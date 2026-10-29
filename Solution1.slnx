@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AspireApp1.AppHost/AspireApp1.AppHost.csproj" />
+    <Project Path="src/AspireApp1.Server/AspireApp1.Server.csproj" />
+    <Project Path="src/frontend/frontend.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AspireApp1.Server.xIntegration/AspireApp1.Server.xIntegration.csproj" />
+    <Project Path="tests/AspireApp1.Server.xUnit/AspireApp1.Server.xUnit.csproj" />
+  </Folder>
+</Solution>
