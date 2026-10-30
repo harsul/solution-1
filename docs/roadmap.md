@@ -40,7 +40,7 @@ A SaaS starter platform that a B2B team can fork on day one and sell on day thir
 ### ✅ 0. Accounts & Identity (done, F1–F5)
 Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account settings (change password, sign out everywhere), change email. Archived in `docs/plans` and `docs/specs`.
 
-### 1. Deploy & CI/CD
+### 1. Deploy & CI/CD (#2)
 **Goal:** Every merge to `main` reaches a real Azure environment safely, and production is a manual approval away.
 **Success criteria**
 - Every pull request runs build, tests and lint, and merging is blocked when they fail.
@@ -58,7 +58,7 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 
 **Depends on:** nothing. **Resolves open decisions:** migrations outside Development, real email provider.
 
-### 2. Organizations & Members
+### 2. Organizations & Members (#3)
 **Goal:** Users work together in organizations with clear roles, and all product data belongs to a tenant.
 **Success criteria**
 - Every user has a personal workspace and can create organizations and switch between them.
@@ -76,7 +76,7 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 
 **Depends on:** 1.
 
-### 3. Billing & Plans (Stripe)
+### 3. Billing & Plans (Stripe) (#4)
 **Goal:** Organizations pay for a plan by themselves, and plan limits are enforced.
 **Success criteria**
 - A public pricing page shows **Free / Pro / Business**. Every new org starts on **Free**, without a card.
@@ -94,7 +94,7 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 
 **Depends on:** 1 (public URL for webhooks), 2 (billing belongs to an org).
 
-### 4. Onboarding & Email templates
+### 4. Onboarding & Email templates (#5)
 **Goal:** A new sign-up reaches "my team is set up" quickly, and every email looks like it comes from one product.
 **Success criteria**
 - After the first sign-in a short guided flow helps the user create or name their org and invite teammates, and it can be skipped.
@@ -109,7 +109,7 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 
 **Depends on:** 2 (invitations), 3 (billing emails).
 
-### 5. Platform admin console
+### 5. Platform admin console (#6)
 **Goal:** Platform staff can find and support any user or organization without touching the database.
 **Success criteria**
 - A platform admin role that normal users can never get by themselves.
@@ -124,7 +124,7 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 
 **Depends on:** 2, 3.
 
-### 6. Audit log
+### 6. Audit log (#7)
 **Goal:** Org admins and platform admins can see who did what and when.
 **Success criteria**
 - Security and org events are recorded: sign-in, password/email changes, invitations, role changes, member removal, billing changes, admin actions.
@@ -139,7 +139,7 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 
 **Depends on:** 2, 5.
 
-### 7. Privacy & data (GDPR)
+### 7. Privacy & data (GDPR) (#8)
 **Goal:** Users and organizations control their data: they can take it with them and have it deleted.
 **Success criteria**
 - A user can export their personal data in a readable format.
