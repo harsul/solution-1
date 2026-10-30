@@ -23,6 +23,8 @@ Read `docs/product.md` (the product profile: name, customers, tenancy, modules, 
 ## 3. Verify and commit
 Format (`npm --prefix src/frontend run format`, `dotnet format whitespace <Solution>.slnx`), all checks green, Definition of Done met – then commit following `.claude/skills/fcommit/SKILL.md` steps 2–6 (`auto`): logical Conventional Commits, `Refs: <ID> (#<task>)`. **Never commit red.**
 
+Skills (use them when the Skill tool is available): `simplify` on your diff before the last commit (reuse, simplification; no unrelated changes), `run` to see a UI or API change working in the real app.
+
 ## 4. Findings from QA, designer, CloudOps and the reviewer
 Fix with tests, all checks green, commit the fixes as **new commits** (never amend or rewrite reviewed commits before the PR exists).
 
