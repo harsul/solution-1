@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using AspireApp1.Server.Auth;
 using AspireApp1.Server.xIntegration.TestDoubles;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -141,6 +142,69 @@ public class EmailConfirmationTests(ServerFactory factory) : IClassFixture<Serve
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Single(factory.Emails.SentTo(email)); // only the confirmation email
+    }
+
+    [Fact]
+    public async Task Resend_sends_a_new_confirmation_email()
+    {
+        var client = factory.CreateHttpsClient();
+        var email = NewEmail();
+        await RegisterAsync(client, email);
+
+        var response = await client.PostAsJsonAsync("/api/auth/resendConfirmationEmail", new { email }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(2, factory.Emails.SentTo(email).Count()); // sign-up + resend
+    }
+
+    [Fact]
+    public async Task Second_resend_within_a_minute_is_rate_limited()
+    {
+        await using var limited = factory.WithWebHostBuilder(b =>
+            b.UseSetting("RateLimits:ResendConfirmation:PermitLimit", "1"));
+        var client = limited.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var email = NewEmail();
+        await RegisterAsync(client, email);
+
+        var first = await client.PostAsJsonAsync("/api/auth/resendConfirmationEmail", new { email }, Ct);
+        var second = await client.PostAsJsonAsync("/api/auth/resendConfirmationEmail", new { email }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, second.StatusCode);
+        Assert.Equal("application/problem+json", second.Content.Headers.ContentType?.MediaType);
+        Assert.InRange(int.Parse(second.Headers.GetValues("Retry-After").Single()), 1, 60);
+    }
+
+    [Theory]
+    [InlineData("/api/auth/resendConfirmationEmail/")]
+    [InlineData("/API/AUTH/RESENDCONFIRMATIONEMAIL")]
+    public async Task Other_spellings_of_the_resend_path_share_the_same_limit(string spelling)
+    {
+        await using var limited = factory.WithWebHostBuilder(b =>
+            b.UseSetting("RateLimits:ResendConfirmation:PermitLimit", "1"));
+        var client = limited.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var email = NewEmail();
+        await RegisterAsync(client, email);
+
+        var first = await client.PostAsJsonAsync("/api/auth/resendConfirmationEmail", new { email }, Ct);
+        var second = await client.PostAsJsonAsync(spelling, new { email }, Ct);
+
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task Rate_limit_only_applies_to_email_sending_paths()
+    {
+        await using var limited = factory.WithWebHostBuilder(b =>
+            b.UseSetting("RateLimits:ResendConfirmation:PermitLimit", "1"));
+        var client = limited.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+
+        for (var i = 0; i < 3; i++)
+        {
+            var response = await RegisterAsync(client, NewEmail());
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
     }
 
     private string LastEmailTo(string email) => factory.Emails.SentTo(email).Last().TextBody;
