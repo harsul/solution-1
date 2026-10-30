@@ -2,8 +2,8 @@
 id: F4
 title: Account settings
 plan: docs/plans/F4-2026-10-30-account-settings.md
-status: In progress
-phase: 2/3
+status: Done
+phase: 3/3
 created: 2026-10-30
 approved: 2026-10-30
 branch: feature/F4-account-settings
@@ -68,7 +68,7 @@ Persistence and caching: none new.
 | `src/features/account/AccountPage.tsx` | New | `/account`: title "Account settings", the signed-in email, the three sections as `Card`s |
 | `src/features/account/ChangePasswordSection.tsx` | New | Current / New / Repeat new password + `PasswordRules`; success Alert "Your password was changed." and fields cleared; errors: "Your current password is incorrect.", F1 lockout text, rule messages, "Something went wrong. Please try again." |
 | `src/features/account/SignOutOthersSection.tsx` | New | Button → confirm `Dialog` → "You've been signed out on all other devices." |
-| `src/features/account/DeleteAccountSection.tsx` | New | "Delete account" (error colour) → `Dialog`: warning, password, "Type your email to confirm"; **Delete my account** enabled when password not empty and email matches case-insensitively; success → `signOut()` → `/signin` with notice "Your account was deleted."; errors "Your password is incorrect.", lockout text |
+| `src/features/account/DeleteAccountSection.tsx` | New | "Delete account" (error colour) → `Dialog`: warning, password, "Type your email to confirm"; **Delete my account** enabled when password not empty and email matches case-insensitively; success → `accountDeleted()` on the auth context → `RequireAuth` shows Sign in with notice "Your account was deleted."; errors "Your password is incorrect.", lockout text |
 | `src/features/auth/UserMenu.tsx` | Changed | "Account settings" item (`ManageAccounts` icon) → `/account` |
 | `src/App.tsx` | Changed | `/account` inside `RequireAuth` |
 | `src/test/fakeApi.ts` | Changed | handlers for the three endpoints (password check against `users`, session per test) |
@@ -134,6 +134,8 @@ State and UX: buttons disabled and `loading` while busy; dialogs close only via 
 - Phase 1: rule errors from the server show Identity's own descriptions (as on Register and Reset password) instead of frontend-mapped texts.
 - Phase 1 (review fix): `app.UseFileServer()` moved before `UseAuthentication()`; the lockout text is shared in `features/auth/messages.ts`; the server's `LockedOut` description is just "Account locked.".
 - Phase 2: the dialog's confirm button says "Sign out others" (not "Sign out", which is the user menu's action for this browser). A failed security-stamp update is an error (500), never a 204.
+- Phase 3: after a successful delete the page calls a new `accountDeleted()` on the auth context instead of `signOut()` + navigate: the server already ended the session, and navigating raced with `RequireAuth`'s own redirect. `RequireAuth` shows the notice for the new `signedOut` reason `deleted`.
+- Phase 3: a failed `DeleteAsync` is an error (500), like the stamp update in phase 2; the delete is also lockout-counted (extra test `Delete_counts_wrong_passwords_towards_the_lockout`).
 
 ## Review log
 - 2026-10-30, Phase 1 (independent reviewer; `/code-review` not available in this session). No 🔴.
@@ -145,3 +147,7 @@ State and UX: buttons disabled and `loading` while busy; dialogs close only via 
   - Fixed 🟡 1: the result of `UpdateSecurityStampAsync` was ignored; a failure now throws (logged 500) instead of claiming success. Not covered by a test (needs a failing user store).
   - Fixed 🔵 2: confirm button renamed "Sign out others".
   - Fixed 🔵 3: the page test now checks that this browser is not signed out (no logout call, user menu still there).
+- 2026-10-30, Phase 3 + whole-feature security pass (independent reviewer; `/code-review` and `/security-review` not available in this session, run them locally). No security findings.
+  - Fixed 🔴 1: leftover debug line (sleep + console.log) in `DeleteAccountSection.test.tsx`.
+  - Fixed 🟡 2: the disabled-button test now fails if the email check is removed (mutation-checked); 🟡 3 JSDoc placement in `RequireAuth`; 🟡 4 focus returns to the password field after an error, and it is focused when the dialog opens.
+  - Fixed 🔵 5 (missing stored email can't pass the email check), 🔵 6 (frontend test for `EmailMismatch`), 🔵 7 (hidden username field in the dialog), 🔵 8 (`aria-describedby` on both dialogs; test), 🔵 9 (spec Frontend row updated).

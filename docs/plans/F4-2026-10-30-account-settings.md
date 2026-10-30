@@ -1,7 +1,7 @@
 ---
 id: F4
 title: Account settings
-status: Approved
+status: Done
 created: 2026-10-30
 approved: 2026-10-30
 depends-on: F1, F3
@@ -67,12 +67,12 @@ Signed-in users can manage their own account: change their password, sign out de
 
 ### Phase 3 – Delete account
 **Goal:** users can delete their account for good.
-- [ ] Given I open Delete account, when the typed email doesn't match my address or the password is empty, then "Delete my account" is disabled.
-- [ ] Given I enter my password and my email, when I confirm, then the account is deleted, I'm signed out, I see "Your account was deleted." on Sign in, and I can't sign in with it anymore.
-- [ ] Given the account is deleted, when someone registers with the same email, then it works like a new account.
-- [ ] Given my password is wrong, when I confirm, then I see "Your password is incorrect." and nothing is deleted.
-- [ ] Given my email was confirmed, when I delete my account, then I receive an "Your account was deleted" email.
-- [ ] Given I was signed in on another device, when I delete my account here, then the other device is signed out on its next request.
+- [x] Given I open Delete account, when the typed email doesn't match my address or the password is empty, then "Delete my account" is disabled.
+- [x] Given I enter my password and my email, when I confirm, then the account is deleted, I'm signed out, I see "Your account was deleted." on Sign in, and I can't sign in with it anymore.
+- [x] Given the account is deleted, when someone registers with the same email, then it works like a new account.
+- [x] Given my password is wrong, when I confirm, then I see "Your password is incorrect." and nothing is deleted.
+- [x] Given my email was confirmed, when I delete my account, then I receive an "Your account was deleted" email.
+- [x] Given I was signed in on another device, when I delete my account here, then the other device is signed out on its next request.
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F4. Asked by: PO | Architect -->
