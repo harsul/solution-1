@@ -61,10 +61,10 @@ Skip any question the free-text answers or the existing profile already settle. 
 
 **Round F – how the team works** (written to `.claude/workflow.conf`; explain that it can be edited any time)
 - Approvals `GATES`: epic + task list (recommended, `epic+tasks`) / task list only (`tasks`) / none, only real decisions (`none`).
-- Team size `DEVELOPERS`: 3 developers + QA (recommended) / 2 (cheaper) / 4–5 (faster, more conflicts and cost).
+- Team size `DEVELOPERS`: 2 developers + QA (recommended) / 3 (faster, more cost) / 4–5 (fastest, more conflicts and cost).
 - Epic and task size: an epic is one working day of the agent team – `EPIC_MAX_TASKS` (default 9) tasks of up to `TASK_MAX_LINES` (default 400) changed lines; ask only if the stakeholder wants other limits.
 - Merging `MERGE_METHOD`: rebase, linear history (recommended) / squash, one commit per task / merge commits. `AUTO_MERGE`: off until the pipeline and branch protection exist (recommended) / on.
-- Cost `COST`: balanced (recommended: faster model for the product owner, designer and QA) / economy (faster model for every role except the reviewer) / max (strongest model everywhere).
+- Cost `COST`: balanced (recommended: Sonnet for the product owner, designer, QA and developers; the session's model for architect, team lead, CloudOps and reviewer) / economy (Sonnet for every role except the reviewer) / max (the session's model everywhere).
 - `BASE_BRANCH` (default `main`): ask only if the stakeholder wants another one.
 - Work tracking: GitHub Issues (current tooling) / something else (note it; the tooling stays GitHub-based for now).
 - **Task IDs**: prefix and first number – `F` → F1, F2 (template default) / `ENG-` → ENG-1 / a project key like `BKG-`. Written to `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`); change it only before the first task.
@@ -100,7 +100,7 @@ Working tree clean (otherwise ask to commit or stash first); a branch `chore/fin
   - tell the stakeholder in two lines what happens: folders, project files and namespaces move; the local Aspire Postgres starts empty once (its volume is named after the AppHost; migrations recreate the schema; the old volume stays until removed); the IDE must reopen the new `.slnx`;
   - run `.claude/scripts/rename.sh <CodeName>`; check that `git status` shows renames (not deletions plus additions) and that `git grep -n "<OldName>"` finds nothing outside `docs/plans` and `docs/specs` (the F1–F5 archive keeps its wording).
 - **Workflow settings**: write the chosen values into `.claude/workflow.conf` (keep its comments) and check them with `.claude/scripts/fgit.sh config`.
-- **Cost**: set `model:` in the agents' frontmatter (`.claude/agents/*.md`) – `economy`: `sonnet` for every agent except `reviewer` (`inherit`); `balanced`: `sonnet` for `product-owner`, `designer` and `qa`, `inherit` for the rest; `max`: `inherit` everywhere.
+- **Cost**: set `model:` in the agents' frontmatter (`.claude/agents/*.md`) – `economy`: `sonnet` for every agent except `reviewer` (`inherit`); `balanced`: `sonnet` for `product-owner`, `designer`, `qa` and `developer`, `inherit` for the rest; `max`: `inherit` everywhere.
 - Start the **developer** agent with the profile and these tasks only:
   - `src/frontend/src/brand.ts`: `name`, `tagline`, `primary` (main color), `secondary` (accent; derive a harmonious one if only a main color was given), `defaultMode`. Remove `primaryDark`/`secondaryDark` unless the stakeholder gave dark-mode shades – the theme then derives readable lighter shades, the backgrounds and the app bar gradient from the brand colors.
   - `src/<Code>.Server/Branding.cs`: `ProductName` (emails and the email sender).

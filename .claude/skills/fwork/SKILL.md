@@ -29,7 +29,7 @@ Slots `dev-1` … `dev-<DEVELOPERS>`. For every free slot, while `fgit.sh ready 
    - **reviewer** (code + security), always;
    - **designer** UI review if the frontend changed;
    - **cloudops** ops review if configuration or migrations changed (the AppHost, infra and workflows only change in `ops` tasks);
-   - the built-in `/code-review` and `/security-review` when available (note when not).
+   - the built-in `/security-review` only when the task touches sign-in, accounts, permissions, tenant data, payments or secrets, and `/code-review` only for size-M tasks (each starts its own agents; the reviewer covers the rest).
 3. **Verify the findings** against the code; drop false positives. Record `fgit.sh set <task> review <file>` (fixed / skipped with reason).
 4. Resume the **same developer** (SendMessage to its agent): fix QA defects and all must/should findings (consider-items when cheap) with tests and new commits, then step 5 of its instructions – rebase on `origin/<BASE_BRANCH>`, checks, push, PR with `Closes #<task>`, auto-merge when `AUTO_MERGE=on`.
 5. Track the PR (`gh pr view <pr> --json state,mergeStateStatus,statusCheckRollup`, or `gh pr checks <pr> --watch` in the background):
