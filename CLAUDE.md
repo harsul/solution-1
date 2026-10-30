@@ -42,9 +42,9 @@ We build a **SaaS starter platform** that any kind of business can start from. T
 | Designer | `designer` | flows, screen states, copy, accessibility, design system, UI review | `design` section, `docs/design/` |
 | Software architect | `architect` | specs, conventions, decision records | `spec` section, `spec:*` labels, `CLAUDE.md` Conventions, `docs/architecture/` |
 | CloudOps | `cloudops` | Azure Container Apps, AppHost, CI/CD, secrets, migrations, monitoring, cost, ops review | `ops` section, AppHost, `infra/`, `.github/workflows/`, `docs/ops/` |
-| Developer | `developer` | one phase at a time, with tests | code, tests, "Changes during implementation" |
+| Developer | `developer` | one phase at a time: implement, test, verify, **commit**; review fixes the same way | code, tests, commits, "Changes during implementation" |
 | Code reviewer | `reviewer` | independent code + security review (read-only) | findings only |
-| Delivery lead | you, via `/fdeliver` | runs the team, batches questions, gates, commits, PR | `review-p<k>` sections, commits |
+| Delivery lead | you, via `/fdeliver` | runs the team, batches questions, gates, push and PR | `review-p<k>` sections |
 
 Subagents can't talk to the stakeholder: they return questions, and the delivery lead asks them in one batch.
 
@@ -56,7 +56,7 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 | `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → pinned Roadmap issue + epic and draft feature issues |
 | `/fdeliver epic #<n> \| F<n> \| "idea"` | Delivery lead | Epic: one planning round and one approval for all features, then each feature built, reviewed, committed and PR'd, epic closed. Feature: the same for one feature |
 | `/ffix #<issue>` | Developer + Reviewer | Bug: reproduce with a failing test, fix, review, commit, PR |
-| `/fcommit [check \| auto]` | – | Verifies (format, build, tests, lint, frontend build) and commits in logical Conventional Commits; `check` only verifies; never pushes |
+| `/fcommit [check]` | – | For your own manual changes: verifies (format, build, tests, lint, frontend build), then commits in logical Conventional Commits; `check` only verifies. Inside `/fdeliver` the developer verifies and commits itself; never pushes |
 | `/foptions [name]` | – | Team, commands, where you are, next command |
 
 Gates: the stakeholder approves the **plans** and the **specs** – once per epic with `/fdeliver epic #<n>`, or per feature; after that `/fdeliver` runs on its own and only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
