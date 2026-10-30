@@ -1,7 +1,7 @@
 ---
 id: F1
 title: User accounts (register, sign in, sign out)
-status: Approved
+status: Done
 created: 2026-10-30
 approved: 2026-10-30
 depends-on:
@@ -46,27 +46,27 @@ Make the app private: people create an account with their email and a password, 
 
 ### Phase 1 – Create an account, sign in and sign out
 **Goal:** the basic account loop works end to end.
-- [ ] Given I'm not signed in, when I open the app, then I see the Sign in page with a link to Create an account.
-- [ ] Given I'm on Create an account, when I enter a new email and matching valid passwords and submit, then I'm signed in and see the weather forecast.
-- [ ] Given I have an account, when I sign in with the right email and password, then I see the weather forecast.
-- [ ] Given I enter a wrong email or password, when I sign in, then I see "Email or password is incorrect" and stay on Sign in.
-- [ ] Given I'm signed in, when I look at the app bar, then I see my email; when I choose Sign out, then I'm back on the Sign in page.
-- [ ] Given a request is in progress, when I submit a form, then the button shows progress and can't be pressed twice.
+- [x] Given I'm not signed in, when I open the app, then I see the Sign in page with a link to Create an account.
+- [x] Given I'm on Create an account, when I enter a new email and matching valid passwords and submit, then I'm signed in and see the weather forecast.
+- [x] Given I have an account, when I sign in with the right email and password, then I see the weather forecast.
+- [x] Given I enter a wrong email or password, when I sign in, then I see "Email or password is incorrect" and stay on Sign in.
+- [x] Given I'm signed in, when I look at the app bar, then I see my email; when I choose Sign out, then I'm back on the Sign in page.
+- [x] Given a request is in progress, when I submit a form, then the button shows progress and can't be pressed twice.
 
 ### Phase 2 – Safe and convenient accounts
 **Goal:** password rules, protection against guessing, and Remember me.
-- [ ] Given I'm creating an account, when my password breaks a rule or the two passwords differ, then I see which rule fails before submitting and can't submit.
-- [ ] Given an email that already has an account, when I register with it, then I see "An account with this email already exists" with a link to Sign in.
-- [ ] Given I entered a wrong password 5 times in a row, when I try again within 5 minutes, then I'm told the account is temporarily locked and when to retry, even with the right password.
-- [ ] Given I signed in with Remember me ticked, when I close and reopen the browser, then I'm still signed in (for up to 14 days).
-- [ ] Given I signed in without Remember me, when I close and reopen the browser, then I have to sign in again.
+- [x] Given I'm creating an account, when my password breaks a rule or the two passwords differ, then I see which rule fails before submitting and can't submit.
+- [x] Given an email that already has an account, when I register with it, then I see "An account with this email already exists" with a link to Sign in.
+- [x] Given I entered a wrong password 5 times in a row, when I try again within 5 minutes, then I'm told the account is temporarily locked and when to retry, even with the right password.
+- [x] Given I signed in with Remember me ticked, when I close and reopen the browser, then I'm still signed in (for up to 14 days).
+- [x] Given I signed in without Remember me, when I close and reopen the browser, then I have to sign in again.
 
 ### Phase 3 – Private app
 **Goal:** nothing is visible without signing in, and users land where they wanted to go.
-- [ ] Given I'm not signed in, when I open any page of the app directly, then I'm sent to Sign in, and after signing in I'm returned to the page I asked for.
-- [ ] Given I'm not signed in, when the forecast data is requested, then it is refused and no weather data is shown.
-- [ ] Given my session has expired, when I use the app, then I'm sent to Sign in with the message "Your session has expired, please sign in again."
-- [ ] Given I'm signed in, when I open the Sign in or Create an account page, then I'm taken to the weather forecast instead.
+- [x] Given I'm not signed in, when I open any page of the app directly, then I'm sent to Sign in, and after signing in I'm returned to the page I asked for.
+- [x] Given I'm not signed in, when the forecast data is requested, then it is refused and no weather data is shown.
+- [x] Given my session has expired, when I use the app, then I'm sent to Sign in with the message "Your session has expired, please sign in again."
+- [x] Given I'm signed in, when I open the Sign in or Create an account page, then I'm taken to the weather forecast instead.
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F1. Asked by: PO | Architect -->

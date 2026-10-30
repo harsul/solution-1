@@ -1,3 +1,5 @@
+using AspireApp1.Server.Endpoints;
+
 namespace AspireApp1.Server.xUnit;
 
 public class WeatherForecastTests
