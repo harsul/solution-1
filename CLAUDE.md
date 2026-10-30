@@ -59,6 +59,7 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 | `/fplan [F<n>]` | Architect | Interactive spec, conventions, ADRs |
 | `/fimplement [F<n>]` | Developer | One phase on the feature branch |
 | `/freview [branch]` | Reviewer (+ Designer, CloudOps) | Independent reviews, verified findings, fixes, review record |
+| `/ffix #<issue>` | Developer + Reviewer | Bug: reproduce with a failing test, fix, review, commit, PR |
 | `/fcommit [auto]` | – | Verifies, then logical Conventional Commits; never pushes |
 | `/fverify [server\|frontend]` | – | Build, test, lint table |
 | `/foptions [name]` | – | Team, commands, where you are, next command |
@@ -74,6 +75,7 @@ All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in
 - **Feature:** issue `F<n> – <title>`, label `type:feature`; **body = plan**. `F<n>` is sequential and never reused (`fdoc.sh next-id`). At most 3 phases; bigger → several features.
 - **Sections** = one comment each, updated in place: `design`, `ops`, `spec`, `review-p<k>`.
 - **Status labels:** `plan:draft → questions → approved → done`, `spec:draft → questions → approved → in-progress → done`, plus `needs-answer` while waiting for the stakeholder.
+- **Bug:** issue from the bug template, label `type:bug`; fixed with `/ffix` on `fix/<issue>-<name>`, PR with `Fixes #<issue>`.
 - **Branch** `feature/F<n>-<name>` (CloudOps work: `ops/<name>`); commits end with `Refs: F<n> (#<issue>)`; one PR per feature with `Closes #<issue>`.
 - Questions flow upstream: Developer → spec (Architect) → plan (PO) → stakeholder.
 - F1–F5 were built before this setup; their plans and specs stay in `docs/plans` and `docs/specs` as an archive.
@@ -83,6 +85,33 @@ All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in
 - Keep it simple: no new layers, libraries or abstractions unless the feature needs them or they are listed under Conventions.
 - Features are small vertical slices: API + UI + tests. Every phase leaves the solution building and the tests passing.
 - Code is never committed to `main` directly (docs and `.claude/` may be). Never push without being asked.
+
+## Definition of Done
+
+Every phase (and every bug fix) is done only when:
+
+- [ ] Its acceptance criteria are met and each has a test; key safeguards are mutation-checked (break it once, a test fails).
+- [ ] `/fverify` passes: format, build, all server and frontend tests, lint, frontend build.
+- [ ] UI: loading, empty and error states; accessible names; focus stays in the form after actions; works at 390 px and in dark mode; copy matches the design section.
+- [ ] Security: authorization (and tenant scope) on every new endpoint; no secrets, tokens or personal data in code, logs or errors; built-in endpoints can't bypass the feature's rules.
+- [ ] Operations: new configuration, secrets, migrations or resources are in the `ops` section and the AppHost; CI still covers the change.
+- [ ] No debug code, unused code or unrelated changes.
+- [ ] The issue is current: criteria ticked, "Changes during implementation" written, review recorded.
+
+## Gotchas
+
+Non-obvious traps the team ran into. `/fdeliver` adds new ones after each feature (retro); keep each to one line.
+
+- Vitest fake timers break Testing Library's `findBy*`: fake only what you need (`toFake: ['setInterval', 'clearInterval', 'Date']`) and only after the `findBy` calls.
+- ASP.NET Identity token providers (`DataProtectorTokenProvider`) have no `TimeProvider`: test expiry by shrinking `TokenLifespan` in a `WithWebHostBuilder` host, plus a test for the configured lifespan.
+- Identity's built-in endpoints (`MapIdentityApi`) can bypass our rules (e.g. `/manage/info` newEmail/newPassword, `/confirmEmail?changedEmail=`): block or test them whenever we add our own version.
+- `UserManager.FindByEmailAsync` matches normalized (upper-cased) addresses: always send emails to the stored address (`GetEmailAsync`), never to the typed one.
+- Usernames are emails and must pass `AllowedUserNameCharacters` (no apostrophes or accented letters); change email and user name in one update (set `UserName` + `UpdateNormalizedUserNameAsync`, then `ChangeEmailAsync`).
+- With the security stamp validated on every request, call `RefreshSignInAsync` after anything that changes the stamp, or the current browser is signed out too.
+- Navigating right after a state change that `RequireAuth` reacts to (e.g. sign-out) races its own redirect: let `RequireAuth` redirect (signed-out `reason`) instead.
+- The rate limiter partitions by the routed endpoint pattern, not the raw path, so `/a/` and `/a` share one limit.
+- Integration tests need Postgres: Testcontainers with Docker, or `TEST_POSTGRES_CONNECTION`.
+- Line endings are LF everywhere (`.gitattributes`, `.editorconfig`); bash scripts fail on CRLF.
 
 ## Conventions
 
@@ -107,6 +136,7 @@ Decided conventions. `/fplan` adds to this list when you answer an architecture 
 - Tests: xunit.v3 with `[Fact]`/`[Theory]`, global `using Xunit`; pass `TestContext.Current.CancellationToken` to async calls.
 - Unit tests (`xUnit` project): pure logic, no HTTP. Server internals are visible to it via `InternalsVisibleTo`.
 - API tests (`xIntegration` project): `IClassFixture<ServerFactory>` and `factory.CreateClient()`. `ServerFactory` swaps Redis output caching for a no-op store and gets its own database on one shared Postgres server per test run (`PostgresFixture`: Testcontainers, so `dotnet test` needs Docker; or set `TEST_POSTGRES_CONNECTION` to use an existing server). Use a unique email per test. Assert status codes and JSON bodies, using test-local DTO records.
+- Code style: `.editorconfig` for everything (LF, UTF-8, 4 spaces; 2 for web files), `dotnet format` for C#, Prettier for the frontend (`src/frontend/.prettierrc.json`: single quotes, width 120). `/fverify` checks both; fix with `npm --prefix src/frontend run format` and `dotnet format whitespace Solution1.slnx`.
 - Frontend tests: `<Component>.test.tsx` next to the component, rendered with `renderWithTheme` (`src/test/render.tsx`). Use Testing Library queries by role or label, `userEvent` for interaction, and stub `fetch` with `vi.stubGlobal`. Shared setup (incl. `matchMedia` stub) is in `src/test/setup.ts`.
 - No mocking libraries: write small test doubles by hand in a `TestDoubles/` folder (C#) or inline (TS).
 - Each acceptance criterion maps to at least one test: API behaviour → `xIntegration`, logic → `xUnit`, UI behaviour → Vitest.

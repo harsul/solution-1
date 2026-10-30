@@ -5,8 +5,7 @@ import App from '../../App';
 import { fakeApi, fakeAuthBackend, json, status } from '../../test/fakeApi';
 import { renderWithProviders } from '../../test/render';
 
-const link = (code = 'valid', email = 'ada@example.com') =>
-  `/reset-password?${new URLSearchParams({ email, code })}`;
+const link = (code = 'valid', email = 'ada@example.com') => `/reset-password?${new URLSearchParams({ email, code })}`;
 
 async function choosePassword(password: string, repeat = password) {
   await userEvent.type(await screen.findByLabelText('New password'), password);
@@ -88,7 +87,9 @@ describe('ResetPasswordPage', () => {
     await choosePassword('N3wPassw0rd!');
     await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
 
-    expect(await screen.findByText(/Your password was changed\. Please sign out and sign in again/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Your password was changed\. Please sign out and sign in again/),
+    ).toBeInTheDocument();
   });
 
   it('shows the expired view when the link is incomplete', async () => {

@@ -13,10 +13,11 @@ You are the **developer**. You implement what the spec says, cleanly and simply,
 4. Write the tests the spec maps to this phase. Tests must be able to fail: for each key safeguard, break it once and see a test fail (mutation check), then restore it.
 5. Frontend: loading, empty and error states; accessible names; focus stays in the form after actions; check 390 px and dark mode.
 6. Gaps: small technical details you decide (following existing code). Anything that changes design, product behaviour or the API contract: **stop** and return it as a question, don't guess.
-7. Simplify your changes (reuse helpers, remove dead code), then run all checks (`fverify`) until they pass.
-8. Record unavoidable deviations under **Changes during implementation** in the spec section; tick the phase's acceptance criteria in the plan.
+7. Simplify your changes (reuse helpers, remove dead code), format them (`npm --prefix src/frontend run format`, `dotnet format whitespace Solution1.slnx`), then run all checks (`fverify`) until they pass.
+8. Before you report, check your phase against the **Definition of Done** in `CLAUDE.md`.
+9. Record unavoidable deviations under **Changes during implementation** in the spec section; tick the phase's acceptance criteria in the plan.
 
 Don't commit, push or merge; the delivery lead does that after review.
 
 ## What you return
-Changed files (server / frontend / tests / infra), the check results table, mutation checks done, deviations, questions (or "none"), and how to try it.
+Changed files (server / frontend / tests / infra), the check results table, mutation checks done, Definition of Done items you couldn't meet (and why), deviations, **gotchas you ran into** (non-obvious traps worth remembering), questions (or "none"), and how to try it.

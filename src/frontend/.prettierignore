@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+package-lock.json
+# stray nested copy, not part of the app
+src/frontend

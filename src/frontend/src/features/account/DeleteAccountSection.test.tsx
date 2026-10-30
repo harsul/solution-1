@@ -67,7 +67,10 @@ describe('DeleteAccountSection', () => {
   });
 
   it.each([
-    [() => json({ errors: { LockedOut: ['Account locked.'] } }, 400), 'This account is temporarily locked. Try again in 5 minutes.'],
+    [
+      () => json({ errors: { LockedOut: ['Account locked.'] } }, 400),
+      'This account is temporarily locked. Try again in 5 minutes.',
+    ],
     [() => json({ errors: { EmailMismatch: ['No match.'] } }, 400), "The email address doesn't match this account."],
     [() => status(500), 'Something went wrong. Please try again.'],
   ])('shows the lockout and unexpected-error messages (%#)', async (handler, text) => {

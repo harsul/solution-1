@@ -1,0 +1,32 @@
+name: Bug report
+description: Something doesn't work as it should
+title: "Bug: "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as …
+        2. Open …
+        3. Click …
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: Page or API route, and environment (local, dev, prod).
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots, logs or error IDs
+      description: No passwords, tokens or personal data, please.

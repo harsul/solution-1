@@ -81,8 +81,12 @@ export default function WeatherPage() {
               onChange={(_, value: TemperatureUnit | null) => value && setUnit(value)}
               aria-label="Temperature unit"
             >
-              <ToggleButton value="F" aria-label="Fahrenheit">°F</ToggleButton>
-              <ToggleButton value="C" aria-label="Celsius">°C</ToggleButton>
+              <ToggleButton value="F" aria-label="Fahrenheit">
+                °F
+              </ToggleButton>
+              <ToggleButton value="C" aria-label="Celsius">
+                °C
+              </ToggleButton>
             </ToggleButtonGroup>
             <Button
               variant="contained"

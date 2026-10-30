@@ -6,6 +6,7 @@
 #   epic issue     title "Epic: <name>",        label type:epic,    body = goal, success criteria, planned features
 #                  its features are GitHub sub-issues (link / children)
 #   feature issue  title "F<n> – <title>",      label type:feature, body = the plan (product owner)
+#   bug issue      label type:bug (from the bug template); fixed with /ffix, sections fix and review-p1
 #   sections       one comment per section, first line "<!-- fdoc:<section> -->"
 #                  (spec, design, ops, review-p<k>, summary); updated in place, never duplicated
 #   status labels  plan:<draft|questions|approved|done>, spec:<draft|questions|approved|in-progress|done>
@@ -15,7 +16,7 @@
 #   fdoc.sh init-labels                   create/refresh the workflow labels (idempotent)
 #   fdoc.sh next-id                       next free F<n> number (issues + legacy docs/plans)
 #   fdoc.sh find F<n>                     issue number of feature F<n> (exit 1 if none)
-#   fdoc.sh new feature|epic "<title>" <body-file>   create an issue, print its number
+#   fdoc.sh new feature|epic|bug "<title>" <body-file>   create an issue, print its number
 #   fdoc.sh roadmap                       print the roadmap issue body (exit 1 if there is none)
 #   fdoc.sh set-roadmap <file>            create (and pin) or update the roadmap issue, print its number
 #   fdoc.sh link <epic> <feature>         make the feature issue a sub-issue of the epic (idempotent)
@@ -59,6 +60,7 @@ case "$cmd" in
   init-labels)
     gh label create type:epic --color 5319e7 --description "Roadmap epic" --force
     gh label create type:feature --color 1d76db --description "Feature F<n>" --force
+    gh label create type:bug --color d73a4a --description "Something is broken" --force
     gh label create type:roadmap --color 0e8a16 --description "Product roadmap (pinned)" --force
     for v in "${plan_values[@]}"; do gh label create "plan:$v" --color c5def5 --description "Plan status" --force; done
     for v in "${spec_values[@]}"; do gh label create "spec:$v" --color bfdadc --description "Spec status" --force; done
@@ -79,7 +81,7 @@ case "$cmd" in
     echo "$n"
     ;;
   new)
-    [[ "${1:-}" == feature || "${1:-}" == epic ]] || die "usage: new feature|epic <title> <body-file>"
+    [[ "${1:-}" =~ ^(feature|epic|bug)$ ]] || die "usage: new feature|epic|bug <title> <body-file>"
     need_file "${3:-}"
     url="$(gh issue create --title "$2" --body-file "$3" --label "type:$1")"
     echo "${url##*/}"

@@ -23,7 +23,10 @@ export function fakeApi(handlers: Record<string, Handler>) {
 }
 
 /** Fake backend with an in-memory session: register, login, logout, info and the forecast. */
-export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signedInAs?: string; emailConfirmed?: boolean } = {}) {
+export function fakeAuthBackend({
+  signedInAs,
+  emailConfirmed = false,
+}: { signedInAs?: string; emailConfirmed?: boolean } = {}) {
   let session: string | null = signedInAs ?? null;
   const confirmed = new Set<string>(signedInAs && emailConfirmed ? [signedInAs] : []);
   const resent: string[] = [];
@@ -106,7 +109,8 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
     },
     'POST /api/auth/register': (init) => {
       const { email, password } = JSON.parse(String(init?.body));
-      if (users.has(email)) return json({ errors: { DuplicateUserName: [`Username '${email}' is already taken.`] } }, 400);
+      if (users.has(email))
+        return json({ errors: { DuplicateUserName: [`Username '${email}' is already taken.`] } }, 400);
       users.set(email, password);
       return status(200);
     },
