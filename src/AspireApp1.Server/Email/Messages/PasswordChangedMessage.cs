@@ -12,7 +12,7 @@ internal static class PasswordChangedMessage
     {
         var when = changedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
         var text = $"""
-            The password for your Aspire Starter account was changed on {when}.
+            The password for your {Branding.ProductName} account was changed on {when}.
 
             If you did this, you don't need to do anything.
 
@@ -20,7 +20,7 @@ internal static class PasswordChangedMessage
             """;
 
         var html = $"""
-            <p>The password for your Aspire Starter account was changed on {WebUtility.HtmlEncode(when)}.</p>
+            <p>The password for your {WebUtility.HtmlEncode(Branding.ProductName)} account was changed on {WebUtility.HtmlEncode(when)}.</p>
             <p>If you did this, you don't need to do anything.</p>
             <p>If this wasn't you, reset your password right away with <strong>Forgot password?</strong> on the sign-in page.</p>
             """;

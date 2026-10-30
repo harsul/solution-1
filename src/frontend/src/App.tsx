@@ -22,12 +22,13 @@ import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import SignInPage from './features/auth/SignInPage';
 import UserMenu from './features/auth/UserMenu';
 import WeatherPage from './features/weather/WeatherPage';
-import { aspireGradient } from './theme';
+import { brand } from './brand';
+import { brandGradient } from './theme';
 
 function App() {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <AppBar position="static" elevation={0} sx={{ background: aspireGradient }}>
+      <AppBar position="static" elevation={0} sx={{ background: brandGradient }}>
         <Toolbar sx={{ gap: { xs: 1, sm: 2 } }}>
           <Link
             href="https://aspire.dev"
@@ -40,10 +41,10 @@ function App() {
           </Link>
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography variant="h6" component="h1" noWrap sx={{ lineHeight: 1.2 }}>
-              Aspire Starter
+              {brand.name}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.85, display: { xs: 'none', md: 'block' } }}>
-              Modern distributed application development
+              {brand.tagline}
             </Typography>
           </Box>
           <UserMenu />

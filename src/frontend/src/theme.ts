@@ -1,12 +1,9 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, darken, lighten } from '@mui/material/styles';
+import { brand } from './brand';
 
-// Aspire purple, taken from the original stylesheet's accent gradient.
-const aspire = {
-  blue: '#5b6fd8',
-  purple: '#6b46a3',
-  blueLight: '#7c92f5',
-  purpleLight: '#a78bfa',
-};
+// Dark mode uses lighter shades, so text and icons stay readable on the dark background.
+const primaryDark = brand.primaryDark ?? lighten(brand.primary, 0.4);
+const secondaryDark = brand.secondaryDark ?? lighten(brand.secondary, 0.4);
 
 export const theme = createTheme({
   // CSS variables + a data attribute let the color mode switch at runtime without a flash.
@@ -14,17 +11,18 @@ export const theme = createTheme({
   colorSchemes: {
     light: {
       palette: {
-        primary: { main: aspire.purple },
-        secondary: { main: aspire.blue },
-        background: { default: '#f0f4ff', paper: '#ffffff' },
+        primary: { main: brand.primary },
+        secondary: { main: brand.secondary },
+        // A faint tint of the accent color behind the content.
+        background: { default: lighten(brand.secondary, 0.92), paper: '#ffffff' },
       },
     },
     dark: {
       palette: {
-        // Lighter shades keep text and icons readable on the dark background.
-        primary: { main: aspire.purpleLight },
-        secondary: { main: aspire.blueLight },
-        background: { default: '#1a1a2e', paper: '#1e1e2e' },
+        primary: { main: primaryDark },
+        secondary: { main: secondaryDark },
+        // Near-black, slightly tinted with the brand color.
+        background: { default: darken(brand.primary, 0.82), paper: darken(brand.primary, 0.78) },
       },
     },
   },
@@ -34,5 +32,5 @@ export const theme = createTheme({
   shape: { borderRadius: 12 },
 });
 
-/** Gradient used for the app bar, matching the original Aspire header. */
-export const aspireGradient = `linear-gradient(135deg, ${aspire.blue} 0%, ${aspire.purple} 100%)`;
+/** Gradient used for the app bar, from the accent to the main brand color. */
+export const brandGradient = `linear-gradient(135deg, ${brand.secondary} 0%, ${brand.primary} 100%)`;

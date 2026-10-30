@@ -11,12 +11,13 @@ import '@fontsource/roboto/700.css';
 import './index.css';
 import App from './App.tsx';
 import AuthProvider from './features/auth/AuthProvider';
+import { brand } from './brand';
 import { theme } from './theme';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <InitColorSchemeScript attribute="data" defaultMode="system" />
-    <ThemeProvider theme={theme} defaultMode="system">
+    <InitColorSchemeScript attribute="data" defaultMode={brand.defaultMode} />
+    <ThemeProvider theme={theme} defaultMode={brand.defaultMode}>
       <CssBaseline enableColorScheme />
       <BrowserRouter>
         <AuthProvider>

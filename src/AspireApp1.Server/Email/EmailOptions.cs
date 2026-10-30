@@ -16,5 +16,5 @@ public sealed class EmailOptions
     public string FromAddress { get; set; } = "no-reply@aspireapp1.local";
 
     [Required]
-    public string FromName { get; set; } = "Aspire Starter";
+    public string FromName { get; set; } = Branding.ProductName;
 }

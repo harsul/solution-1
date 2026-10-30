@@ -10,7 +10,7 @@ internal static class ConfirmBeforeResetMessage
     public static EmailMessage Create(string to, string confirmLink)
     {
         var text = $"""
-            We received a request to reset the password for your Aspire Starter account, but your email address isn't confirmed yet.
+            We received a request to reset the password for your {Branding.ProductName} account, but your email address isn't confirmed yet.
 
             Please confirm it first by opening this link:
 
@@ -21,7 +21,7 @@ internal static class ConfirmBeforeResetMessage
 
         var link = WebUtility.HtmlEncode(confirmLink);
         var html = $"""
-            <p>We received a request to reset the password for your Aspire Starter account, but your email address isn't confirmed yet.</p>
+            <p>We received a request to reset the password for your {WebUtility.HtmlEncode(Branding.ProductName)} account, but your email address isn't confirmed yet.</p>
             <p><a href="{link}">Confirm email address</a></p>
             <p>Or copy this link into your browser:<br>{link}</p>
             <p>Then request the password reset again on the "Forgot password" page. The link is valid for 24 hours. If you didn't ask for this, you can ignore this email.</p>
