@@ -11,6 +11,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
 import AccountPage from './features/account/AccountPage';
+import ConfirmEmailChangePage from './features/account/ConfirmEmailChangePage';
 import ConfirmEmailBanner from './features/auth/ConfirmEmailBanner';
 import ConfirmEmailPage from './features/auth/ConfirmEmailPage';
 import ForgotPasswordPage from './features/auth/ForgotPasswordPage';
@@ -73,6 +74,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/confirm-email" element={<ConfirmEmailPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/confirm-email-change" element={<ConfirmEmailChangePage />} />
           <Route
             path="/"
             element={

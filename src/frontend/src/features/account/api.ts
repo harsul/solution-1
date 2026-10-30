@@ -82,3 +82,16 @@ export async function changeEmail(newEmail: string, password: string): Promise<C
   }
   throw unexpected(response);
 }
+
+export type ConfirmEmailChangeResult = 'changed' | 'invalid' | 'inUse';
+
+/** Applies a change-email link. Works signed in or not. */
+export async function confirmEmailChange(userId: string, email: string, code: string): Promise<ConfirmEmailChangeResult> {
+  const response = await apiFetch('/api/account/email/confirm', postJson({ userId, email, code }));
+  if (response.ok) return 'changed';
+  if (response.status === 400) {
+    const errors = await readErrors(response);
+    return 'DuplicateEmail' in errors ? 'inUse' : 'invalid';
+  }
+  throw unexpected(response);
+}

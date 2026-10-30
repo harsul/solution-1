@@ -12,6 +12,8 @@ import { dismissBanner, isBannerDismissed } from './bannerDismissal';
 
 const cooldownSeconds = 60;
 
+const hiddenOn = ['/confirm-email', '/confirm-email-change'];
+
 type Feedback = 'sent' | 'tooSoon' | 'error' | null;
 
 /**
@@ -49,7 +51,8 @@ function SessionBanner() {
   const secondsLeft = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
 
   // The confirm page handles confirmation itself; no second "Resend email" there.
-  if (!email || pathname === '/confirm-email' || dismissedFor === email || isBannerDismissed(email)) return null;
+  // The confirm pages have their own messages; a reminder about the (old) address would confuse.
+  if (!email || hiddenOn.includes(pathname) || dismissedFor === email || isBannerDismissed(email)) return null;
 
   const resend = async () => {
     setBusy(true);

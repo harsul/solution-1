@@ -89,6 +89,17 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       emailChangeRequests.push(newEmail);
       return status(204);
     },
+    // Change-email links in tests: userId = the current email, code = 'valid' (works once).
+    'POST /api/account/email/confirm': (init) => {
+      const { userId, email, code } = JSON.parse(String(init?.body));
+      if (code !== 'valid' || !users.has(userId)) return json({ errors: { InvalidToken: ['Invalid.'] } }, 400);
+      if (users.has(email)) return json({ errors: { DuplicateEmail: ['In use.'] } }, 400);
+      users.set(email, users.get(userId)!);
+      users.delete(userId);
+      confirmed.add(email);
+      if (session === userId) session = email;
+      return status(204);
+    },
     'POST /api/auth/resendConfirmationEmail': (init) => {
       resent.push(JSON.parse(String(init?.body)).email);
       return status(200);
