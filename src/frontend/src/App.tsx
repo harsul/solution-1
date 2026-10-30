@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
+import ConfirmEmailPage from './features/auth/ConfirmEmailPage';
 import GuestOnly from './features/auth/GuestOnly';
 import RegisterPage from './features/auth/RegisterPage';
 import RequireAuth from './features/auth/RequireAuth';
@@ -63,6 +64,7 @@ function App() {
               </GuestOnly>
             }
           />
+          <Route path="/confirm-email" element={<ConfirmEmailPage />} />
           <Route
             path="/"
             element={

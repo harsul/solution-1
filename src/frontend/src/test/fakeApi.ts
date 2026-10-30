@@ -23,12 +23,25 @@ export function fakeApi(handlers: Record<string, Handler>) {
 }
 
 /** Fake backend with an in-memory session: register, login, logout, info and the forecast. */
-export function fakeAuthBackend({ signedInAs }: { signedInAs?: string } = {}) {
+export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signedInAs?: string; emailConfirmed?: boolean } = {}) {
   let session: string | null = signedInAs ?? null;
+  const confirmed = new Set<string>(signedInAs && emailConfirmed ? [signedInAs] : []);
+  const resent: string[] = [];
   const users = new Map<string, string>(signedInAs ? [[signedInAs, 'Passw0rd!']] : []);
 
   const fetchMock = fakeApi({
-    'GET /api/auth/manage/info': () => (session ? json({ email: session, isEmailConfirmed: false }) : status(401)),
+    'GET /api/auth/manage/info': () =>
+      session ? json({ email: session, isEmailConfirmed: confirmed.has(session) }) : status(401),
+    // Confirmation links in tests: userId = the email, code = 'valid'.
+    'GET /api/auth/confirmEmail': (_, url) => {
+      if (url.searchParams.get('code') !== 'valid') return status(401);
+      confirmed.add(url.searchParams.get('userId') ?? '');
+      return status(200);
+    },
+    'POST /api/auth/resendConfirmationEmail': (init) => {
+      resent.push(JSON.parse(String(init?.body)).email);
+      return status(200);
+    },
     'POST /api/auth/register': (init) => {
       const { email, password } = JSON.parse(String(init?.body));
       if (users.has(email)) return json({ errors: { DuplicateUserName: [`Username '${email}' is already taken.`] } }, 400);
@@ -49,5 +62,5 @@ export function fakeAuthBackend({ signedInAs }: { signedInAs?: string } = {}) {
       json([{ date: '2026-11-01', temperatureC: 20, temperatureF: 67, summary: 'Mild' }]),
   });
 
-  return { fetchMock, users };
+  return { fetchMock, users, confirmed, resent };
 }

@@ -16,7 +16,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     let next: AuthState;
     try {
       const user = await api.getUserInfo();
-      next = user ? { status: 'signedIn', email: user.email } : { status: 'signedOut' };
+      next = user
+        ? { status: 'signedIn', email: user.email, emailConfirmed: user.isEmailConfirmed }
+        : { status: 'signedOut' };
     } catch {
       next = { status: 'signedOut' };
     }
@@ -68,7 +70,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: 'signedOut' });
   }, []);
 
-  const value = useMemo(() => ({ state, signIn, register, signOut }), [state, signIn, register, signOut]);
+  const value = useMemo(
+    () => ({ state, signIn, register, signOut, refreshUser: loadUser }),
+    [state, signIn, register, signOut, loadUser],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
