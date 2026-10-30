@@ -40,11 +40,11 @@ Users who forgot their password can set a new one through a link sent to their e
 
 ### Phase 1 – Request a reset link
 **Goal:** users can ask for a reset email and receive it.
-- [ ] Given I'm on Sign in, when I click "Forgot password?", then I see a page asking for my email.
-- [ ] Given I enter an email that has an account, when I submit, then I see the neutral confirmation message and an email with a reset link arrives in the test mailbox.
-- [ ] Given I enter an email without an account, when I submit, then I see the same confirmation message and no email is sent.
-- [ ] Given I enter the email of an account that isn't confirmed yet, when I submit, then I see the same confirmation message and receive an email asking me to confirm my address first, with a working confirmation link.
-- [ ] Given I enter an invalid email address, when I submit, then I see a validation message and nothing is sent.
+- [x] Given I'm on Sign in, when I click "Forgot password?", then I see a page asking for my email.
+- [x] Given I enter an email that has an account, when I submit, then I see the neutral confirmation message and an email with a reset link arrives in the test mailbox.
+- [x] Given I enter an email without an account, when I submit, then I see the same confirmation message and no email is sent.
+- [x] Given I enter the email of an account that isn't confirmed yet, when I submit, then I see the same confirmation message and receive an email asking me to confirm my address first, with a working confirmation link.
+- [x] Given I enter an invalid email address, when I submit, then I see a validation message and nothing is sent.
 
 ### Phase 2 – Set a new password
 **Goal:** the link lets users choose a new password and sign in with it.

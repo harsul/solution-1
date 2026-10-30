@@ -2,11 +2,11 @@
 id: F2
 title: Forgot password
 plan: docs/plans/F2-2026-10-30-forgot-password.md
-status: Approved
-phase: 0/2
+status: In progress
+phase: 1/2
 created: 2026-10-30
 approved: 2026-10-30
-branch:
+branch: feature/F2-forgot-password
 ---
 
 # Spec F2 – Forgot password
@@ -123,7 +123,15 @@ State and UX: both pages use `AuthCard`, disabled submit while busy, light/dark,
 - Other sessions of a user end only at the next security-stamp check (ASP.NET default interval: 30 min) after a reset; acceptable for this app.
 
 ## Changes during implementation
-- _filled in by /fimplement_
+- Phase 1: the confirmation-link helpers used by the F3 tests moved to `TestDoubles/EmailHelpers` (`LinkIn`, `ConfirmEmailAsync`, `RegisterConfirmedAsync`) so the F2 tests reuse them.
+- Phase 1: reset links keep `@` unencoded in `email=` (`QueryHelpers` leaves it as is; it is valid in a query string). The frontend reads it with `URLSearchParams`, so both forms work.
+- Phase 1: a malformed or empty email returns **400** ValidationProblem (`email`: "Enter a valid email address.") before any lookup, so it reveals nothing about accounts; the page also blocks it client-side.
+- Phase 1: the Forgot password page shows a generic "Something went wrong" alert for unexpected errors (500/network), separate from the 429 message.
 
 ## Review log
-- _filled in by /freview_
+- 2026-10-30, Phase 1 (independent reviewer; `/code-review` and `/security-review` not available in this session, run them locally):
+  - Fixed 🔴 1: the email went to the **typed** address; the lookup matches normalized (upper-cased) addresses, so a look-alike spelling (e.g. dotless `ı`) could send a victim's reset link to another mailbox. Now sent to the stored address (`GetEmailAsync`); test `Reset_email_goes_to_the_stored_address_not_the_typed_spelling` (mutation-checked).
+  - Fixed 🟡 2: "Back to sign in" on Forgot password keeps `state.from`; test in `RequireAuth.test.tsx`.
+  - Fixed 🟡 3: test `Forgot_returns_200_when_email_delivery_fails`.
+  - Fixed 🟡 4: test `Reset_link_is_accepted_by_the_built_in_reset_once` (link round-trip + single use); the 1-hour expiry test stays in Phase 2.
+  - Fixed 🔵 5 (comment only: change-email also uses the default 1 h provider; not offered by the app), 🔵 6 stale comment, 🔵 7 duplicate test removed (kept and renamed the F3 one), 🔵 8 logger category, 🔵 9 frontend tests for 400 and 500.
