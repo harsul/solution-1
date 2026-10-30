@@ -27,6 +27,7 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
   let session: string | null = signedInAs ?? null;
   const confirmed = new Set<string>(signedInAs && emailConfirmed ? [signedInAs] : []);
   const resent: string[] = [];
+  const resetRequests: string[] = [];
   const users = new Map<string, string>(signedInAs ? [[signedInAs, 'Passw0rd!']] : []);
 
   const fetchMock = fakeApi({
@@ -36,6 +37,10 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
     'GET /api/auth/confirmEmail': (_, url) => {
       if (url.searchParams.get('code') !== 'valid') return status(401);
       confirmed.add(url.searchParams.get('userId') ?? '');
+      return status(200);
+    },
+    'POST /api/auth/password/forgot': (init) => {
+      resetRequests.push(JSON.parse(String(init?.body)).email);
       return status(200);
     },
     'POST /api/auth/resendConfirmationEmail': (init) => {
@@ -62,5 +67,5 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       json([{ date: '2026-11-01', temperatureC: 20, temperatureF: 67, summary: 'Mild' }]),
   });
 
-  return { fetchMock, users, confirmed, resent };
+  return { fetchMock, users, confirmed, resent, resetRequests };
 }

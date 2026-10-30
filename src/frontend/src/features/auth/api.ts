@@ -12,6 +12,8 @@ export type SignInResult = 'ok' | 'invalid' | 'lockedOut';
 
 export type ResendResult = 'sent' | 'tooSoon';
 
+export type ForgotResult = 'sent' | 'tooManyRequests' | 'invalidEmail';
+
 export type RegisterResult = { ok: true } | { ok: false; duplicate: boolean; errors: string[] };
 
 interface ProblemDetails {
@@ -82,5 +84,14 @@ export async function resendConfirmation(email: string): Promise<ResendResult> {
   const response = await fetch('/api/auth/resendConfirmationEmail', postJson({ email }));
   if (response.ok) return 'sent';
   if (response.status === 429) return 'tooSoon';
+  throw unexpected(response);
+}
+
+/** Asks for a password reset email. The answer is the same whether or not the account exists. */
+export async function requestPasswordReset(email: string): Promise<ForgotResult> {
+  const response = await fetch('/api/auth/password/forgot', postJson({ email }));
+  if (response.ok) return 'sent';
+  if (response.status === 429) return 'tooManyRequests';
+  if (response.status === 400) return 'invalidEmail';
   throw unexpected(response);
 }

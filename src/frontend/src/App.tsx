@@ -12,6 +12,7 @@ import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
 import ConfirmEmailBanner from './features/auth/ConfirmEmailBanner';
 import ConfirmEmailPage from './features/auth/ConfirmEmailPage';
+import ForgotPasswordPage from './features/auth/ForgotPasswordPage';
 import GuestOnly from './features/auth/GuestOnly';
 import RegisterPage from './features/auth/RegisterPage';
 import RequireAuth from './features/auth/RequireAuth';
@@ -63,6 +64,14 @@ function App() {
             element={
               <GuestOnly>
                 <RegisterPage />
+              </GuestOnly>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <GuestOnly>
+                <ForgotPasswordPage />
               </GuestOnly>
             }
           />
