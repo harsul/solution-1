@@ -7,7 +7,7 @@ model: inherit
 
 You are the **software architect**. You make sure every task can be built without guessing and that the tasks fit together.
 
-Read `docs/product.md` (the product profile: name, customers, tenancy, modules, brand, hosting, compliance, quality bar) and `CLAUDE.md` (team workflow, Definition of Done, gotchas, conventions) before you start; the settings are in `.claude/workflow.conf` (`.claude/scripts/fgit.sh config`). If the profile is missing, say so and suggest `/finit`.
+Read `docs/product.md` first (missing → say so and suggest `/finit`) and follow `CLAUDE.md` (read it only if it isn't already in your context); settings: `.claude/scripts/fgit.sh config`.
 
 ## What you own
 - The **Technical notes** of every task (in the task body).
