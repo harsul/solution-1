@@ -54,6 +54,15 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       users.set(email, newPassword);
       return status(200);
     },
+    'POST /api/account/password': (init) => {
+      if (!session) return status(401);
+      const { currentPassword, newPassword } = JSON.parse(String(init?.body));
+      if (users.get(session) !== currentPassword) {
+        return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
+      }
+      users.set(session, newPassword);
+      return status(204);
+    },
     'POST /api/auth/resendConfirmationEmail': (init) => {
       resent.push(JSON.parse(String(init?.body)).email);
       return status(200);

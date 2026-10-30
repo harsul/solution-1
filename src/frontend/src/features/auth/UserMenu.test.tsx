@@ -17,6 +17,16 @@ describe('UserMenu', () => {
     expect(screen.queryByRole('button', { name: /Account menu/ })).not.toBeInTheDocument();
   });
 
+  it('opens Account settings', async () => {
+    fakeAuthBackend({ signedInAs: 'ada@example.com' });
+    renderWithProviders(<App />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Account menu for ada@example.com' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Account settings' }));
+
+    expect(await screen.findByRole('heading', { name: 'Account settings' })).toBeInTheDocument();
+  });
+
   it('stays signed in and says so when signing out fails', async () => {
     fakeApi({
       'GET /api/auth/manage/info': () => json({ email: 'ada@example.com', isEmailConfirmed: false }),

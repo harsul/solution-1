@@ -10,10 +10,11 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AuthCard from './AuthCard';
 import { useAuth } from './AuthContext';
+import { lockedOutMessage } from './messages';
 
 const signInMessages = {
   invalid: 'Email or password is incorrect.',
-  lockedOut: 'This account is temporarily locked. Try again in 5 minutes.',
+  lockedOut: lockedOutMessage,
   unexpected: 'Something went wrong. Please try again.',
 };
 

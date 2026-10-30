@@ -9,6 +9,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import { useAuth } from './AuthContext';
 
 /** Signed-in user's email in the app bar, with a menu to sign out. Renders nothing when signed out. */
@@ -47,6 +48,17 @@ export default function UserMenu() {
         </Box>
       </Button>
       <Menu anchorEl={anchor} open={anchor !== null} onClose={() => setAnchor(null)}>
+        <MenuItem
+          onClick={() => {
+            setAnchor(null);
+            navigate('/account');
+          }}
+        >
+          <ListItemIcon>
+            <ManageAccountsIcon fontSize="small" />
+          </ListItemIcon>
+          Account settings
+        </MenuItem>
         <MenuItem onClick={handleSignOut}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
