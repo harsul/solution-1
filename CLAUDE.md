@@ -13,6 +13,7 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 | `tests/AspireApp1.Server.xIntegration` | API tests: server in memory via `WebApplicationFactory<Program>` (`ServerFactory`) |
 | `tests/*/TestDoubles/` | Hand-written test doubles (`TestLogger`, `TestLoggerProvider`, `ThrowingEndpointStartupFilter`) |
 | `src/frontend/src/**/*.test.tsx` | Frontend tests (Vitest + Testing Library, jsdom) |
+| `docs/product.md` | Product profile: name, customers, tenancy, modules, brand, hosting, compliance (`/finit`); read by every agent |
 | GitHub: pinned **Roadmap** issue | Product vision and epic order (product owner, `/froadmap`) |
 | `docs/design/` | Design system (designer) |
 | `docs/architecture/` | Architecture decision records (architect) |
@@ -51,6 +52,7 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 
 | Command | Role | Does |
 |---|---|---|
+| `/finit [update \| topic]` | Product owner + Architect | Product setup: asks about the product and options, writes `docs/product.md`, applies name/tagline/brand color |
 | `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → pinned Roadmap issue + epic and draft feature issues |
 | `/fdeliver epic #<n> \| F<n> \| "idea"` | Delivery lead | Epic: one planning round and one approval for all features, then each feature built, reviewed, committed and PR'd, epic closed. Feature: the same for one feature |
 | `/fbrainstorm <idea \| F<n>>` | Product owner | Interactive plan for one feature |

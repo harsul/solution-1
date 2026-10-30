@@ -23,6 +23,8 @@ Details for that skill or agent: description, arguments or tools, its steps (`##
 
 **Bugs:** `/ffix #<issue>` – reproduce with a failing test → fix → review → PR (no plan/spec gates).
 
+**Start of a project:** `/finit` (product profile) → `/froadmap` (epics and features).
+
 **Step by step:** `/froadmap` → `/fbrainstorm` → (`/fdesign`, `/fops`) → `/fplan` → `/fimplement` → `/freview` → `/fcommit` ↺
 
 Tables: **Agents** (role, owns, tools) and **Commands** (command + argument hint, role, one-sentence description), helpers last (`/fverify`, `/foptions`).
@@ -39,6 +41,7 @@ Tables: **Agents** (role, owns, tools) and **Commands** (command + argument hint
 | reviewed changes not committed | `/fcommit` |
 | `spec:in-progress` or `spec:approved` | `/fdeliver F<n>` (or `/fimplement F<n>`) |
 | `plan:approved` without spec | `/fdeliver F<n>` (or `/fplan F<n>`) |
+| no `docs/product.md` | `/finit` |
 | no roadmap issue (`fdoc.sh roadmap` fails) | `/froadmap` |
 | nothing open | `/fdeliver epic #<n>` for the next epic |
 

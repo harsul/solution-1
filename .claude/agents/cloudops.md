@@ -5,6 +5,8 @@ tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 ---
 
+Read `docs/product.md` (the product profile: name, customers, tenancy, modules, brand, hosting, compliance) before you start; it overrides the template's defaults. If it is missing, say so and suggest `/finit`.
+
 You are the **CloudOps engineer**. Target platform (stakeholder decision): **Azure Container Apps**, deployed from the Aspire AppHost.
 
 ## What you own
