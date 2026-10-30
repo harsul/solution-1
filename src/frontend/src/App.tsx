@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
+import GuestOnly from './features/auth/GuestOnly';
 import RegisterPage from './features/auth/RegisterPage';
 import RequireAuth from './features/auth/RequireAuth';
 import SignInPage from './features/auth/SignInPage';
@@ -46,8 +47,22 @@ function App() {
 
       <Container component="main" maxWidth="md" sx={{ py: 4, flexGrow: 1 }}>
         <Routes>
-          <Route path="/signin" element={<SignInPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/signin"
+            element={
+              <GuestOnly>
+                <SignInPage />
+              </GuestOnly>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestOnly>
+                <RegisterPage />
+              </GuestOnly>
+            }
+          />
           <Route
             path="/"
             element={

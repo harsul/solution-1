@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { setUnauthorizedHandler } from '../../api/apiFetch';
 import * as api from './api';
 import { AuthContext, type AuthContextValue, type AuthState } from './AuthContext';
 
@@ -9,6 +10,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   // (e.g. the check on page load, after a sign-in) must not overwrite it.
   const latestCheck = useRef(0);
 
+  /** Refreshes the session state; resolves to whether the user is signed in. */
   const loadUser = useCallback(async () => {
     const check = ++latestCheck.current;
     let next: AuthState;
@@ -19,16 +21,29 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       next = { status: 'signedOut' };
     }
     if (check === latestCheck.current) setState(next);
+    return next.status === 'signedIn';
   }, []);
 
   useEffect(() => {
     loadUser();
   }, [loadUser]);
 
+  // An API call answered 401 while we thought we were signed in: the session expired.
+  useEffect(
+    () =>
+      setUnauthorizedHandler(() => {
+        latestCheck.current++;
+        setState((current) => (current.status === 'signedIn' ? { status: 'signedOut', reason: 'expired' } : current));
+      }),
+    [],
+  );
+
   const signIn = useCallback<AuthContextValue['signIn']>(
     async (credentials, rememberMe) => {
       const result = await api.signIn(credentials, rememberMe);
-      if (result === 'ok') await loadUser();
+      // Login accepted but no session afterwards (cookie not stored, check failed): that's an error,
+      // otherwise the page would wait forever for a redirect that never comes.
+      if (result === 'ok' && !(await loadUser())) throw new Error('Signed in, but the session could not be confirmed');
       return result;
     },
     [loadUser],

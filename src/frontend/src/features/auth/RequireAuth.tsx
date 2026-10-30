@@ -4,7 +4,10 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from './AuthContext';
 
-/** Shows its children only to signed-in users; everyone else goes to the sign-in page. */
+/**
+ * Shows its children only to signed-in users; everyone else goes to the sign-in page, which
+ * sends them back here (`state.from`) once they have signed in.
+ */
 export default function RequireAuth({ children }: { children: ReactNode }) {
   const { state } = useAuth();
   const location = useLocation();
@@ -18,7 +21,8 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (state.status === 'signedOut') {
-    return <Navigate to="/signin" replace state={{ from: location }} />;
+    const notice = state.reason === 'expired' ? 'Your session has expired, please sign in again.' : undefined;
+    return <Navigate to="/signin" replace state={{ from: location, notice }} />;
   }
 
   return children;

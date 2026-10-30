@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router';
+import { Link as RouterLink, useLocation, useNavigate, type Location } from 'react-router';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
@@ -16,6 +16,8 @@ type FormError = { kind: 'duplicate' } | { kind: 'messages'; messages: string[] 
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  // The page the user originally asked for (from RequireAuth), kept when switching to Sign in.
+  const from = (useLocation().state as { from?: Location } | null)?.from;
   const [email, setEmail] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const [password, setPassword] = useState('');
@@ -36,11 +38,11 @@ export default function RegisterPage() {
     setError(null);
     try {
       const result = await register({ email: email.trim(), password });
+      // Signed in: GuestOnly takes the user to the app. Created but not signed in: ask to sign in.
       if (result.ok) {
-        navigate(result.signedIn ? '/' : '/signin', {
-          replace: true,
-          state: result.signedIn ? undefined : { notice: 'Account created, please sign in.' },
-        });
+        if (!result.signedIn) {
+          navigate('/signin', { replace: true, state: { notice: 'Account created, please sign in.', from } });
+        }
         return;
       }
       setError(result.duplicate ? { kind: 'duplicate' } : { kind: 'messages', messages: result.errors });
@@ -56,7 +58,7 @@ export default function RegisterPage() {
         {error?.kind === 'duplicate' && (
           <Alert severity="error">
             An account with this email already exists.{' '}
-            <Link component={RouterLink} to="/signin" color="inherit" sx={{ fontWeight: 500 }}>
+            <Link component={RouterLink} to="/signin" state={{ from }} color="inherit" sx={{ fontWeight: 500 }}>
               Sign in
             </Link>
           </Alert>
@@ -105,7 +107,7 @@ export default function RegisterPage() {
       </Stack>
       <Typography variant="body2">
         Already have an account?{' '}
-        <Link component={RouterLink} to="/signin">
+        <Link component={RouterLink} to="/signin" state={{ from }}>
           Sign in
         </Link>
       </Typography>

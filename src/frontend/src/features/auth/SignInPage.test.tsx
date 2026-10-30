@@ -110,4 +110,17 @@ describe('SignInPage', () => {
     const loginUrl = fetchMock.mock.calls.map(([url]) => String(url)).find((url) => url.startsWith('/api/auth/login'));
     expect(loginUrl).toBe(`/api/auth/login?${expectedQuery}`);
   });
+
+  it('shows an error instead of waiting forever when the session cannot be confirmed after sign-in', async () => {
+    fakeApi({
+      'GET /api/auth/manage/info': () => status(401),
+      'POST /api/auth/login': () => status(200),
+    });
+    renderWithProviders(<App />, { route: '/signin' });
+
+    await fillAndSubmit('ada@example.com', 'Passw0rd!');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong. Please try again.');
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeEnabled();
+  });
 });

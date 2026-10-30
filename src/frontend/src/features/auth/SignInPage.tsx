@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
+import { Link as RouterLink, useLocation, type Location } from 'react-router';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
@@ -19,8 +19,7 @@ const signInMessages = {
 
 export default function SignInPage() {
   const { signIn } = useAuth();
-  const navigate = useNavigate();
-  const notice = (useLocation().state as { notice?: string } | null)?.notice;
+  const { notice, from } = (useLocation().state as { notice?: string; from?: Location } | null) ?? {};
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -34,10 +33,8 @@ export default function SignInPage() {
     setError(null);
     try {
       const result = await signIn({ email: email.trim(), password }, rememberMe);
-      if (result === 'ok') {
-        navigate('/', { replace: true });
-        return;
-      }
+      // On success the auth state changes and GuestOnly sends the user on to where they wanted to go.
+      if (result === 'ok') return;
       setError(signInMessages[result]);
     } catch {
       setError(signInMessages.unexpected);
@@ -77,7 +74,7 @@ export default function SignInPage() {
       </Stack>
       <Typography variant="body2">
         New here?{' '}
-        <Link component={RouterLink} to="/register">
+        <Link component={RouterLink} to="/register" state={{ from }}>
           Create an account
         </Link>
       </Typography>

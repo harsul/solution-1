@@ -23,7 +23,7 @@ describe('WeatherPage', () => {
 
     expect(await screen.findByText('Mild')).toBeInTheDocument();
     expect(screen.getByText('Chilly')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/weatherforecast');
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/weatherforecast');
   });
 
   it('switches between Fahrenheit and Celsius', async () => {

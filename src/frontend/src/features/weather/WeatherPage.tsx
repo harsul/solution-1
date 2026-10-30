@@ -11,6 +11,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import { apiFetch } from '../../api/apiFetch';
 
 interface WeatherForecast {
   date: string;
@@ -39,7 +40,7 @@ export default function WeatherPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/weatherforecast');
+      const response = await apiFetch('/api/weatherforecast');
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
