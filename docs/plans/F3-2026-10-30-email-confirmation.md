@@ -1,7 +1,7 @@
 ---
 id: F3
 title: Email confirmation
-status: Approved
+status: Done
 created: 2026-10-30
 approved: 2026-10-30
 depends-on: F1
@@ -52,11 +52,11 @@ Users confirm that the email address on their account is really theirs. This kee
 
 ### Phase 2 – Reminder and resend
 **Goal:** unconfirmed users (new and existing) are reminded and can get the email again.
-- [ ] Given I'm signed in with an unconfirmed email, when I use the app, then I see a banner "Please confirm your email address" with Resend email and a close button.
-- [ ] Given I click Resend email, when it succeeds, then a new confirmation email arrives and the banner says it was sent; clicking again within a minute is not possible and says when it will be.
-- [ ] Given I close the banner, when I keep using the app, then it stays hidden; when I sign in again later and am still unconfirmed, then it's back.
-- [ ] Given my email is confirmed, when I use the app, then no banner is shown.
-- [ ] Given an account created before this feature, when its owner signs in, then they see the banner like any unconfirmed user.
+- [x] Given I'm signed in with an unconfirmed email, when I use the app, then I see a banner "Please confirm your email address" with Resend email and a close button.
+- [x] Given I click Resend email, when it succeeds, then a new confirmation email arrives and the banner says it was sent; clicking again within a minute is not possible and says when it will be.
+- [x] Given I close the banner, when I keep using the app, then it stays hidden; when I sign in again later and am still unconfirmed, then it's back.
+- [x] Given my email is confirmed, when I use the app, then no banner is shown.
+- [x] Given an account created before this feature, when its owner signs in, then they see the banner like any unconfirmed user.
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F3. Asked by: PO | Architect -->

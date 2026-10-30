@@ -2,8 +2,8 @@
 id: F3
 title: Email confirmation
 plan: docs/plans/F3-2026-10-30-email-confirmation.md
-status: In progress
-phase: 1/2
+status: Done
+phase: 2/2
 created: 2026-10-30
 approved: 2026-10-30
 branch: feature/F3-email-confirmation
@@ -134,6 +134,11 @@ Test infrastructure: `ServerFactory` replaces `IEmailDelivery` with `TestDoubles
 - Phase 1: `InternalsVisibleTo` for the integration test project too (tests read the internal token options).
 - Phase 1 (review fix): links are built by `Email/EmailLinks` (planned for F2, introduced now): it appends to `App:PublicUrl` and keeps any path (`https://example.com/app` → `…/app/confirm-email`). `App:PublicUrl` is validated on start as an absolute http(s) URL with a message naming the setting.
 - Phase 1 (review fix): Mailpit is added **only in run mode**; a published app has no Mailpit, so confirmation emails fail and are logged until a real email provider is configured.
+- Phase 2: the banner is hidden on `/confirm-email` (that page has its own "Resend email"; two buttons would be confusing).
+- Phase 2: the resend countdown is based on an end time (an interval only refreshes the display), so it stays correct when the browser throttles timers in background tabs.
+- Phase 2: a banner closed in this tab is cleared on sign-in **and** sign-out, so it also returns when the old session simply ended (expired) without a sign-out; both paths have a test.
+- Phase 2: the rate limiter is configured with a route table (`LimitedPaths`), so F2 adds `/api/auth/password/forgot` with one line. It matches the **routed endpoint's pattern**, not the raw path (review fix), so every spelling routing accepts shares one limit.
+- Phase 2 (review fix): the banner is keyed by who is signed in (`signedOut` / `in:<email>`), so each sign-in or sign-out starts with fresh banner state; only the message is a live region (`role="status"`), not the buttons or the countdown.
 
 ## Review log
 - **2026-10-30, Phase 1** – independent review: 0 must-fix, 4 should-fix, 5 consider. Confirmed OK: 24 h provider wiring (reset tokens untouched; the expiry test proves it), no host-header injection, HTML-encoded links, no tokens in logs, StrictMode-safe confirm call, no `dotnet ef` breakage from `ValidateOnStart`.
@@ -141,3 +146,9 @@ Test infrastructure: `ServerFactory` replaces `IEmailDelivery` with `TestDoubles
   - Noted: (7) `/resendConfirmationEmail` is unlimited until phase 2 adds the rate limit, and SMTP timing hints whether an account exists → don't release phase 1 alone; sending email in the background is a later option.
   - Built-in `/code-review` and `/security-review` not run (not available in this session).
   - Verified after fixes: server 70/70, frontend 56/56, lint, type check and build clean.
+- **2026-10-30, Phase 2** – independent review incl. a whole-feature security pass: 2 must-fix, 2 should-fix. Security pass otherwise clean (no response-based account enumeration, links only from `App:PublicUrl`, no tokens/emails in logs, middleware order correct).
+  - Fixed: (1) **must-fix:** a trailing slash (`/api/auth/resendConfirmationEmail/`) bypassed the resend rate limit → limiter partitions by the routed endpoint's pattern; test for trailing slash and upper case (fails with the old matching); (2) **must-fix:** a closed banner stayed hidden after sign-out and sign-in without a reload → banner state is reset per session (keyed by who is signed in); test without reload; (3) one user's "Email sent" message and countdown carried over to the next user → same fix, test; (4) the whole banner incl. the countdown button was a live region → only the message is announced, test.
+  - Noted (consider): without a client IP (e.g. behind a misconfigured proxy) all requests share one "unknown" rate-limit bucket; forwarded headers are a deployment task (see Risks).
+  - Built-in `/code-review` and `/security-review` not run (not available in this session).
+  - Verified after fixes: server 75/75, frontend 67/67, lint, type check and build clean; each new test fails without its fix.
+  - Last phase without open must-fix → spec and plan set to **Done**.
