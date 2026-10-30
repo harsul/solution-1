@@ -21,7 +21,7 @@ Run from the repository root. Don't fix anything here; only report. The calling 
 | 4 | Frontend tests | `npm --prefix src/frontend test` | frontend |
 | 5 | Frontend build | `npm --prefix src/frontend run build` | frontend |
 
-- `dotnet test` runs both test projects: `AspireApp1.Server.xUnit` (unit) and `AspireApp1.Server.xIntegration` (in-memory API tests via `WebApplicationFactory`, no Docker or Redis needed).
+- `dotnet test` runs both test projects: `AspireApp1.Server.xUnit` (unit) and `AspireApp1.Server.xIntegration` (in-memory API tests via `WebApplicationFactory`; they need Postgres: Docker for Testcontainers, or `TEST_POSTGRES_CONNECTION` pointing at an existing server).
 - `npm test` runs Vitest once (`vitest run`) in jsdom.
 - If `src/frontend/node_modules` is missing, run `npm --prefix src/frontend ci` first. That needs permission; say why you're asking.
 - If a tool (`dotnet`, `npm`) is not available in this environment, mark its checks **not run** and say so. Never report them as passed.
