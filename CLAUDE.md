@@ -52,8 +52,7 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 
 | Command | Role | Does |
 |---|---|---|
-| `/finit [update \| topic]` | Product owner + Architect | Product setup: asks about the product and options, writes `docs/product.md`, applies name/tagline/brand color |
-| `/frename <NewName> ["Display name"]` | Developer | Renames the code base (solution, projects, namespaces) and/or the name users see; rebuilds, tests, commits on a branch |
+| `/finit [update [name \| brand \| tickets \| section]]` | Product owner + Architect | The one setup command: product questions → `docs/product.md`, then applies code name (rename), display name, brand colors and ticket prefix. Re-run with `update` to change any of it |
 | `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → pinned Roadmap issue + epic and draft feature issues |
 | `/fdeliver epic #<n> \| F<n> \| "idea"` | Delivery lead | Epic: one planning round and one approval for all features, then each feature built, reviewed, committed and PR'd, epic closed. Feature: the same for one feature |
 | `/fbrainstorm <idea \| F<n>>` | Product owner | Interactive plan for one feature |
