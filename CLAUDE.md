@@ -57,7 +57,6 @@ We build a **SaaS starter platform** that any kind of business can start from. W
 | `/fwork #<epic>` | The sprint: developers in parallel take ready tasks by priority → QA → review → rebase → PR → auto-merge → next task, until the epic is done |
 | `/ffix #<bug>` | Bug: failing test → fix → QA → review → PR |
 | `/fcommit [check]` | Your own manual changes: all checks, then logical Conventional Commits; `check` only verifies |
-| `/foptions [name]` | Team, commands, settings, where things stand, next command |
 
 Approvals (`GATES`, default `epic+tasks`): you approve the **epic** and its **task list**; after that `/fwork` runs on its own and only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
 
