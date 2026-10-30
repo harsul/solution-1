@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
+import ConfirmEmailBanner from './features/auth/ConfirmEmailBanner';
 import ConfirmEmailPage from './features/auth/ConfirmEmailPage';
 import GuestOnly from './features/auth/GuestOnly';
 import RegisterPage from './features/auth/RegisterPage';
@@ -47,6 +48,7 @@ function App() {
       </AppBar>
 
       <Container component="main" maxWidth="md" sx={{ py: 4, flexGrow: 1 }}>
+        <ConfirmEmailBanner />
         <Routes>
           <Route
             path="/signin"
