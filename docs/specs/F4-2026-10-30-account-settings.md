@@ -3,7 +3,7 @@ id: F4
 title: Account settings
 plan: docs/plans/F4-2026-10-30-account-settings.md
 status: In progress
-phase: 1/3
+phase: 2/3
 created: 2026-10-30
 approved: 2026-10-30
 branch: feature/F4-account-settings
@@ -133,6 +133,7 @@ State and UX: buttons disabled and `loading` while busy; dialogs close only via 
 - Phase 1: `PasswordChangedMessage` takes the time from `TimeProvider` and states it in UTC.
 - Phase 1: rule errors from the server show Identity's own descriptions (as on Register and Reset password) instead of frontend-mapped texts.
 - Phase 1 (review fix): `app.UseFileServer()` moved before `UseAuthentication()`; the lockout text is shared in `features/auth/messages.ts`; the server's `LockedOut` description is just "Account locked.".
+- Phase 2: the dialog's confirm button says "Sign out others" (not "Sign out", which is the user menu's action for this browser). A failed security-stamp update is an error (500), never a 204.
 
 ## Review log
 - 2026-10-30, Phase 1 (independent reviewer; `/code-review` not available in this session). No 🔴.
@@ -140,3 +141,7 @@ State and UX: buttons disabled and `loading` while busy; dialogs close only via 
   - Fixed 🟡 2: hidden `username` field so password managers update the right entry.
   - Fixed 🔵 3 (static files before authentication + risk note), 🔵 4 and 🔵 9 (risk notes), 🔵 5 (test that Remember me survives the change), 🔵 6 (shared lockout text), 🔵 7 (focus returns to Current password after success).
   - Skipped 🔵 8 (fields editable while saving): same as the other forms.
+- 2026-10-30, Phase 2 (independent reviewer). No 🔴.
+  - Fixed 🟡 1: the result of `UpdateSecurityStampAsync` was ignored; a failure now throws (logged 500) instead of claiming success. Not covered by a test (needs a failing user store).
+  - Fixed 🔵 2: confirm button renamed "Sign out others".
+  - Fixed 🔵 3: the page test now checks that this browser is not signed out (no logout call, user menu still there).

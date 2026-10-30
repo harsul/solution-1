@@ -62,8 +62,8 @@ Signed-in users can manage their own account: change their password, sign out de
 
 ### Phase 2 – Sign out other devices
 **Goal:** users can end all their other sessions.
-- [ ] Given I'm signed in on two devices, when I click "Sign out other devices" and confirm, then I see "You've been signed out on all other devices.", the other device is signed out on its next request, and I stay signed in.
-- [ ] Given I open the confirmation, when I cancel, then nothing changes.
+- [x] Given I'm signed in on two devices, when I click "Sign out other devices" and confirm, then I see "You've been signed out on all other devices.", the other device is signed out on its next request, and I stay signed in.
+- [x] Given I open the confirmation, when I cancel, then nothing changes.
 
 ### Phase 3 – Delete account
 **Goal:** users can delete their account for good.
