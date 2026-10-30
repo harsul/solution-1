@@ -5,7 +5,8 @@
 #   epic   issue "Epic: <name>", label epic + epic:<draft|approved|planned>; body = the epic (product owner);
 #          its tasks are GitHub sub-issues; the epic closes when all tasks are done
 #   task   issue "<ID> – <title>", label task + priority P1|P2|P3; body = the task (team lead + architect),
-#          incl. a line "**Blocked by:** #12, #15" (or "–"); label in-progress while a developer works on it
+#          incl. a line "**Blocked by:** #12, #15" (or "–"); label in-progress while a developer works on it;
+#          label ops = infrastructure task (AppHost, infra, workflows), done by CloudOps only
 #   bug    issue from the bug template, label bug; fixed with /ffix
 #   sections  one comment per section, first line "<!-- fdoc:<name> -->" (qa, review, fix), updated in place
 #   <ID>   ID_PREFIX + number from .claude/workflow.conf, e.g. F6 or ENG-1
@@ -89,6 +90,7 @@ case "$cmd" in
     gh label create task --color 1d76db --description "Task <ID>, a sub-issue of an epic" --force
     gh label create bug --color d73a4a --description "Something is broken" --force
     for v in draft approved planned; do gh label create "epic:$v" --color c5def5 --description "Epic status" --force; done
+    gh label create ops --color 0e8a16 --description "Infrastructure task: only CloudOps changes AppHost, infra, workflows" --force
     gh label create in-progress --color fbca04 --description "A developer is working on it" --force
     gh label create P1 --color b60205 --description "Priority: first" --force
     gh label create P2 --color d93f0b --description "Priority: normal" --force

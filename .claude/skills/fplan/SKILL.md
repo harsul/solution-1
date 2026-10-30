@@ -19,6 +19,7 @@ Input: $ARGUMENTS
    - **architect** → Technical notes for every task; flags collisions and shared foundations;
    - **designer** → UI notes for tasks with screens (skip if none);
    - **cloudops** → Ops notes for tasks touching infrastructure, configuration, CI or migrations (skip if none).
+   The architect and CloudOps also say whether the epic needs infrastructure changes; if so the team lead has one `ops` task (P1, CloudOps) and makes dependent tasks `Blocked by` it, see the team lead's step 5.
 3. **team-lead** again: fold in the architect's collisions (blockers, merged or extra foundation tasks), re-check sizes, and produce the **parallel plan**: which tasks can start at once, the critical path, roughly how many rounds `DEVELOPERS` developers need.
 4. Too big (more than `EPIC_MAX_TASKS` tasks, or more rounds than one working day allows) → the **product-owner** splits the epic; re-plan the part that stays.
 

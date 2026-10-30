@@ -14,7 +14,8 @@ Read `docs/product.md` (the product profile: name, customers, tenancy, modules, 
 2. Cut the epic into **tasks**: each a vertical slice (API + UI + tests where it applies) that a developer finishes alone, at most `TASK_MAX_LINES` changed lines (tests and lock files not counted). Order: foundations first (data model, shared pieces), then features, then polish.
 3. For each task: **priority** (P1 = needed first / on the critical path, P2 = normal, P3 = nice to have or polish), **Blocked by** (only real dependencies: needs another task's code, migration or API), and **conflict risk**: tasks that change the same files (same endpoint file, same page, the same migration) either get a "Blocked by" between them or are merged into one task – parallel developers must not edit the same files.
 4. At most `EPIC_MAX_TASKS` tasks. More → the epic is too big: propose a split for the product owner instead of a longer task list.
-5. The designer adds UI notes to tasks with screens; CloudOps adds notes to tasks with infrastructure, configuration, CI or migrations – ask for them through your return (the lead runs them).
+5. **Ops task first.** If the epic needs a change to the AppHost, `infra/`, `azure.yaml`, workflows or Dockerfiles (new resource, configuration key, secret, pipeline change – the architect and CloudOps say so), create **one** ops task for all of it: label `ops` + `P1`, no blockers, done by CloudOps. Every task that depends on it gets it under `Blocked by`; tasks that don't depend on it start right away. Developer tasks never include changes to those paths. No infra change → no ops task.
+6. The designer adds UI notes to tasks with screens; CloudOps adds notes to tasks with infrastructure, configuration, CI or migrations – ask for them through your return (the lead runs them).
 
 ## Task template (the issue body; the architect fills **Technical notes**)
 ```markdown

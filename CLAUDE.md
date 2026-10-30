@@ -41,7 +41,7 @@ We build a **SaaS starter platform** that any kind of business can start from. W
 | Team lead | `team-lead` | Breaking an epic into small prioritized tasks with dependencies; keeping the sprint flowing |
 | Software architect | `architect` | Technical notes on every task, collisions between tasks, conventions, ADRs (`docs/architecture/`) |
 | Designer | `designer` | UI notes on tasks with screens, the design system (`docs/design/`), UI review before a PR |
-| CloudOps | `cloudops` | Ops notes, pipeline and required checks, Azure dev environment (`infra/`, `.github/workflows/`, `docs/ops/`), ops review |
+| CloudOps | `cloudops` | Ops notes, the epic's `ops` task, pipeline and required checks, Azure dev environment; **the only role that changes the AppHost, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles, `docs/ops/`**; ops review |
 | Developers (×`DEVELOPERS`) | `developer` | One task at a time in their own worktree: branch, build with tests, verify, commit, fix findings, rebase, push, PR with auto-merge |
 | QA | `qa` | Acceptance criteria → tests, edge cases, main flows; commits tests only; reports defects |
 | Reviewer | `reviewer` | Independent code + security review of every task before its PR (read-only) |
@@ -115,6 +115,7 @@ Decided conventions. The architect adds to this list when the stakeholder answer
 
 - Work tracking: GitHub Issues through `.claude/scripts/fdoc.sh`: epics (label `epic`) and their tasks (sub-issues, label `task`, priorities `P1`–`P3`, `Blocked by` lines); one branch and one PR per task.
 - Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/fdoc.sh config`): task IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), team size (`DEVELOPERS`), epic and task size (`EPIC_MAX_TASKS`, `TASK_MAX_LINES`), `BASE_BRANCH`, `MERGE_METHOD`, `AUTO_MERGE` (switch to `on` only once the pipeline has required checks and branch protection), and the model per role (`COST`). `/finit` sets them; edit them any time.
+- Infrastructure ownership: only CloudOps changes the AppHost, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles and `docs/ops/`, through one `ops` task per epic (label `ops`, P1) when the epic needs it; tasks that depend on it are `Blocked by` it, the others start at once. Developers keep migrations, `Program.cs` wiring and `appsettings` bindings and stop when they need an infra change; the reviewer flags violations.
 - Hosting: Azure Container Apps (dev environment only for now; production comes later, as its own epic), deployed from the Aspire AppHost (`aspire publish`/azd); CI/CD with GitHub Actions using OIDC federated credentials; secrets in Key Vault / Container Apps secrets, never in the repo.
 - Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.
 - Database: PostgreSQL via Aspire (`appdb`, pgAdmin in dev) with EF Core; DbContext, migrations and DB helpers in `Data/`. Migrations apply automatically at startup in Development only. Create them with `dotnet ef migrations add <Name> -o Data/Migrations` (local tool).

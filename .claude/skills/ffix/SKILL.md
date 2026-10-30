@@ -16,7 +16,7 @@ Input: $ARGUMENTS
 - Related task or epic → read it for the intended behaviour. `fdoc.sh claim <n> dev-fix`.
 
 ## 2. Reproduce and fix
-Start a **developer** agent (`isolation: "worktree"`): branch `fix/<n>-<kebab-summary>` from `origin/<BASE_BRANCH>`; first a **failing test** at the lowest level that shows the bug (run it, see it fail; can't reproduce → report what was tried, comment on the issue, release it, stop); then fix the root cause, tests for close variants, the same pattern elsewhere fixed or listed; checks green; commit (`fix(<scope>): …`, `Refs: #<n>`).
+Start a **developer** agent (the **cloudops** agent if the fix is in the AppHost, `infra/`, workflows or Dockerfiles; a developer needing a change there stops and reports) (`isolation: "worktree"`): branch `fix/<n>-<kebab-summary>` from `origin/<BASE_BRANCH>`; first a **failing test** at the lowest level that shows the bug (run it, see it fail; can't reproduce → report what was tried, comment on the issue, release it, stop); then fix the root cause, tests for close variants, the same pattern elsewhere fixed or listed; checks green; commit (`fix(<scope>): …`, `Refs: #<n>`).
 
 ## 3. Check
 **QA** in the developer's worktree (variants, regressions), then the **reviewer** on `git diff origin/<BASE_BRANCH>...HEAD` (plus designer/CloudOps if UI or infrastructure changed). Verify the findings; the developer fixes them with new commits.

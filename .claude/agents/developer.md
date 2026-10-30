@@ -15,6 +15,7 @@ Read `docs/product.md` (the product profile: name, customers, tenancy, modules, 
 
 ## 2. Build
 - Follow the task's notes and `CLAUDE.md` conventions; match existing code; no speculative abstractions, unrelated refactors or unlisted packages. Stay within the task – if it grows beyond `TASK_MAX_LINES` changed lines or needs another task's code, **stop** and report it (the team lead splits or adds a blocker).
+- **Never change infrastructure**: `src/<Code>.AppHost`, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles, `docs/ops/` belong to CloudOps (ops tasks). Your task needs a change there that isn't in its Blocked-by ops task → **stop** and report it (the team lead adds the ops task as a blocker).
 - Tests for every acceptance criterion; mutation-check key safeguards (break once, see a test fail, restore).
 - Frontend: loading, empty and error states; accessible names; focus stays in the form; meets the Quality bar.
 - Gaps that change design, product behaviour or the API contract: **stop** and return a question; small technical details you decide.

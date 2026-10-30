@@ -18,6 +18,7 @@ The worktree path and branch, the diff scope (`git diff origin/<BASE_BRANCH>...H
 - **Security pass (always):** authentication and authorization incl. tenant isolation, lockout/rate limits, enumeration, CSRF, injection, secrets, personal data in errors or logs, built-in endpoints that bypass the task's rules, dependency risks.
 - **Frontend:** states, accessibility, types match the API, Quality bar.
 - **Tests:** every criterion covered; tests can fail; no mocking libraries; no debug code.
+- **Ownership:** the diff changes `src/<Code>.AppHost`, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles or `docs/ops/` in a task that is not labelled `ops` (`fdoc.sh labels <task>`), or an `ops` task changes application code → must fix.
 - **Definition of Done** (`CLAUDE.md`) and conventions; simplicity, duplication, dead code.
 
 ## Output
