@@ -1,22 +1,24 @@
 # Solution1
 
-Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Vite 8 / TypeScript frontend + Redis output cache.
+Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 / TypeScript frontend (Node 26) + Redis output cache.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `src/AspireApp1.AppHost` | Aspire orchestration (`AppHost.cs`): Redis `cache`, `server`, Vite `webfrontend` |
-| `src/AspireApp1.Server` | API. Minimal APIs in `Program.cs`, all routes under the `/api` group. `Extensions.cs` = service defaults |
-| `src/frontend` | React app. Vite proxies `/api` to the server in dev; in publish it is served from the server's `wwwroot` |
+| `src/AspireApp1.Server` | API. Minimal APIs in `Program.cs`, all routes under the `/api` group. `GlobalExceptionHandler.cs` = unhandled errors → ProblemDetails. `Extensions.cs` = service defaults |
+| `src/frontend` | React app. Vite proxies `/api` to the server in dev; in publish it is served from the server's `wwwroot`. `src/theme.ts` = MUI theme (Aspire purple, light/dark), `src/components/` = shared components |
 | `tests/AspireApp1.Server.xUnit` | Unit tests (xunit.v3, Microsoft Testing Platform) |
 | `tests/AspireApp1.Server.xIntegration` | API tests: server in memory via `WebApplicationFactory<Program>` (`ServerFactory`) |
+| `tests/*/TestDoubles/` | Hand-written test doubles (`TestLogger`, `TestLoggerProvider`, `ThrowingEndpointStartupFilter`) |
 | `src/frontend/src/**/*.test.tsx` | Frontend tests (Vitest + Testing Library, jsdom) |
 | `docs/plans` | Feature plans (product owner, `/fbrainstorm`) |
 | `docs/specs` | Technical specs (architect, `/fplan`) |
 
 ## Commands
 
+- Prerequisites: .NET 10 SDK, Node 26 (`src/frontend/.nvmrc`, minimum 24.15), Docker for Redis. First time: `npm --prefix src/frontend install`
 - Run everything: `aspire run` (or `dotnet run --project src/AspireApp1.AppHost`)
 - Build: `dotnet build Solution1.slnx`
 - Test: `dotnet test` (the runner is set to Microsoft.Testing.Platform in `global.json`)
@@ -64,15 +66,20 @@ Loop per phase: `fimplement → freview → fcommit`.
 Decided conventions. `/fplan` adds to this list when you answer an architecture question, so it is not asked again.
 
 - Server endpoints: minimal APIs mapped on the `/api` group (current state of `Program.cs`).
+- Errors: don't catch exceptions just to return 500; `GlobalExceptionHandler` turns unhandled exceptions into a ProblemDetails 500 (logged, no details leaked). For expected failures return `TypedResults.Problem` / `TypedResults.ValidationProblem` / `TypedResults.NotFound` with the right status code.
 - Frontend data fetching: `fetch` against relative `/api/...` URLs (current state of `App.tsx`).
+- UI: Material UI components first. Style with the `sx` prop and theme values (`primary`, `text.secondary`, spacing), never hard-coded colors; no new `.css` files. Theme changes go in `src/theme.ts`; light and dark must both work.
+- Icons: `@mui/icons-material`, imported by path (`import RefreshIcon from '@mui/icons-material/Refresh'`). MUI components are imported by path too (`@mui/material/Button`).
+- Accessibility: every interactive element has an accessible name (visible text or `aria-label`); tests find elements by role or label.
 - Tests: xunit.v3 with `[Fact]`/`[Theory]`, global `using Xunit`; pass `TestContext.Current.CancellationToken` to async calls.
 - Unit tests (`xUnit` project): pure logic, no HTTP. Server internals are visible to it via `InternalsVisibleTo`.
 - API tests (`xIntegration` project): `IClassFixture<ServerFactory>` and `factory.CreateClient()`. `ServerFactory` swaps Redis output caching for a no-op store, so no Docker is needed. Assert status codes and JSON bodies, using test-local DTO records.
-- Frontend tests: `<Component>.test.tsx` next to the component. Use Testing Library queries by role or label, `userEvent` for interaction, and stub `fetch` with `vi.stubGlobal`. Shared setup is in `src/test/setup.ts`.
+- Frontend tests: `<Component>.test.tsx` next to the component, rendered with `renderWithTheme` (`src/test/render.tsx`). Use Testing Library queries by role or label, `userEvent` for interaction, and stub `fetch` with `vi.stubGlobal`. Shared setup (incl. `matchMedia` stub) is in `src/test/setup.ts`.
+- No mocking libraries: write small test doubles by hand in a `TestDoubles/` folder (C#) or inline (TS).
 - Each acceptance criterion maps to at least one test: API behaviour → `xIntegration`, logic → `xUnit`, UI behaviour → Vitest.
 
 ### Open decisions (ask when a feature first needs them)
 
 - Where endpoints live once `Program.cs` grows (e.g. `Endpoints/<Feature>Endpoints.cs` extension methods?)
 - Persistence: in-memory, Redis, or a database (EF Core?)
-- Frontend structure: `src/api/`, `src/features/<feature>/`, `src/components/`?
+- Frontend structure beyond `src/components/`: `src/api/` for API clients? `src/features/<feature>/`? Routing library?
