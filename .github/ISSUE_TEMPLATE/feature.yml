@@ -1,0 +1,21 @@
+name: Feature idea
+description: Suggest something new; the product owner turns it into a plan
+title: "Idea: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Who has the problem, and why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What could solve it? Rough is fine.
+  - type: input
+    id: epic
+    attributes:
+      label: Related epic
+      description: e.g. "#12 Organizations", if you know it.
