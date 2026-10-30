@@ -1,7 +1,7 @@
 ---
 name: foptions
-description: List the team workflow (roles, agents and /f* commands) with what each does, where the work currently stands on GitHub Issues, and the suggested next command. Read-only.
-argument-hint: "[skill or agent name for details]"
+description: Show the team workflow (roles, agents and the /f* commands), where the work currently stands on GitHub Issues, and the suggested next command. Read-only.
+argument-hint: "[command or agent name for details]"
 disable-model-invocation: true
 effort: low
 ---
@@ -16,33 +16,30 @@ Read-only: don't change files, branches, issues or labels.
 Read every `.claude/skills/*/SKILL.md` and `.claude/agents/*.md` (frontmatter `name`, `description`, `argument-hint`/`tools`). Always from the files, never from memory.
 
 ## 2. With an argument
-Details for that skill or agent: description, arguments or tools, its steps (`##` headings, one line each), what it reads and writes, what comes before and after. No match → closest names. Stop.
+Details for that command or agent: description, arguments or tools, its steps (`##` headings, one line each), what it reads and writes, what comes before and after. No match → closest names. Stop.
 
 ## 3. Overview
-**Team run:** `/fdeliver F<n> | epic #<n> | "idea"` – PO → (Designer ∥ Architect ∥ CloudOps) → spec gate → per phase Developer → Reviewer (+ Designer/CloudOps) → fixes → commit → PR.
+```
+/finit → /froadmap → /fdeliver epic #<n> ↺ next epic
+ setup     epics      plan → approve → build, review, commit, PR (per feature)
+/ffix #<bug>          failing test → fix → review → PR
+/fcommit [check|auto] verify (+ commit)          /foptions  this overview
+```
+Tables: **Commands** (command + argument hint, one-sentence description) and **Agents** (role, owns, tools).
 
-**Bugs:** `/ffix #<issue>` – reproduce with a failing test → fix → review → PR (no plan/spec gates).
-
-**Start of a project:** `/finit` (product profile) → `/froadmap` (epics and features).
-
-**Step by step:** `/froadmap` → `/fbrainstorm` → (`/fdesign`, `/fops`) → `/fplan` → `/fimplement` → `/freview` → `/fcommit` ↺
-
-Tables: **Agents** (role, owns, tools) and **Commands** (command + argument hint, role, one-sentence description), helpers last (`/fverify`, `/foptions`).
-
-**Where you are** (skip silently what's empty): current branch; `fdoc.sh check` result; open epics with their open features; features by label (`gh issue list --label type:feature --state open --json number,title,labels`) – one line each, e.g. `F7 Invitations (#23) – spec in-progress`; issues labelled `needs-answer`.
+**Where you are** (skip silently what's empty): current branch; product profile present (`docs/product.md`); `fdoc.sh check`; the roadmap's epics with their open features and status labels (`fdoc.sh roadmap`, `fdoc.sh children <epic>`); open bugs (`type:bug`); issues labelled `needs-answer`; uncommitted changes.
 
 **Suggested next** (first matching rule):
 | Situation | Suggest |
 |---|---|
-| `fdoc.sh check` fails | install/sign in to `gh` |
-| an issue labelled `needs-answer` | answer it, then `/fdeliver F<n>` |
-| an open issue labelled `type:bug` | `/ffix #<n>` |
-| uncommitted code on a feature branch | `/freview` |
-| reviewed changes not committed | `/fcommit` |
-| `spec:in-progress` or `spec:approved` | `/fdeliver F<n>` (or `/fimplement F<n>`) |
-| `plan:approved` without spec | `/fdeliver F<n>` (or `/fplan F<n>`) |
 | no `docs/product.md` | `/finit` |
-| no roadmap issue (`fdoc.sh roadmap` fails) | `/froadmap` |
-| nothing open | `/fdeliver epic #<n>` for the next epic |
+| `fdoc.sh check` fails | install / sign in to `gh` (or use a cloud session with GitHub connected) |
+| no roadmap issue | `/froadmap` |
+| an issue labelled `needs-answer` | answer it, then the same `/fdeliver …` again |
+| uncommitted changes on a branch | `/fcommit` (or continue `/fdeliver`) |
+| a feature `spec:in-progress` | `/fdeliver <ID>` |
+| an open bug | `/ffix #<n>` |
+| an epic with open features | `/fdeliver epic #<n>` |
+| nothing open | `/froadmap review` |
 
 End with: "Details: `/foptions <name>`."
