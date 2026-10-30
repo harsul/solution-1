@@ -12,9 +12,11 @@ import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
 import ConfirmEmailBanner from './features/auth/ConfirmEmailBanner';
 import ConfirmEmailPage from './features/auth/ConfirmEmailPage';
+import ForgotPasswordPage from './features/auth/ForgotPasswordPage';
 import GuestOnly from './features/auth/GuestOnly';
 import RegisterPage from './features/auth/RegisterPage';
 import RequireAuth from './features/auth/RequireAuth';
+import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import SignInPage from './features/auth/SignInPage';
 import UserMenu from './features/auth/UserMenu';
 import WeatherPage from './features/weather/WeatherPage';
@@ -66,7 +68,10 @@ function App() {
               </GuestOnly>
             }
           />
+          {/* Not guest-only: a signed-in user may arrive here from an expired reset link. */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/confirm-email" element={<ConfirmEmailPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/"
             element={

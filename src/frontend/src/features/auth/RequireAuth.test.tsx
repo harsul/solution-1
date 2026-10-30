@@ -4,6 +4,7 @@ import { Route, Routes, useLocation } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { fakeAuthBackend } from '../../test/fakeApi';
 import { renderWithProviders } from '../../test/render';
+import ForgotPasswordPage from './ForgotPasswordPage';
 import GuestOnly from './GuestOnly';
 import RequireAuth from './RequireAuth';
 import RegisterPage from './RegisterPage';
@@ -33,6 +34,7 @@ function TestRoutes() {
           </GuestOnly>
         }
       />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
         path="/reports"
         element={
@@ -78,6 +80,20 @@ describe('RequireAuth', () => {
     await userEvent.type(screen.getByLabelText('Password'), 'Passw0rd!');
     await userEvent.type(screen.getByLabelText('Repeat password'), 'Passw0rd!');
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
+
+    expect(await screen.findByText('Protected page at /reports?range=week')).toBeInTheDocument();
+  });
+
+  it('keeps the requested page after visiting Forgot password and going back', async () => {
+    const { users } = fakeAuthBackend();
+    users.set('ada@example.com', 'Passw0rd!');
+    renderWithProviders(<TestRoutes />, { route: '/reports?range=week' });
+
+    await userEvent.click(await screen.findByRole('link', { name: 'Forgot password?' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'Back to sign in' }));
+    await userEvent.type(await screen.findByLabelText('Email'), 'ada@example.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'Passw0rd!');
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(await screen.findByText('Protected page at /reports?range=week')).toBeInTheDocument();
   });

@@ -40,6 +40,7 @@ app.UseRateLimiter();
 app.UseOutputCache();
 
 app.MapAuthEndpoints();
+app.MapPasswordEndpoints();
 app.MapWeatherEndpoints();
 
 app.MapDefaultEndpoints();

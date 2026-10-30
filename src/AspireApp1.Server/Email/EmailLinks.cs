@@ -14,6 +14,9 @@ internal static class EmailLinks
     public static string ConfirmEmail(string publicUrl, string userId, string code) =>
         Build(publicUrl, "confirm-email", new() { ["userId"] = userId, ["code"] = code });
 
+    public static string ResetPassword(string publicUrl, string email, string code) =>
+        Build(publicUrl, "reset-password", new() { ["email"] = email, ["code"] = code });
+
     /// <summary>Appends <paramref name="path"/> to the public URL, keeping any path it already has.</summary>
     private static string Build(string publicUrl, string path, Dictionary<string, string?> query) =>
         QueryHelpers.AddQueryString($"{publicUrl.TrimEnd('/')}/{path}", query);

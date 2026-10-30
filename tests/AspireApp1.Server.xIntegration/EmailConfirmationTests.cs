@@ -131,7 +131,7 @@ public class EmailConfirmationTests(ServerFactory factory) : IClassFixture<Serve
     }
 
     [Fact]
-    public async Task ForgotPassword_for_confirmed_account_sends_no_email_yet()
+    public async Task Built_in_forgotPassword_for_confirmed_account_sends_nothing()
     {
         var client = factory.CreateHttpsClient();
         var email = NewEmail();
@@ -209,17 +209,9 @@ public class EmailConfirmationTests(ServerFactory factory) : IClassFixture<Serve
 
     private string LastEmailTo(string email) => factory.Emails.SentTo(email).Last().TextBody;
 
-    /// <summary>The first https link in the email text.</summary>
-    private static Uri ConfirmLinkFrom(string text) =>
-        new(text.Split(['\n', ' '], StringSplitOptions.TrimEntries).First(w => w.StartsWith("https://")));
+    private static Uri ConfirmLinkFrom(string text) => EmailHelpers.LinkIn(text);
 
-    private static Task<HttpResponseMessage> ConfirmAsync(HttpClient client, Uri link)
-    {
-        var query = QueryHelpers.ParseQuery(link.Query);
-        return client.GetAsync(
-            QueryHelpers.AddQueryString("/api/auth/confirmEmail",
-                new Dictionary<string, string?> { ["userId"] = query["userId"], ["code"] = query["code"] }), Ct);
-    }
+    private static Task<HttpResponseMessage> ConfirmAsync(HttpClient client, Uri link) => EmailHelpers.ConfirmEmailAsync(client, link);
 
     private static async Task<InfoDto> InfoAsync(HttpClient client) =>
         (await client.GetFromJsonAsync<InfoDto>("/api/auth/manage/info", Ct))!;

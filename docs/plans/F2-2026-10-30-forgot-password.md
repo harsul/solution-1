@@ -1,7 +1,7 @@
 ---
 id: F2
 title: Forgot password
-status: Approved
+status: Done
 created: 2026-10-30
 approved: 2026-10-30
 depends-on: F1, F3
@@ -40,18 +40,18 @@ Users who forgot their password can set a new one through a link sent to their e
 
 ### Phase 1 – Request a reset link
 **Goal:** users can ask for a reset email and receive it.
-- [ ] Given I'm on Sign in, when I click "Forgot password?", then I see a page asking for my email.
-- [ ] Given I enter an email that has an account, when I submit, then I see the neutral confirmation message and an email with a reset link arrives in the test mailbox.
-- [ ] Given I enter an email without an account, when I submit, then I see the same confirmation message and no email is sent.
-- [ ] Given I enter the email of an account that isn't confirmed yet, when I submit, then I see the same confirmation message and receive an email asking me to confirm my address first, with a working confirmation link.
-- [ ] Given I enter an invalid email address, when I submit, then I see a validation message and nothing is sent.
+- [x] Given I'm on Sign in, when I click "Forgot password?", then I see a page asking for my email.
+- [x] Given I enter an email that has an account, when I submit, then I see the neutral confirmation message and an email with a reset link arrives in the test mailbox.
+- [x] Given I enter an email without an account, when I submit, then I see the same confirmation message and no email is sent.
+- [x] Given I enter the email of an account that isn't confirmed yet, when I submit, then I see the same confirmation message and receive an email asking me to confirm my address first, with a working confirmation link.
+- [x] Given I enter an invalid email address, when I submit, then I see a validation message and nothing is sent.
 
 ### Phase 2 – Set a new password
 **Goal:** the link lets users choose a new password and sign in with it.
-- [ ] Given I open a valid reset link, when I enter a new valid password twice, then I'm told it was changed and sent to Sign in, where the new password works and the old one doesn't.
-- [ ] Given the link is older than 1 hour or was already used, when I open it or submit it, then I see "This link has expired" with a button to request a new one.
-- [ ] Given my new password breaks a rule or the two passwords differ, when I try to submit, then I see which rule fails and can't submit.
-- [ ] Given my account was temporarily locked, when I reset my password and the lock has run out, then I can sign in with the new password (while still locked I see the F1 lockout message).
+- [x] Given I open a valid reset link, when I enter a new valid password twice, then I'm told it was changed and sent to Sign in, where the new password works and the old one doesn't.
+- [x] Given the link is older than 1 hour or was already used, when I open it or submit it, then I see "This link has expired" with a button to request a new one.
+- [x] Given my new password breaks a rule or the two passwords differ, when I try to submit, then I see which rule fails and can't submit.
+- [x] Given my account was temporarily locked, when I reset my password and the lock has run out, then I can sign in with the new password (while still locked I see the F1 lockout message).
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F2. Asked by: PO | Architect -->

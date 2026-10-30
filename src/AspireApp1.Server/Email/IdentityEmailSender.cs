@@ -43,14 +43,14 @@ internal sealed class IdentityEmailSender(
         }
     }
 
-    // Password reset emails are F2's job; until then the built-in /forgotPassword must not send anything.
-    public Task SendPasswordResetLinkAsync(IdentityUser user, string email, string resetLink) => NotSentYet(user);
+    // Password reset emails come from POST /api/auth/password/forgot (F2); the built-in /forgotPassword must not send anything.
+    public Task SendPasswordResetLinkAsync(IdentityUser user, string email, string resetLink) => NotSent(user);
 
-    public Task SendPasswordResetCodeAsync(IdentityUser user, string email, string resetCode) => NotSentYet(user);
+    public Task SendPasswordResetCodeAsync(IdentityUser user, string email, string resetCode) => NotSent(user);
 
-    private Task NotSentYet(IdentityUser user)
+    private Task NotSent(IdentityUser user)
     {
-        logger.LogInformation("Password reset email for user {UserId} not sent: password reset isn't available yet", user.Id);
+        logger.LogInformation("Password reset email for user {UserId} not sent: the built-in /forgotPassword is not used (see POST /api/auth/password/forgot)", user.Id);
         return Task.CompletedTask;
     }
 }
