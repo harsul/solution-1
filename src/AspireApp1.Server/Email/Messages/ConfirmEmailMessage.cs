@@ -9,7 +9,7 @@ internal static class ConfirmEmailMessage
     public static EmailMessage Create(string to, string confirmLink)
     {
         var text = $"""
-            Please confirm your email address for Aspire Starter by opening this link:
+            Please confirm your email address for {Branding.ProductName} by opening this link:
 
             {confirmLink}
 
@@ -18,7 +18,7 @@ internal static class ConfirmEmailMessage
 
         var link = WebUtility.HtmlEncode(confirmLink);
         var html = $"""
-            <p>Please confirm your email address for Aspire Starter.</p>
+            <p>Please confirm your email address for {WebUtility.HtmlEncode(Branding.ProductName)}.</p>
             <p><a href="{link}">Confirm email address</a></p>
             <p>Or copy this link into your browser:<br>{link}</p>
             <p>The link is valid for 24 hours. If you didn't create an account, you can ignore this email.</p>

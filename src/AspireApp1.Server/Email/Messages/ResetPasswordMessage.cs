@@ -9,7 +9,7 @@ internal static class ResetPasswordMessage
     public static EmailMessage Create(string to, string resetLink)
     {
         var text = $"""
-            We received a request to reset the password for your Aspire Starter account.
+            We received a request to reset the password for your {Branding.ProductName} account.
 
             Choose a new password by opening this link:
 
@@ -20,7 +20,7 @@ internal static class ResetPasswordMessage
 
         var link = WebUtility.HtmlEncode(resetLink);
         var html = $"""
-            <p>We received a request to reset the password for your Aspire Starter account.</p>
+            <p>We received a request to reset the password for your {WebUtility.HtmlEncode(Branding.ProductName)} account.</p>
             <p><a href="{link}">Choose a new password</a></p>
             <p>Or copy this link into your browser:<br>{link}</p>
             <p>The link is valid for 1 hour and works once. If you didn't ask to reset your password, you can ignore this email; your password stays the same.</p>

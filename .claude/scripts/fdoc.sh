@@ -5,7 +5,8 @@
 #   roadmap issue  title "Roadmap",                label type:roadmap, pinned; body = vision, customers, epic order
 #   epic issue     title "Epic: <name>",        label type:epic,    body = goal, success criteria, planned features
 #                  its features are GitHub sub-issues (link / children)
-#   feature issue  title "F<n> – <title>",      label type:feature, body = the plan (product owner)
+#   feature issue  title "<ID> – <title>",      label type:feature, body = the plan (product owner)
+#                  <ID> = ID_PREFIX + number from .claude/workflow.conf, e.g. F6 or ENG-1
 #   bug issue      label type:bug (from the bug template); fixed with /ffix, sections fix and review-p1
 #   sections       one comment per section, first line "<!-- fdoc:<section> -->"
 #                  (spec, design, ops, review-p<k>, summary); updated in place, never duplicated
@@ -14,8 +15,8 @@
 # Usage:
 #   fdoc.sh check                         gh installed, signed in, repo detected
 #   fdoc.sh init-labels                   create/refresh the workflow labels (idempotent)
-#   fdoc.sh next-id                       next free F<n> number (issues + legacy docs/plans)
-#   fdoc.sh find F<n>                     issue number of feature F<n> (exit 1 if none)
+#   fdoc.sh next-id                       next free ticket ID, e.g. F6 or ENG-1 (issues + legacy docs/plans)
+#   fdoc.sh find <ID>                     issue number of the feature with that ID (exit 1 if none)
 #   fdoc.sh new feature|epic|bug "<title>" <body-file>   create an issue, print its number
 #   fdoc.sh roadmap                       print the roadmap issue body (exit 1 if there is none)
 #   fdoc.sh set-roadmap <file>            create (and pin) or update the roadmap issue, print its number
@@ -33,6 +34,18 @@ set -euo pipefail
 
 die() { echo "fdoc: $*" >&2; exit 1; }
 need_file() { [[ -f "$1" ]] || die "file not found: $1"; }
+
+# Ticket IDs: prefix and first number from .claude/workflow.conf (defaults: F, 1).
+ID_PREFIX=F; ID_START=1
+conf="$(git rev-parse --show-toplevel 2>/dev/null)/.claude/workflow.conf"
+if [[ -f "$conf" ]]; then  # read, never execute: KEY=value, # comments allowed
+  while IFS='=' read -r key value; do
+    value="$(printf '%s' "${value%%#*}" | tr -d '\r' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
+    case "$key" in ID_PREFIX) ID_PREFIX="$value" ;; ID_START) ID_START="$value" ;; esac
+  done < <(grep -E '^(ID_PREFIX|ID_START)=' "$conf")
+fi
+[[ "$ID_PREFIX" =~ ^[A-Za-z]+-?$ ]] || die "ID_PREFIX in .claude/workflow.conf must be letters, optionally followed by '-' (e.g. F or ENG-)"
+[[ "$ID_START" =~ ^[0-9]+$ ]] || die "ID_START in .claude/workflow.conf must be a number"
 
 plan_values=(draft questions approved done)
 spec_values=(draft questions approved in-progress done)
@@ -67,14 +80,14 @@ case "$cmd" in
     gh label create needs-answer --color d93f0b --description "Waiting for an answer from the stakeholder" --force
     ;;
   next-id)
-    max=0
-    while read -r n; do (( n > max )) && max=$n; done < <(
+    max=$((ID_START - 1))
+    while read -r n; do (( 10#$n > max )) && max=$((10#$n)); done < <(
       { gh issue list --state all --label type:feature --limit 1000 --json title --jq '.[].title' 2>/dev/null || true
-        ls docs/plans 2>/dev/null || true; } | sed -nE 's/^F([0-9]+)[^0-9].*/\1/p')
-    echo $((max + 1))
+        [[ "$ID_PREFIX" == F ]] && ls docs/plans 2>/dev/null || true; } | sed -nE "s/^${ID_PREFIX}([0-9]+)([^0-9].*)?$/\1/p")
+    echo "${ID_PREFIX}$((max + 1))"
     ;;
   find)
-    [[ "${1:-}" =~ ^F[0-9]+$ ]] || die "usage: find F<n>"
+    [[ "${1:-}" =~ ^${ID_PREFIX}[0-9]+$ ]] || die "usage: find ${ID_PREFIX}<number> (prefix from .claude/workflow.conf)"
     n="$(gh issue list --state all --label type:feature --limit 1000 --json number,title \
       --jq ".[] | select(.title | test(\"^$1[^0-9]\")) | .number" | head -n1)"
     [[ -n "$n" ]] || die "no feature issue for $1"

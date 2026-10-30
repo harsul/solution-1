@@ -160,6 +160,24 @@ public class EmailTests
     }
 
     [Fact]
+    public void Emails_use_the_product_name_from_Branding()
+    {
+        EmailMessage[] messages =
+        [
+            ConfirmEmailMessage.Create("a@example.com", "https://app.test/x"),
+            ResetPasswordMessage.Create("a@example.com", "https://app.test/x"),
+            ConfirmBeforeResetMessage.Create("a@example.com", "https://app.test/x"),
+            PasswordChangedMessage.Create("a@example.com", DateTimeOffset.UnixEpoch),
+            AccountDeletedMessage.Create("a@example.com"),
+            ChangeEmailMessage.Create("a@example.com", "https://app.test/x"),
+            EmailChangedMessage.Create("a@example.com", "b@example.com"),
+        ];
+
+        Assert.All(messages, m => Assert.Contains(Branding.ProductName, m.TextBody));
+        Assert.Equal(Branding.ProductName, new EmailOptions().FromName);
+    }
+
+    [Fact]
     public void ResetPasswordMessage_has_the_link_and_says_1_hour()
     {
         const string link = "https://app.test/reset-password?email=ada%40example.com&code=x<y";

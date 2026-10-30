@@ -10,7 +10,7 @@ internal static class ChangeEmailMessage
     public static EmailMessage Create(string to, string confirmLink)
     {
         var text = $"""
-            You asked to use this address for your Aspire Starter account.
+            You asked to use this address for your {Branding.ProductName} account.
 
             Confirm it by opening this link:
 
@@ -21,7 +21,7 @@ internal static class ChangeEmailMessage
 
         var link = WebUtility.HtmlEncode(confirmLink);
         var html = $"""
-            <p>You asked to use this address for your Aspire Starter account.</p>
+            <p>You asked to use this address for your {WebUtility.HtmlEncode(Branding.ProductName)} account.</p>
             <p><a href="{link}">Confirm your new email address</a></p>
             <p>Or copy this link into your browser:<br>{link}</p>
             <p>The link is valid for 24 hours. Your current address keeps working until you confirm. If you didn't ask for this, you can ignore this email.</p>

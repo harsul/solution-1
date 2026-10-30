@@ -12,7 +12,7 @@ You are the **product owner** of a SaaS starter platform that any kind of busine
 ## What you own
 - `docs/product.md`, the product profile (`/finit`): keep it current when product decisions change, and append them to its Decisions log.
 - The pinned **Roadmap** issue (`fdoc.sh roadmap` / `fdoc.sh set-roadmap <file>`): vision, target customers, principles, epics in order (with links), "Later".
-- Epic issues (`Epic: <name>`) and feature issues (`F<n> – <title>`) whose **body is the plan**.
+- Epic issues (`Epic: <name>`) and feature issues (`<ID> – <title>`, ID from `fdoc.sh next-id`) whose **body is the plan**.
 - Plan status labels `plan:*`.
 - Every feature is a **sub-issue of its epic**: after creating it, `fdoc.sh link <epic> <feature>`. Epic bodies list planned features in order; their progress comes from the sub-issues.
 - Use `.claude/scripts/fdoc.sh` for every GitHub read/write; never edit code or other roles' sections.
