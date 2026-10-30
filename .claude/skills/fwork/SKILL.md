@@ -35,7 +35,7 @@ Slots `dev-1` … `dev-<DEVELOPERS>`. For every free slot, while `fgit.sh ready 
 5. Track the PR (`gh pr view <pr> --json state,mergeStateStatus,statusCheckRollup`, or `gh pr checks <pr> --watch` in the background):
    - checks failing → resume the developer with the failing output;
    - behind `BASE_BRANCH` / conflicts → resume the developer to rebase and push with lease;
-   - **merged** → the task closes (`Closes #<task>`); remove the worktree if it's left; the slot takes the next ready task (step 1).
+   - **merged** → the task closes (`Closes #<task>`); remove the worktree if it's left; `fgit.sh sync` in the main checkout (back on `BASE_BRANCH`, pulled, merged branches deleted); the slot takes the next ready task (step 1).
    - `AUTO_MERGE=off` → tell the stakeholder the PR is ready; the slot takes the next ready task meanwhile.
 
 ## 3. Problems
@@ -47,5 +47,5 @@ Slots `dev-1` … `dev-<DEVELOPERS>`. For every free slot, while `fgit.sh ready 
 All tasks closed (`fgit.sh children <epic>`):
 - **team-lead** confirms the epic's success criteria (missing → a new task, back to step 1);
 - close the epic (`gh issue close <epic> --comment "<summary>"`);
-- **retro**: non-obvious lessons from the developers' gotchas and the review findings → one-liners in `CLAUDE.md` → Gotchas (no duplicates), committed through a small PR like any change;
+- **retro**: non-obvious lessons from the developers' gotchas and the review findings → one-liners in `CLAUDE.md` → Gotchas (no duplicates), committed through a small PR like any change; once it merges, `fgit.sh sync` so the main checkout ends on the latest `BASE_BRANCH`;
 - report: what users get, the PRs, notable review fixes, skipped items, steps for the stakeholder (from CloudOps), and the next approved epic (`/fplan #<n>` or `/fwork #<n>`).

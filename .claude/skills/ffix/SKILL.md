@@ -23,6 +23,6 @@ Start a **developer** agent (the **cloudops** agent if the fix is in the AppHost
 
 ## 4. Ship
 - `fgit.sh set <n> fix <file>`: cause, fix, tests, related places checked, review notes. A non-obvious trap → `CLAUDE.md` → Gotchas.
-- The developer rebases on `origin/<BASE_BRANCH>`, runs the checks, pushes, opens the PR with `Fixes #<n>`, and sets auto-merge when `AUTO_MERGE=on`. Track it as in `/fwork` step 2.5.
+- The developer rebases on `origin/<BASE_BRANCH>`, runs the checks, pushes, opens the PR with `Fixes #<n>`, and sets auto-merge when `AUTO_MERGE=on`. Track it as in `/fwork` step 2.5; once merged, `fgit.sh sync` in the main checkout.
 
 Report: the cause in one sentence, the fix, tests, review notes, the PR.

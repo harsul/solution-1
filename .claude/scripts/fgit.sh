@@ -32,6 +32,8 @@
 #   fgit.sh comment <issue> <file>         add a plain comment (questions, notes)
 #   fgit.sh comments <issue>               all comments (author, date, body), e.g. to read answers
 #   fgit.sh labels <issue>                 the issue's labels, one per line
+#   fgit.sh sync                           after a merge: switch to BASE_BRANCH, pull (fast-forward only),
+#                                          prune, delete local branches whose PR is merged; refuses with local changes
 set -euo pipefail
 
 die() { echo "fgit: $*" >&2; exit 1; }
@@ -190,5 +192,18 @@ case "$cmd" in
     gh api "repos/{owner}/{repo}/issues/$1/comments" --paginate --jq '.[] | "--- \(.user.login) \(.created_at)\n\(.body)\n"'
     ;;
   labels)    gh issue view "$1" --json labels --jq '.labels[].name' ;;
+  sync)
+    [[ -z "$(git status --porcelain)" ]] || die "uncommitted changes – commit or stash them first"
+    git fetch --prune --quiet origin
+    git switch --quiet "$BASE_BRANCH"
+    git pull --ff-only --quiet origin "$BASE_BRANCH"
+    while read -r branch; do  # local branches whose PR is merged (their commits are on BASE_BRANCH)
+      [[ "$branch" == "$BASE_BRANCH" ]] && continue
+      if [[ -n "$(gh pr list --state merged --head "$branch" --json number --jq '.[0].number')" ]]; then
+        git branch -D "$branch" >/dev/null 2>&1 && echo "deleted $branch (PR merged)" || echo "kept $branch (checked out in a worktree)"
+      fi
+    done < <(git for-each-ref --format='%(refname:short)' refs/heads)
+    git log --oneline -1
+    ;;
   *) sed -n '2,/^set -euo/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
