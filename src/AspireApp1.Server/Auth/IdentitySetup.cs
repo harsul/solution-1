@@ -40,6 +40,10 @@ internal static class IdentitySetup
         // flow also uses the default provider (1 h); the app doesn't offer changing the email yet.
         builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(1));
 
+        // Check the security stamp on every request, so changing it (password change, "sign out other
+        // devices", deleted account) ends other sessions on their next request (F4).
+        builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.Zero);
+
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;

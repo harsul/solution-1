@@ -34,6 +34,10 @@ if (app.Environment.IsDevelopment())
     await app.MigrateDatabaseAsync();
 }
 
+// Static files (the built React app) are public: serve them before authentication, so they don't
+// pay for the per-request session check (F4).
+app.UseFileServer();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
@@ -41,11 +45,10 @@ app.UseOutputCache();
 
 app.MapAuthEndpoints();
 app.MapPasswordEndpoints();
+app.MapAccountEndpoints();
 app.MapWeatherEndpoints();
 
 app.MapDefaultEndpoints();
-
-app.UseFileServer();
 
 // The React app (served from wwwroot when published) owns all other paths, e.g. /signin or a
 // bookmarked deep link: serve index.html for them. Unknown /api routes stay a plain 404.

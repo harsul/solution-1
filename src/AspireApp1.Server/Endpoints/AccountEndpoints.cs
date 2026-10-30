@@ -1,0 +1,107 @@
+using System.Security.Claims;
+using AspireApp1.Server.Email;
+using AspireApp1.Server.Email.Messages;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
+
+namespace AspireApp1.Server.Endpoints;
+
+public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
+
+internal static class AccountEndpoints
+{
+    /// <summary>
+    /// The signed-in user's own account (F4). Passwords are checked with lockout counting, so these
+    /// endpoints can't be used to guess the password. Expected failures are 400s keyed by code.
+    /// </summary>
+    public static IEndpointRouteBuilder MapAccountEndpoints(this IEndpointRouteBuilder app)
+    {
+        var account = app.MapGroup("/api/account").WithTags("Account").RequireAuthorization();
+
+        account.MapPost("/password", ChangePasswordAsync);
+
+        return app;
+    }
+
+    private static async Task<Results<NoContent, ValidationProblem, UnauthorizedHttpResult>> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        ClaimsPrincipal principal,
+        UserManager<IdentityUser> userManager,
+        SignInManager<IdentityUser> signInManager,
+        IEmailDelivery delivery,
+        TimeProvider time,
+        ILoggerFactory loggers,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.GetUserAsync(principal);
+        if (user is null)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        if (await VerifyPasswordAsync(signInManager, user, request.CurrentPassword) is { } failure)
+        {
+            return failure;
+        }
+
+        // Changing the password changes the security stamp, which ends every session ...
+        var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword!, request.NewPassword ?? "");
+        if (!result.Succeeded)
+        {
+            return TypedResults.ValidationProblem(result.Errors
+                .GroupBy(e => e.Code)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray()));
+        }
+
+        // ... so give this browser a fresh cookie (it keeps its Remember me choice).
+        await signInManager.RefreshSignInAsync(user);
+
+        await NotifyAsync(userManager, user, delivery, loggers,
+            to => PasswordChangedMessage.Create(to, time.GetUtcNow()), cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+
+    /// <summary>Checks the password and counts a wrong one towards the lockout; null when it is correct.</summary>
+    private static async Task<ValidationProblem?> VerifyPasswordAsync(
+        SignInManager<IdentityUser> signInManager, IdentityUser user, string? password)
+    {
+        var check = await signInManager.CheckPasswordSignInAsync(user, password ?? "", lockoutOnFailure: true);
+        if (check.Succeeded)
+        {
+            return null;
+        }
+
+        return check.IsLockedOut
+            ? Problem("LockedOut", "Account locked.")
+            : Problem("PasswordMismatch", "Incorrect password.");
+    }
+
+    private static ValidationProblem Problem(string code, string description) =>
+        TypedResults.ValidationProblem(new Dictionary<string, string[]> { [code] = [description] });
+
+    /// <summary>Notifies confirmed addresses only (an unconfirmed one may be a typo). Failures are logged.</summary>
+    private static async Task NotifyAsync(
+        UserManager<IdentityUser> userManager,
+        IdentityUser user,
+        IEmailDelivery delivery,
+        ILoggerFactory loggers,
+        Func<string, EmailMessage> createMessage,
+        CancellationToken cancellationToken)
+    {
+        var email = await userManager.GetEmailAsync(user);
+        if (email is null || !await userManager.IsEmailConfirmedAsync(user))
+        {
+            return;
+        }
+
+        try
+        {
+            await delivery.SendAsync(createMessage(email), cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            loggers.CreateLogger(typeof(AccountEndpoints)).LogError(ex, "Sending the account notification failed for user {UserId}", user.Id);
+        }
+    }
+}
