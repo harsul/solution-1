@@ -27,9 +27,13 @@ internal static class IdentitySetup
 
                 options.User.RequireUniqueEmail = true;
                 options.SignIn.RequireConfirmedAccount = false;
+
+                // Email confirmation links use their own provider (24 h lifetime).
+                options.Tokens.EmailConfirmationTokenProvider = EmailConfirmationTokenProvider.ProviderName;
             })
             .AddEntityFrameworkStores<AppDbContext>()
-            .AddPasswordValidator<RequireLetterPasswordValidator>();
+            .AddPasswordValidator<RequireLetterPasswordValidator>()
+            .AddTokenProvider<EmailConfirmationTokenProvider>(EmailConfirmationTokenProvider.ProviderName);
 
         builder.Services.ConfigureApplicationCookie(options =>
         {

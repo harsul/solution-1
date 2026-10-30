@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { setUnauthorizedHandler } from '../../api/apiFetch';
 import * as api from './api';
+import { clearBannerDismissals } from './bannerDismissal';
 import { AuthContext, type AuthContextValue, type AuthState } from './AuthContext';
 
 /** Loads the current session on start and keeps the signed-in state for the whole app. */
@@ -16,7 +17,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     let next: AuthState;
     try {
       const user = await api.getUserInfo();
-      next = user ? { status: 'signedIn', email: user.email } : { status: 'signedOut' };
+      next = user
+        ? { status: 'signedIn', email: user.email, emailConfirmed: user.isEmailConfirmed }
+        : { status: 'signedOut' };
     } catch {
       next = { status: 'signedOut' };
     }
@@ -41,6 +44,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback<AuthContextValue['signIn']>(
     async (credentials, rememberMe) => {
       const result = await api.signIn(credentials, rememberMe);
+      // A new sign-in shows the confirmation reminder again (closing it lasts until the next sign-in).
+      if (result === 'ok') clearBannerDismissals();
       // Login accepted but no session afterwards (cookie not stored, check failed): that's an error,
       // otherwise the page would wait forever for a redirect that never comes.
       if (result === 'ok' && !(await loadUser())) throw new Error('Signed in, but the session could not be confirmed');
@@ -64,11 +69,15 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await api.signOut();
+    clearBannerDismissals();
     latestCheck.current++;
     setState({ status: 'signedOut' });
   }, []);
 
-  const value = useMemo(() => ({ state, signIn, register, signOut }), [state, signIn, register, signOut]);
+  const value = useMemo(
+    () => ({ state, signIn, register, signOut, refreshUser: loadUser }),
+    [state, signIn, register, signOut, loadUser],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

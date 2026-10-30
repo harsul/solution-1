@@ -4,7 +4,7 @@ title: Forgot password
 status: Approved
 created: 2026-10-30
 approved: 2026-10-30
-depends-on: F1
+depends-on: F1, F3
 ---
 
 # F2 – Forgot password
@@ -32,8 +32,9 @@ Users who forgot their password can set a new one through a link sent to their e
 - The reset link is valid for 1 hour and works only once.
 - New passwords follow the F1 rules; the old password stops working immediately.
 - After resetting, the user signs in themselves (no automatic sign-in).
-- A successful reset also lifts a temporary lockout.
+- A successful reset does **not** lift a temporary lockout: the lock simply runs out (at most 5 minutes, F1). Changed on 2026-10-30, see Q2.
 - During development, emails are delivered to a local test mailbox that only developers see; no real emails are sent yet.
+- Password reset needs a confirmed email address (F3). For an unconfirmed address, "Forgot password" sends an email asking the user to confirm their address first (with the confirmation link); after confirming, they request the reset again. The page shows the same neutral message in every case.
 
 ## Phases
 
@@ -42,6 +43,7 @@ Users who forgot their password can set a new one through a link sent to their e
 - [ ] Given I'm on Sign in, when I click "Forgot password?", then I see a page asking for my email.
 - [ ] Given I enter an email that has an account, when I submit, then I see the neutral confirmation message and an email with a reset link arrives in the test mailbox.
 - [ ] Given I enter an email without an account, when I submit, then I see the same confirmation message and no email is sent.
+- [ ] Given I enter the email of an account that isn't confirmed yet, when I submit, then I see the same confirmation message and receive an email asking me to confirm my address first, with a working confirmation link.
 - [ ] Given I enter an invalid email address, when I submit, then I see a validation message and nothing is sent.
 
 ### Phase 2 – Set a new password
@@ -49,11 +51,19 @@ Users who forgot their password can set a new one through a link sent to their e
 - [ ] Given I open a valid reset link, when I enter a new valid password twice, then I'm told it was changed and sent to Sign in, where the new password works and the old one doesn't.
 - [ ] Given the link is older than 1 hour or was already used, when I open it or submit it, then I see "This link has expired" with a button to request a new one.
 - [ ] Given my new password breaks a rule or the two passwords differ, when I try to submit, then I see which rule fails and can't submit.
-- [ ] Given my account was temporarily locked, when I reset my password, then I can sign in right away with the new password.
+- [ ] Given my account was temporarily locked, when I reset my password and the lock has run out, then I can sign in with the new password (while still locked I see the F1 lockout message).
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F2. Asked by: PO | Architect -->
-_None open._
+- **Q1 (Architect):** ASP.NET Core Identity's built-in password reset only works for **confirmed** email addresses, and F1 accounts are never confirmed (F1: "signed in automatically, no email confirmation"). Verified on 2026-10-30: `/forgotPassword` sends nothing for an unconfirmed account, `/resetPassword` rejects it. The stakeholder chose to **add email confirmation first** instead of a custom reset flow. That is a new feature and changes F1's sign-up behaviour, so it needs product decisions:
+  - Can a user sign in and use the app before confirming their email, or only after?
+  - What happens to accounts created before email confirmation existed (confirm on next sign-in, treat as confirmed, or require confirmation)?
+  - Can users ask for the confirmation email again, and how long is the confirmation link valid?
+  - Architect suggestion: plan it as its own feature (**F3 – Email confirmation**, via `/fbrainstorm`) and let F2 depend on it, so each stays small.
+  - **Answer (2026-10-30):** Yes, email confirmation first, as its own feature **F3 – Email confirmation** (approved): users can use the app before confirming, old accounts count as unconfirmed, links are valid 24 hours, and the confirmation email can be resent from a banner. F2 depends on F3. For an unconfirmed address, "Forgot password" emails a confirmation link first; after confirming, the user requests the reset again.
+
+- **Q2 (Architect):** Lifting the lockout on reset needs a custom reset endpoint; the built-in one doesn't do it. Keep the built-in reset and drop "reset lifts the lockout"?
+  - **Answer (2026-10-30):** Yes. Built-in reset, own forgot-password endpoint; the lockout runs out on its own (≤ 5 minutes).
 
 ## Questions for the architect
 - Stakeholder preference: use **Mailpit** as the development mailbox (local SMTP with a web inbox), ideally started by Aspire alongside the app.
@@ -61,6 +71,7 @@ _None open._
 
 ## Related
 - F1 – User accounts (required first).
+- F3 – Email confirmation (required first: reset needs a confirmed email).
 
 ## Later
 - Real email provider for production, change password while signed in, email confirmation on registration.

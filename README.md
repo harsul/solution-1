@@ -17,6 +17,9 @@ aspire run
 dotnet run --project src/AspireApp1.AppHost
 ```
 
+Emails (e.g. email confirmation) go to **Mailpit** in development: open the `mailpit` resource's
+web inbox from the Aspire dashboard. Nothing is sent to real addresses.
+
 ## Test
 
 ```bash
