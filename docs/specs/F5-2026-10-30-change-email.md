@@ -2,11 +2,11 @@
 id: F5
 title: Change email address
 plan: docs/plans/F5-2026-10-30-change-email.md
-status: Approved
-phase: 0/2
+status: In progress
+phase: 1/2
 created: 2026-10-30
 approved: 2026-10-30
-branch:
+branch: feature/F5-change-email
 ---
 
 # Spec F5 – Change email address
@@ -27,7 +27,8 @@ Two own endpoints under `/api/account` (F4 pattern). **Request:** the signed-in 
 |---|---|---|---|---|
 | POST | `/api/account/email` (signed in) | `{ newEmail, password }` | `204`; link emailed to `newEmail` | `400` `PasswordMismatch` / `LockedOut` / `InvalidEmail` / `SameEmail` / `DuplicateEmail`; `401`; `429` |
 | POST | `/api/account/email/confirm` (anonymous) | `{ userId, email, code }` | `204`; cookie re-issued if the caller is that user | `400` `InvalidToken` (expired, used, tampered, unknown user) / `DuplicateEmail` |
-| POST | `/api/auth/manage/info` (built-in) | with `newEmail` | – | `400` `UseAccountEmail` (blocked) |
+| POST | `/api/auth/manage/info` (built-in) | with `newEmail` / `newPassword` | – | `400` `UseAccountEmail` / `UseAccountPassword` (blocked) |
+| GET | `/api/auth/confirmEmail` (built-in) | with `changedEmail` | – | `400` `UseAccountEmail` (blocked) |
 
 Check order (request): password first (so nothing else is revealed without it), then email format, same-as-current, in use.
 
@@ -78,9 +79,9 @@ Validation: `EmailAddressAttribute` on the trimmed address, like F2. Send failur
 | P1 – Email section shows address + confirmed state | page test | `EmailSection.test.tsx` |
 | P1 – valid request → link to new address, nothing changes yet | `Request_sends_link_to_new_address_and_changes_nothing_yet` | `xIntegration/ChangeEmailTests.cs` |
 | P1 – invalid / same / in use | `Request_rejects_invalid_same_and_used_addresses` (Theory) | `ChangeEmailTests.cs` |
-| P1 – wrong password; lockout counted | `Request_with_wrong_password_returns_PasswordMismatch`, `Request_counts_wrong_passwords_towards_lockout` | `ChangeEmailTests.cs` |
+| P1 – wrong password; lockout counted | `Request_with_wrong_password_returns_PasswordMismatch` (also: nothing sent), `Request_counts_wrong_passwords_towards_lockout` | `ChangeEmailTests.cs` |
 | P1 – rate limit | `Sixth_request_within_15_minutes_is_rate_limited` | `ChangeEmailTests.cs` |
-| P1 – built-in blocked | `Built_in_newEmail_is_rejected` | `ChangeEmailTests.cs` |
+| P1 – built-in blocked | `Built_in_newEmail_is_rejected`, `Built_in_confirmEmail_with_changedEmail_is_rejected`, `Built_in_password_change_is_rejected` | `ChangeEmailTests.cs` |
 | P1 – UI messages, client validation | page tests | `EmailSection.test.tsx` |
 | P2 – link changes + confirms email; new sign-in works, old doesn't | `Confirm_changes_email_and_sign_in_name` | `ChangeEmailTests.cs` |
 | P2 – this browser stays signed in, others signed out | `Confirm_keeps_this_browser_and_signs_out_others` | `ChangeEmailTests.cs` |
@@ -114,7 +115,15 @@ Validation: `EmailAddressAttribute` on the trimmed address, like F2. Send failur
 - Approved by the stakeholder's "finish the remaining features" after the three architecture answers.
 
 ## Changes during implementation
-- _filled in by /fimplement_
+- Phase 1: the new address is checked with `isValidEmail` in the page (like Register/Forgot password); the server's `InvalidEmail` stays the real check.
+- Phase 1: extra test `Built_in_manage_info_still_works_without_newEmail`, so the filter only blocks `newEmail`.
+- Phase 1: the old F2 comment in `IdentitySetup` about change-email links using the 1 h provider is replaced; they now use the 24 h provider.
+- Phase 1 (review fix): the built-in filter (`AuthEndpoints.BlockBuiltInAccountChanges`) also rejects `changedEmail` on the built-in `/confirmEmail`, which would otherwise accept our change-email links (same token purpose and encoding) and skip the notification; and `newPassword` on `/manage/info`, so F4's `/api/account/password` is the only way to change the password (closes the F4 risk note about it).
+- Phase 1: after an address-only error (`InvalidEmail`, `SameEmail`, `DuplicateEmail`) the password is kept and the address field is focused; otherwise the password is cleared and focused.
 
 ## Review log
-- _filled in by /freview_
+- 2026-10-30, Phase 1 (independent reviewer; `/code-review` not available in this session).
+  - Fixed 🔴 1: our change-email link could be replayed against the built-in `/confirmEmail?changedEmail=` and change the email without notifying the old address; now blocked, test (mutation-checked).
+  - Fixed 🟡 2–3: focus stays in the form after success and errors; tests.
+  - Fixed 🔵 4 (only a non-empty `newEmail` is blocked), 🔵 5 (built-in password change blocked too; test), 🔵 7 (`autoComplete="off"` on New email), 🔵 8 (wrong-password test asserts 400 + nothing sent; unused variable).
+  - Skipped 🔵 6 (per-user rate limit): the project convention limits per IP; the endpoint also needs a session and the password. Candidate for later hardening.

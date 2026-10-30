@@ -38,10 +38,10 @@ Signed-in users can change the email address they sign in with, for example afte
 
 ### Phase 1 – Request the change
 **Goal:** users can ask to change their email and get a link at the new address.
-- [ ] Given I'm on Account settings, when I look at the Email section, then I see my current address and whether it is confirmed.
-- [ ] Given I enter a valid new address and my correct password, when I click Change email, then I see the "We've sent a confirmation link" message, an email with a link arrives at the new address, and my sign-in address doesn't change yet.
-- [ ] Given the new address is invalid, the same as my current one, or already in use, when I submit, then I see why and nothing is sent.
-- [ ] Given my password is wrong, when I submit, then I see "Your password is incorrect." and nothing is sent.
+- [x] Given I'm on Account settings, when I look at the Email section, then I see my current address and whether it is confirmed.
+- [x] Given I enter a valid new address and my correct password, when I click Change email, then I see the "We've sent a confirmation link" message, an email with a link arrives at the new address, and my sign-in address doesn't change yet.
+- [x] Given the new address is invalid, the same as my current one, or already in use, when I submit, then I see why and nothing is sent.
+- [x] Given my password is wrong, when I submit, then I see "Your password is incorrect." and nothing is sent.
 
 ### Phase 2 – Confirm the change
 **Goal:** the link changes the address and the old address is told.
