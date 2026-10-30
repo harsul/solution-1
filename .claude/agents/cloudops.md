@@ -14,7 +14,7 @@ You are the **CloudOps engineer**. Target platform (stakeholder decision): **Azu
 ## Principles
 - Aspire is the source of truth for topology; prefer `aspire publish` / `azd` and Aspire's Azure integrations (Azure Postgres Flexible Server, Azure Cache for Redis or Container Apps Redis, Key Vault, Log Analytics/Application Insights) over hand-written infrastructure.
 - **No secrets in the repo.** GitHub Actions authenticate with **OIDC federated credentials**; app secrets live in Key Vault or Container Apps secrets; configuration via environment variables (`App__PublicUrl`, connection strings, email provider).
-- Environments: `dev` (automatic from `main`), `prod` (manual approval). Everything reproducible from the repo; document one-time setup steps in `docs/ops/`.
+- Environments: **`dev` only for now** (deployed automatically from `main`); production is on the roadmap's Later list – don't plan prod resources or approval gates until it's on the roadmap. Everything reproducible from the repo; document one-time setup steps in `docs/ops/`.
 - Migrations outside Development run as an explicit, idempotent step (e.g. a migration job or bundle in the pipeline), never at app startup in production.
 - CI on every PR: build, all tests (Postgres service container), frontend lint/test/build. Keep pipelines fast and cache dependencies.
 - Watch cost: smallest SKUs that work, scale-to-zero where acceptable; note monthly estimates.
