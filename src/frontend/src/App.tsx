@@ -1,6 +1,24 @@
 import { useState, useEffect } from 'react';
+import Alert from '@mui/material/Alert';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Container from '@mui/material/Container';
+import IconButton from '@mui/material/IconButton';
+import Link from '@mui/material/Link';
+import Paper from '@mui/material/Paper';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import aspireLogo from '/Aspire.png';
-import './App.css';
+import { aspireGradient } from './theme';
 
 interface WeatherForecast {
   date: string;
@@ -9,23 +27,32 @@ interface WeatherForecast {
   summary: string;
 }
 
+type TemperatureUnit = 'F' | 'C';
+
+const formatDate = (dateString: string) =>
+  new Date(dateString).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+
 function App() {
   const [weatherData, setWeatherData] = useState<WeatherForecast[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [useCelsius, setUseCelsius] = useState(false);
+  const [unit, setUnit] = useState<TemperatureUnit>('F');
 
   const fetchWeatherForecast = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/weatherforecast');
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data: WeatherForecast[] = await response.json();
       setWeatherData(data);
     } catch (err) {
@@ -40,145 +67,147 @@ function App() {
     fetchWeatherForecast();
   }, []);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  };
+  const unitName = unit === 'C' ? 'Celsius' : 'Fahrenheit';
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <a 
-          href="https://aspire.dev" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          aria-label="Visit Aspire website (opens in new tab)"
-          className="logo-link"
-        >
-          <img src={aspireLogo} className="logo" alt="Aspire logo" />
-        </a>
-        <h1 className="app-title">Aspire Starter</h1>
-        <p className="app-subtitle">Modern distributed application development</p>
-      </header>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <AppBar position="static" elevation={0} sx={{ background: aspireGradient }}>
+        <Toolbar sx={{ gap: 2 }}>
+          <Link
+            href="https://aspire.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit Aspire website (opens in new tab)"
+            sx={{ display: 'flex' }}
+          >
+            <Box component="img" src={aspireLogo} alt="Aspire logo" sx={{ height: 36 }} />
+          </Link>
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h6" component="h1" sx={{ lineHeight: 1.2 }}>
+              Aspire Starter
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.85, display: { xs: 'none', sm: 'block' } }}>
+              Modern distributed application development
+            </Typography>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-      <main className="main-content">
-        <section className="weather-section" aria-labelledby="weather-heading">
-          <div className="card">
-            <div className="section-header">
-              <h2 id="weather-heading" className="section-title">Weather Forecast</h2>
-              <div className="header-actions">
-                <fieldset className="toggle-switch" aria-label="Temperature unit selection">
-                  <legend className="visually-hidden">Temperature unit</legend>
-                  <button 
-                    className={`toggle-option ${!useCelsius ? 'active' : ''}`}
-                    onClick={() => setUseCelsius(false)}
-                    aria-pressed={!useCelsius}
-                    type="button"
-                  >
-                    <span aria-hidden="true">°F</span>
-                    <span className="visually-hidden">Fahrenheit</span>
-                  </button>
-                  <button 
-                    className={`toggle-option ${useCelsius ? 'active' : ''}`}
-                    onClick={() => setUseCelsius(true)}
-                    aria-pressed={useCelsius}
-                    type="button"
-                  >
-                    <span aria-hidden="true">°C</span>
-                    <span className="visually-hidden">Celsius</span>
-                  </button>
-                </fieldset>
-                <button 
-                  className="refresh-button"
-                  onClick={fetchWeatherForecast} 
+      <Container component="main" maxWidth="md" sx={{ py: 4, flexGrow: 1 }}>
+        <Card component="section" aria-labelledby="weather-heading" variant="outlined">
+          <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              sx={{ justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' } }}
+            >
+              <Typography id="weather-heading" variant="h5" component="h2">
+                Weather Forecast
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <ToggleButtonGroup
+                  exclusive
+                  size="small"
+                  value={unit}
+                  onChange={(_, value: TemperatureUnit | null) => value && setUnit(value)}
+                  aria-label="Temperature unit"
+                >
+                  <ToggleButton value="F" aria-label="Fahrenheit">°F</ToggleButton>
+                  <ToggleButton value="C" aria-label="Celsius">°C</ToggleButton>
+                </ToggleButtonGroup>
+                <Button
+                  variant="contained"
+                  onClick={fetchWeatherForecast}
                   disabled={loading}
                   aria-label={loading ? 'Loading weather forecast' : 'Refresh weather forecast'}
-                  type="button"
+                  startIcon={
+                    <RefreshIcon
+                      sx={{
+                        animation: loading ? 'spin 1s linear infinite' : 'none',
+                        '@keyframes spin': { to: { transform: 'rotate(360deg)' } },
+                      }}
+                    />
+                  }
                 >
-                  <svg 
-                    className={`refresh-icon ${loading ? 'spinning' : ''}`}
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                  </svg>
-                  <span>{loading ? 'Loading...' : 'Refresh'}</span>
-                </button>
-              </div>
-            </div>
-            
-            {error && (
-              <div className="error-message" role="alert" aria-live="polite">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-            
-            {loading && weatherData.length === 0 && (
-              <div className="loading-skeleton" role="status" aria-live="polite" aria-label="Loading weather data">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="skeleton-row" aria-hidden="true" />
-                ))}
-                <span className="visually-hidden">Loading weather forecast data...</span>
-              </div>
-            )}
-            
-            {weatherData.length > 0 && (
-              <div className="weather-grid">
-                {weatherData.map((forecast, index) => (
-                  <article key={index} className="weather-card" aria-label={`Weather for ${formatDate(forecast.date)}`}>
-                    <h3 className="weather-date">
-                      <time dateTime={forecast.date}>{formatDate(forecast.date)}</time>
-                    </h3>
-                    <p className="weather-summary">{forecast.summary}</p>
-                    <div className="weather-temps" aria-label={`Temperature: ${useCelsius ? forecast.temperatureC : forecast.temperatureF} degrees ${useCelsius ? 'Celsius' : 'Fahrenheit'}`}>
-                      <div className="temp-group">
-                        <span className="temp-value" aria-hidden="true">
-                          {useCelsius ? forecast.temperatureC : forecast.temperatureF}°
-                        </span>
-                        <span className="temp-unit" aria-hidden="true">{useCelsius ? 'Celsius' : 'Fahrenheit'}</span>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
+                  {loading ? 'Loading...' : 'Refresh'}
+                </Button>
+              </Stack>
+            </Stack>
 
-      <footer className="app-footer">
-        <nav aria-label="Footer navigation">
-          <a href="https://aspire.dev" target="_blank" rel="noopener noreferrer">
-            Learn more about Aspire<span className="visually-hidden"> (opens in new tab)</span>
-          </a>
-          <a 
-            href="https://github.com/microsoft/aspire" 
-            target="_blank" 
+            {error && <Alert severity="error">{error}</Alert>}
+
+            {loading && weatherData.length === 0 && (
+              <Box role="status" aria-label="Loading weather data" sx={forecastGrid}>
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Skeleton key={i} variant="rounded" height={120} aria-hidden="true" />
+                ))}
+              </Box>
+            )}
+
+            {weatherData.length > 0 && (
+              <Box sx={forecastGrid}>
+                {weatherData.map((forecast) => {
+                  const temperature = unit === 'C' ? forecast.temperatureC : forecast.temperatureF;
+                  return (
+                    <Paper
+                      key={forecast.date}
+                      component="article"
+                      variant="outlined"
+                      aria-label={`Weather for ${formatDate(forecast.date)}`}
+                      sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}
+                    >
+                      <Typography variant="subtitle2" component="h3" color="text.secondary">
+                        <time dateTime={forecast.date}>{formatDate(forecast.date)}</time>
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {forecast.summary}
+                      </Typography>
+                      <Box aria-label={`Temperature: ${temperature} degrees ${unitName}`}>
+                        <Typography variant="h4" component="span" color="primary" aria-hidden="true">
+                          {temperature}°
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" aria-hidden="true" sx={{ ml: 0.5 }}>
+                          {unitName}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  );
+                })}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Container>
+
+      <Box component="footer" sx={{ py: 3 }}>
+        <Stack
+          component="nav"
+          aria-label="Footer navigation"
+          direction="row"
+          spacing={2}
+          sx={{ justifyContent: 'center', alignItems: 'center' }}
+        >
+          <Link href="https://aspire.dev" target="_blank" rel="noopener noreferrer">
+            Learn more about Aspire
+          </Link>
+          <IconButton
+            href="https://github.com/microsoft/aspire"
+            target="_blank"
             rel="noopener noreferrer"
-            className="github-link"
             aria-label="View Aspire on GitHub (opens in new tab)"
           >
-            <img src="/github.svg" alt="" width="24" height="24" aria-hidden="true" />
-            <span className="visually-hidden">GitHub</span>
-          </a>
-        </nav>
-      </footer>
-    </div>
+            <GitHubIcon />
+          </IconButton>
+        </Stack>
+      </Box>
+    </Box>
   );
 }
+
+const forecastGrid = {
+  display: 'grid',
+  gap: 1.5,
+  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+} as const;
 
 export default App;
