@@ -2,11 +2,11 @@
 id: F4
 title: Account settings
 plan: docs/plans/F4-2026-10-30-account-settings.md
-status: Approved
-phase: 0/3
+status: In progress
+phase: 1/3
 created: 2026-10-30
 approved: 2026-10-30
-branch:
+branch: feature/F4-account-settings
 ---
 
 # Spec F4 – Account settings
@@ -120,13 +120,23 @@ State and UX: buttons disabled and `loading` while busy; dialogs close only via 
   - **Answer (2026-10-30):** `POST /api/account/delete` with `{ password, email }`.
 
 ## Risks / notes
-- Per-request stamp check adds one indexed user lookup per signed-in API call; fine for this app, revisit if traffic grows (e.g. cache for a few seconds).
+- Per-request stamp check: two small queries (user + claims) per signed-in request, and every authenticated response re-issues the cookie (so sliding expiration restarts on each request). Static files are served before authentication to skip it. Fine for this app; revisit if traffic grows.
+- Because every response re-issues the cookie, a request still in flight while the password changes (or other devices are signed out) could store a cookie with the old stamp and sign this browser out. The account page makes no parallel calls, so this is unlikely.
+- Bearer tokens from the built-in `/api/auth/login` (without `useCookies`) aren't checked against the stamp; an existing access token keeps working until it expires (1 h). The React app uses cookies only.
 - A signed-out device notices on its next API call; a page left open shows the F1 "session expired" message then.
 - The built-in `/manage/info` can still change the password (no lockout counting, signs out this browser too). The UI doesn't use it; it stays for now.
 - Deleting removes Identity rows only; future features that store user data must delete it too (or use cascade).
 
 ## Changes during implementation
-- _filled in by /fimplement_
+- Phase 1: the 401 test is a Theory over the account routes; phases 2 and 3 add their routes to it.
+- Phase 1: after a wrong current password or lockout, only the current-password field is cleared and focused; the new password stays so it needn't be typed again.
+- Phase 1: `PasswordChangedMessage` takes the time from `TimeProvider` and states it in UTC.
+- Phase 1: rule errors from the server show Identity's own descriptions (as on Register and Reset password) instead of frontend-mapped texts.
+- Phase 1 (review fix): `app.UseFileServer()` moved before `UseAuthentication()`; the lockout text is shared in `features/auth/messages.ts`; the server's `LockedOut` description is just "Account locked.".
 
 ## Review log
-- _filled in by /freview_
+- 2026-10-30, Phase 1 (independent reviewer; `/code-review` not available in this session). No 🔴.
+  - Fixed 🟡 1: the rule test now checks *which* rule fails (accessible description), here and in `ResetPasswordPage.test.tsx`.
+  - Fixed 🟡 2: hidden `username` field so password managers update the right entry.
+  - Fixed 🔵 3 (static files before authentication + risk note), 🔵 4 and 🔵 9 (risk notes), 🔵 5 (test that Remember me survives the change), 🔵 6 (shared lockout text), 🔵 7 (focus returns to Current password after success).
+  - Skipped 🔵 8 (fields editable while saving): same as the other forms.
