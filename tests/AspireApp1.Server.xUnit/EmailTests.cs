@@ -148,6 +148,18 @@ public class EmailTests
     }
 
     [Fact]
+    public void EmailChangedMessage_names_the_new_address_and_has_no_link()
+    {
+        var message = EmailChangedMessage.Create("old@example.com", "<new>@example.com");
+
+        Assert.Equal("old@example.com", message.To);
+        Assert.Equal("Your email address was changed", message.Subject);
+        Assert.Contains("<new>@example.com", message.TextBody);
+        Assert.Contains("&lt;new&gt;@example.com", message.HtmlBody);
+        Assert.DoesNotContain("http", message.TextBody);
+    }
+
+    [Fact]
     public void ResetPasswordMessage_has_the_link_and_says_1_hour()
     {
         const string link = "https://app.test/reset-password?email=ada%40example.com&code=x<y";

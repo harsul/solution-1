@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using AspireApp1.Server.xIntegration.TestDoubles;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using AspireApp1.Server.Auth;
 using Microsoft.AspNetCore.WebUtilities;
 using static AspireApp1.Server.xIntegration.TestDoubles.AuthHelpers;
 using static AspireApp1.Server.xIntegration.TestDoubles.EmailHelpers;
@@ -57,6 +60,8 @@ public class ChangeEmailTests(ServerFactory factory) : IClassFixture<ServerFacto
     [InlineData("", "InvalidEmail")]
     [InlineData("same", "SameEmail")]
     [InlineData("taken", "DuplicateEmail")]
+    [InlineData("o'brien@example.com", "InvalidEmail")]
+    [InlineData("jürgen@example.com", "InvalidEmail")]
     public async Task Request_rejects_invalid_same_and_used_addresses(string kind, string expectedCode)
     {
         var (client, email) = await SignedInClientAsync(factory);
@@ -174,5 +179,179 @@ public class ChangeEmailTests(ServerFactory factory) : IClassFixture<ServerFacto
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains(email, await response.Content.ReadAsStringAsync(Ct));
+    }
+
+    private record LinkValues(string UserId, string Email, string Code);
+
+    private async Task<LinkValues> RequestLinkAsync(HttpClient client, string newEmail)
+    {
+        (await RequestAsync(client, newEmail)).EnsureSuccessStatusCode();
+        var query = QueryHelpers.ParseQuery(LinkIn(factory.Emails.SentTo(newEmail).Last().TextBody).Query);
+        return new(query["userId"].ToString(), query["email"].ToString(), query["code"].ToString());
+    }
+
+    private static Task<HttpResponseMessage> ConfirmAsync(HttpClient client, LinkValues link) =>
+        client.PostAsJsonAsync("/api/account/email/confirm", new { userId = link.UserId, email = link.Email, code = link.Code }, Ct);
+
+    private static Task<HttpResponseMessage> InfoAsync(HttpClient client) => client.GetAsync("/api/auth/manage/info", Ct);
+
+    [Fact]
+    public async Task Confirm_changes_email_and_sign_in_name()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        var newEmail = NewEmail();
+        var link = await RequestLinkAsync(client, newEmail);
+
+        var response = await ConfirmAsync(factory.CreateHttpsClient(), link);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        var signIn = factory.CreateHttpsClient();
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(signIn, newEmail)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+        var info = await (await InfoAsync(signIn)).Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.Equal(newEmail, info.GetProperty("email").GetString());
+        Assert.True(info.GetProperty("isEmailConfirmed").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Confirm_keeps_this_browser_and_signs_out_others()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        var other = factory.CreateHttpsClient();
+        (await LoginAsync(other, email)).EnsureSuccessStatusCode();
+        var link = await RequestLinkAsync(client, NewEmail());
+
+        (await ConfirmAsync(client, link)).EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.OK, (await InfoAsync(client)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await InfoAsync(other)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Confirm_link_works_once()
+    {
+        var (client, _) = await SignedInClientAsync(factory);
+        var link = await RequestLinkAsync(client, NewEmail());
+        (await ConfirmAsync(client, link)).EnsureSuccessStatusCode();
+
+        var second = await ConfirmAsync(client, link);
+
+        Assert.Equal(HttpStatusCode.BadRequest, second.StatusCode);
+        Assert.Equal(["InvalidToken"], await ErrorCodesAsync(second));
+    }
+
+    [Fact]
+    public async Task Expired_confirm_link_is_InvalidToken()
+    {
+        // Identity's token provider has no test clock, so shrink the lifetime and let it pass.
+        await using var shortLived = factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
+            s.Configure<EmailConfirmationTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromMilliseconds(1))));
+        var client = shortLived.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var email = NewEmail();
+        (await RegisterAsync(client, email)).EnsureSuccessStatusCode();
+        (await LoginAsync(client, email)).EnsureSuccessStatusCode();
+        var link = await RequestLinkAsync(client, NewEmail());
+        await Task.Delay(TimeSpan.FromMilliseconds(50), Ct);
+
+        var response = await ConfirmAsync(client, link);
+
+        Assert.Equal(["InvalidToken"], await ErrorCodesAsync(response));
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("not base64 !!")]
+    [InlineData("")]
+    [InlineData("dGFtcGVyZWQ")]
+    public async Task Malformed_or_tampered_code_is_InvalidToken(string code)
+    {
+        var (client, _) = await SignedInClientAsync(factory);
+        var link = await RequestLinkAsync(client, NewEmail());
+
+        var response = await ConfirmAsync(client, link with { Code = code });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(["InvalidToken"], await ErrorCodesAsync(response));
+    }
+
+    [Fact]
+    public async Task Link_for_one_address_cannot_set_another()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        var link = await RequestLinkAsync(client, NewEmail());
+
+        var response = await ConfirmAsync(client, link with { Email = NewEmail() });
+
+        Assert.Equal(["InvalidToken"], await ErrorCodesAsync(response));
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Confirm_notifies_old_confirmed_address()
+    {
+        var client = factory.CreateHttpsClient();
+        var email = await RegisterConfirmedAsync(factory, client);
+        (await LoginAsync(client, email)).EnsureSuccessStatusCode();
+        var newEmail = NewEmail();
+
+        (await ConfirmAsync(client, await RequestLinkAsync(client, newEmail))).EnsureSuccessStatusCode();
+
+        var message = factory.Emails.SentTo(email).Last();
+        Assert.Equal("Your email address was changed", message.Subject);
+        Assert.Contains(newEmail, message.TextBody);
+    }
+
+    [Fact]
+    public async Task Confirm_does_not_notify_old_unconfirmed_address()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+
+        (await ConfirmAsync(client, await RequestLinkAsync(client, NewEmail()))).EnsureSuccessStatusCode();
+
+        Assert.DoesNotContain(factory.Emails.SentTo(email), m => m.Subject == "Your email address was changed");
+    }
+
+    [Fact]
+    public async Task Confirm_when_address_was_taken_meanwhile_returns_DuplicateEmail()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        var newEmail = NewEmail();
+        var link = await RequestLinkAsync(client, newEmail);
+        (await RegisterAsync(factory.CreateHttpsClient(), newEmail)).EnsureSuccessStatusCode();
+
+        var response = await ConfirmAsync(client, link);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("DuplicateEmail", await ErrorCodesAsync(response));
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await InfoAsync(client)).StatusCode); // nothing saved, session intact
+    }
+
+    [Fact]
+    public async Task Confirm_with_a_bad_code_reveals_nothing_about_other_accounts()
+    {
+        var (client, _) = await SignedInClientAsync(factory);
+        var link = await RequestLinkAsync(client, NewEmail());
+        var (_, registered) = await SignedInClientAsync(factory);
+
+        var response = await ConfirmAsync(factory.CreateHttpsClient(), link with { Email = registered, Code = "AAAA" });
+
+        Assert.Equal(["InvalidToken"], await ErrorCodesAsync(response));
+    }
+
+    [Fact]
+    public async Task Confirm_in_a_browser_of_another_user_keeps_that_user_signed_in()
+    {
+        var (owner, ownerEmail) = await SignedInClientAsync(factory);
+        var ownerOther = factory.CreateHttpsClient();
+        (await LoginAsync(ownerOther, ownerEmail)).EnsureSuccessStatusCode();
+        var link = await RequestLinkAsync(owner, NewEmail());
+        var (otherUser, otherEmail) = await SignedInClientAsync(factory);
+
+        (await ConfirmAsync(otherUser, link)).EnsureSuccessStatusCode();
+
+        var info = await (await InfoAsync(otherUser)).Content.ReadFromJsonAsync<JsonElement>(Ct);
+        Assert.Equal(otherEmail, info.GetProperty("email").GetString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await InfoAsync(ownerOther)).StatusCode);
     }
 }
