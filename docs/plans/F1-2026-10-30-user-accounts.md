@@ -70,7 +70,8 @@ Make the app private: people create an account with their email and a password, 
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F1. Asked by: PO | Architect -->
-_None open._
+- **Q1 (Architect):** The built-in sign-in only reports "locked out", not until when. Is "This account is temporarily locked. Try again in 5 minutes." (based on the fixed lockout length) good enough for "the message says when to try again"?
+  - **Answer:** Yes (2026-10-30).
 
 ## Questions for the architect
 - Stakeholder preference: ASP.NET Core Identity, with accounts stored in PostgreSQL running in a container next to Redis. Please confirm or propose an alternative.

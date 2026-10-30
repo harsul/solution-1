@@ -65,21 +65,24 @@ Loop per phase: `fimplement → freview → fcommit`.
 
 Decided conventions. `/fplan` adds to this list when you answer an architecture question, so it is not asked again.
 
-- Server endpoints: minimal APIs mapped on the `/api` group (current state of `Program.cs`).
+- Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.
+- Database: PostgreSQL via Aspire (`appdb`, pgAdmin in dev) with EF Core; DbContext, migrations and DB helpers in `Data/`. Migrations apply automatically at startup in Development only. Create them with `dotnet ef migrations add <Name> -o Data/Migrations` (local tool).
+- Auth: ASP.NET Core Identity with cookie sessions (same origin, `HttpOnly`, `SameSite=Strict`); API returns 401/403, never redirects. Protect endpoints with `.RequireAuthorization()`.
 - Errors: don't catch exceptions just to return 500; `GlobalExceptionHandler` turns unhandled exceptions into a ProblemDetails 500 (logged, no details leaked). For expected failures return `TypedResults.Problem` / `TypedResults.ValidationProblem` / `TypedResults.NotFound` with the right status code.
-- Frontend data fetching: `fetch` against relative `/api/...` URLs (current state of `App.tsx`).
+- Frontend data fetching: relative `/api/...` URLs through `src/api/apiFetch.ts` (handles expired sessions).
+- Frontend structure: feature folders `src/features/<feature>/` (pages, API calls, hooks, tests); shared UI in `src/components/`. Routing with React Router 8 (`react-router`).
+- Forms: plain MUI fields with `useState`; validation in small pure functions (unit-tested), no form libraries.
 - UI: Material UI components first. Style with the `sx` prop and theme values (`primary`, `text.secondary`, spacing), never hard-coded colors; no new `.css` files. Theme changes go in `src/theme.ts`; light and dark must both work.
 - Icons: `@mui/icons-material`, imported by path (`import RefreshIcon from '@mui/icons-material/Refresh'`). MUI components are imported by path too (`@mui/material/Button`).
 - Accessibility: every interactive element has an accessible name (visible text or `aria-label`); tests find elements by role or label.
 - Tests: xunit.v3 with `[Fact]`/`[Theory]`, global `using Xunit`; pass `TestContext.Current.CancellationToken` to async calls.
 - Unit tests (`xUnit` project): pure logic, no HTTP. Server internals are visible to it via `InternalsVisibleTo`.
-- API tests (`xIntegration` project): `IClassFixture<ServerFactory>` and `factory.CreateClient()`. `ServerFactory` swaps Redis output caching for a no-op store, so no Docker is needed. Assert status codes and JSON bodies, using test-local DTO records.
+- API tests (`xIntegration` project): `IClassFixture<ServerFactory>` and `factory.CreateClient()`. `ServerFactory` swaps Redis output caching for a no-op store and runs a real Postgres via Testcontainers (from F1, so `dotnet test` needs Docker). Use a unique email per test. Assert status codes and JSON bodies, using test-local DTO records.
 - Frontend tests: `<Component>.test.tsx` next to the component, rendered with `renderWithTheme` (`src/test/render.tsx`). Use Testing Library queries by role or label, `userEvent` for interaction, and stub `fetch` with `vi.stubGlobal`. Shared setup (incl. `matchMedia` stub) is in `src/test/setup.ts`.
 - No mocking libraries: write small test doubles by hand in a `TestDoubles/` folder (C#) or inline (TS).
 - Each acceptance criterion maps to at least one test: API behaviour → `xIntegration`, logic → `xUnit`, UI behaviour → Vitest.
 
 ### Open decisions (ask when a feature first needs them)
 
-- Where endpoints live once `Program.cs` grows (e.g. `Endpoints/<Feature>Endpoints.cs` extension methods?)
-- Persistence: in-memory, Redis, or a database (EF Core?)
-- Frontend structure beyond `src/components/`: `src/api/` for API clients? `src/features/<feature>/`? Routing library?
+- Applying migrations outside Development (deployment strategy)
+- Real email provider for production (F2 uses Mailpit in development)
