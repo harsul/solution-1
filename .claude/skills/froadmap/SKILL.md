@@ -16,6 +16,7 @@ Input: $ARGUMENTS
 Read `CLAUDE.md`, the **Roadmap** issue (`fdoc.sh roadmap`) (if any), the epic issues (`gh issue list --label type:epic --state all`) and what is already built (Done features, `src/frontend/src/features/`). Run `.claude/scripts/fdoc.sh check`.
 
 ## 2. Without a roadmap: shape it (2–3 rounds)
+Start from `docs/product.md` (written by `/finit`): its customers, tenancy, billing, v1 modules and main entities already answer most questions below – don't ask them again; ask only what's missing (mainly order, success criteria and what "v1 done" means). No profile → suggest running `/finit` first, or continue with the questions below.
 - **Vision and customers:** what kinds of businesses start from this template (B2B SaaS, marketplaces, internal tools, ...), who pays, what "done" looks like for v1.
 - **Tenancy model:** single user, organizations/workspaces with members and roles, or both.
 - **Monetization:** none yet, subscriptions with plans, usage-based; payment provider.
