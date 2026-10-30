@@ -49,12 +49,12 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 - A new user can sign up, confirm their email and sign in on staging and production (real email delivery).
 - The team can see errors, health and basic usage of each environment, and gets alerts when production is down.
 
-**Features (rough)**
-- CI checks on pull requests
-- Staging environment on Azure (auto-deploy from `main`, database migrations)
-- Production environment with approval gate
-- Production email delivery
-- Monitoring, health checks and alerts
+**Features**
+- F6 – CI checks on pull requests (#9)
+- F7 – Staging environment on Azure (auto-deploy from `main`, database migrations) (#10)
+- F8 – Production environment with approval gate (#11)
+- F9 – Production email delivery (#12)
+- F10 – Monitoring, health checks and alerts (#13)
 
 **Depends on:** nothing. **Resolves open decisions:** migrations outside Development, real email provider.
 
@@ -67,12 +67,12 @@ Sign-up, sign-in, sessions, forgot/reset password, email confirmation, account s
 - Owners can transfer ownership, and members can leave (the last owner can't).
 - Product data (the sample feature) is scoped to the current organization, and cross-tenant access returns "not found".
 
-**Features (rough)**
-- Personal workspace, create organization, org switcher
-- Invite members by email (accept / decline / revoke)
-- Manage members: change role, remove, leave, transfer ownership
-- Organization settings (name, ...)
-- Org-scoped product data (sample feature moved under the org)
+**Features**
+- F11 – Personal workspace, create organization, org switcher (#14)
+- F12 – Invite members by email (accept / decline / revoke) (#15)
+- F13 – Manage members: change role, remove, leave, transfer ownership (#16)
+- F14 – Organization settings (name, ...) (#17)
+- F15 – Org-scoped product data (sample feature moved under the org) (#18)
 
 **Depends on:** 1.
 
