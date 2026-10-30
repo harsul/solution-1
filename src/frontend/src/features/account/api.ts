@@ -4,6 +4,10 @@ export type ChangePasswordResult =
   | { ok: true }
   | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'rules'; errors: string[] };
 
+export type DeleteAccountResult =
+  | { ok: true }
+  | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'emailMismatch' };
+
 interface ValidationProblem {
   errors?: Record<string, string[]>;
 }
@@ -39,4 +43,17 @@ export async function changePassword(currentPassword: string, newPassword: strin
 export async function signOutOtherDevices(): Promise<void> {
   const response = await apiFetch('/api/account/sign-out-others', postJson());
   if (!response.ok) throw unexpected(response);
+}
+
+/** Deletes the account for good; the server ends the session. */
+export async function deleteAccount(password: string, email: string): Promise<DeleteAccountResult> {
+  const response = await apiFetch('/api/account/delete', postJson({ password, email }));
+  if (response.ok) return { ok: true };
+  if (response.status === 400) {
+    const errors = await readErrors(response);
+    if ('LockedOut' in errors) return { ok: false, code: 'lockedOut' };
+    if ('PasswordMismatch' in errors) return { ok: false, code: 'wrongPassword' };
+    if ('EmailMismatch' in errors) return { ok: false, code: 'emailMismatch' };
+  }
+  throw unexpected(response);
 }

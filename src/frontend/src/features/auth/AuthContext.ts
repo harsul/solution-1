@@ -3,7 +3,7 @@ import type { Credentials, RegisterResult, SignInResult } from './api';
 
 export type AuthState =
   | { status: 'loading' }
-  | { status: 'signedOut'; reason?: 'expired' }
+  | { status: 'signedOut'; reason?: 'expired' | 'deleted' }
   | { status: 'signedIn'; email: string; emailConfirmed: boolean };
 
 /** Registration result; `signedIn` is false when the account was created but the automatic sign-in failed. */
@@ -15,6 +15,8 @@ export interface AuthContextValue {
   /** Registers and, on success, signs the new user in (session cookie). */
   register: (credentials: Credentials) => Promise<RegisterOutcome>;
   signOut: () => Promise<void>;
+  /** The server deleted the account and ended the session: sign out locally (RequireAuth shows a notice). */
+  accountDeleted: () => void;
   /** Reloads the session state (e.g. after confirming the email); resolves to whether signed in. */
   refreshUser: () => Promise<boolean>;
 }

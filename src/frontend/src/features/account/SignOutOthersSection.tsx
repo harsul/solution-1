@@ -54,10 +54,15 @@ export default function SignOutOthersSection() {
           </Button>
         </Stack>
       </CardContent>
-      <Dialog open={open} onClose={() => !busy && setOpen(false)} aria-labelledby="sign-out-others-title">
+      <Dialog
+        open={open}
+        onClose={() => !busy && setOpen(false)}
+        aria-labelledby="sign-out-others-title"
+        aria-describedby="sign-out-others-description"
+      >
         <DialogTitle id="sign-out-others-title">Sign out other devices?</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText id="sign-out-others-description">
             Every other browser and device signed in to your account will be signed out. You stay signed in here.
           </DialogContentText>
         </DialogContent>

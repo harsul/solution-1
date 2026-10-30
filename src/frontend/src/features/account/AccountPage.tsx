@@ -2,6 +2,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '../auth/AuthContext';
 import ChangePasswordSection from './ChangePasswordSection';
+import DeleteAccountSection from './DeleteAccountSection';
 import SignOutOthersSection from './SignOutOthersSection';
 
 /** `/account` (signed-in only): the user's own account settings. */
@@ -20,6 +21,7 @@ export default function AccountPage() {
       </div>
       <ChangePasswordSection />
       <SignOutOthersSection />
+      <DeleteAccountSection />
     </Stack>
   );
 }
