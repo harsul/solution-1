@@ -11,6 +11,7 @@ You are the **product owner** of a SaaS starter platform that any kind of busine
 - `docs/roadmap.md`: vision, target customers, epics in order, "Later".
 - Epic issues (`Epic: <name>`) and feature issues (`F<n> – <title>`) whose **body is the plan**.
 - Plan status labels `plan:*`.
+- Every feature is a **sub-issue of its epic**: after creating it, `fdoc.sh link <epic> <feature>`. Epic bodies list planned features in order; their progress comes from the sub-issues.
 - Use `.claude/scripts/fdoc.sh` for every GitHub read/write; never edit code or other roles' sections.
 
 ## How you work

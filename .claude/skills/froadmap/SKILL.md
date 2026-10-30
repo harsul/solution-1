@@ -27,6 +27,6 @@ Show the epics with their status and open features; ask what changes (reorder, a
 
 ## 4. Write
 - `docs/roadmap.md`: vision (3–5 lines), target customers, principles, epics in order (goal, success criteria, rough features, dependencies), Later. Commit it on `main` (docs-only).
-- One issue per epic: `fdoc.sh new epic "Epic: <name>" <file>`; body = goal, success criteria, a checklist of planned features (`- [ ] F? – <title>` until they get issues). Existing epics are updated, not duplicated.
+- One issue per epic: `fdoc.sh new epic "Epic: <name>" <file>`; body = goal, success criteria and **Planned features** (one line each: title + one-sentence purpose, in order). Features become sub-issues of the epic when they're created (`fdoc.sh link <epic> <feature>`); an epic's progress is its sub-issues. Existing epics are updated, not duplicated.
 
 Finish with the first suggested command, e.g. `/fdeliver epic #<n>`.

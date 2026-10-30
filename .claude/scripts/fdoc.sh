@@ -2,7 +2,8 @@
 # fdoc.sh – the only way the workflow reads and writes GitHub Issues (via the gh CLI).
 #
 # Model (see CLAUDE.md → Feature workflow):
-#   epic issue     title "Epic: <name>",        label type:epic,    body = epic goal + feature checklist
+#   epic issue     title "Epic: <name>",        label type:epic,    body = goal, success criteria, planned features
+#                  its features are GitHub sub-issues (link / children)
 #   feature issue  title "F<n> – <title>",      label type:feature, body = the plan (product owner)
 #   sections       one comment per section, first line "<!-- fdoc:<section> -->"
 #                  (spec, design, ops, review-p<k>, summary); updated in place, never duplicated
@@ -14,6 +15,8 @@
 #   fdoc.sh next-id                       next free F<n> number (issues + legacy docs/plans)
 #   fdoc.sh find F<n>                     issue number of feature F<n> (exit 1 if none)
 #   fdoc.sh new feature|epic "<title>" <body-file>   create an issue, print its number
+#   fdoc.sh link <epic> <feature>         make the feature issue a sub-issue of the epic (idempotent)
+#   fdoc.sh children <epic>               list the sub-issues: "#<n> <state> <title>"
 #   fdoc.sh body <issue>                  print the issue body
 #   fdoc.sh set-body <issue> <file>       replace the issue body
 #   fdoc.sh get <issue> <section>         print a section comment without its marker (exit 1 if none)
@@ -76,6 +79,20 @@ case "$cmd" in
     need_file "${3:-}"
     url="$(gh issue create --title "$2" --body-file "$3" --label "type:$1")"
     echo "${url##*/}"
+    ;;
+  link)
+    [[ -n "${1:-}" && -n "${2:-}" ]] || die "usage: link <epic> <feature>"
+    # The API wants the feature's internal id, not its number.
+    id="$(gh api "repos/{owner}/{repo}/issues/$2" --jq .id)"
+    if gh api "repos/{owner}/{repo}/issues/$1/sub_issues" --paginate --jq '.[].number' | grep -qx "$2"; then
+      echo "#$2 is already a sub-issue of #$1"
+    else
+      gh api -X POST "repos/{owner}/{repo}/issues/$1/sub_issues" -F "sub_issue_id=$id" >/dev/null
+      echo "linked #$2 to #$1"
+    fi
+    ;;
+  children)
+    gh api "repos/{owner}/{repo}/issues/$1/sub_issues" --paginate --jq '.[] | "#\(.number) \(.state) \(.title)"'
     ;;
   body)      gh issue view "$1" --json body --jq .body ;;
   set-body)  need_file "${2:-}"; gh issue edit "$1" --body-file "$2" >/dev/null ;;

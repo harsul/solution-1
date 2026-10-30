@@ -69,7 +69,7 @@ Gates: the stakeholder approves the **plan** and the **spec**; after that `/fdel
 
 All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in; run `fdoc.sh init-labels` once).
 
-- **Epic:** issue `Epic: <name>`, label `type:epic`; body = goal, success criteria, checklist of features.
+- **Epic:** issue `Epic: <name>`, label `type:epic`; body = goal, success criteria, planned features. Its features are **sub-issues** (`fdoc.sh link <epic> <feature>`, `fdoc.sh children <epic>`), so GitHub shows the epic's progress.
 - **Feature:** issue `F<n> – <title>`, label `type:feature`; **body = plan**. `F<n>` is sequential and never reused (`fdoc.sh next-id`). At most 3 phases; bigger → several features.
 - **Sections** = one comment each, updated in place: `design`, `ops`, `spec`, `review-p<k>`.
 - **Status labels:** `plan:draft → questions → approved → done`, `spec:draft → questions → approved → in-progress → done`, plus `needs-answer` while waiting for the stakeholder.

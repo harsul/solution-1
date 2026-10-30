@@ -17,7 +17,7 @@ Input: $ARGUMENTS
 - Read `CLAUDE.md` and `docs/roadmap.md` (if present).
 - Resolve the input to a feature issue:
   - `F<n>` → `fdoc.sh find F<n>`; `#<n>` → that issue;
-  - `epic #<n>` → the first unchecked feature in the epic's checklist whose dependencies are done; if the epic has no feature left to plan, ask the product owner agent to propose the next one;
+  - `epic #<n>` → `fdoc.sh children <n>`: the first open feature whose dependencies are done (in-progress first); if no open feature is left, ask the product owner agent to propose the next one from the epic's planned features;
   - an idea → new feature (step 1).
 - Resume from the issue's labels: `plan:approved` without spec → step 2; `spec:approved`/`spec:in-progress` → step 4 at the next unchecked phase; `*:questions` → collect answers (step 3) first.
 
@@ -53,7 +53,7 @@ When all three are back, run the **architect** once more to fold the design and 
 6. **Commit** with `/fcommit auto` (logical Conventional Commits, `Refs: F<n> (#<issue>)`).
 
 ## 5. Finish the feature
-- Plan and spec labels → `done`; tick the feature in the epic's checklist.
+- Plan and spec labels → `done`. The PR's `Closes #<issue>` closes the feature, which updates the epic's sub-issue progress; when all its sub-issues are closed and the epic's goal is met, close the epic too.
 - Push the branch and open a PR (`gh pr create --fill --body` with summary + `Closes #<issue>`); pushing and creating the PR need the stakeholder's permission (settings ask). If pushing isn't possible here, give the exact commands.
 - Don't merge the PR yourself unless the stakeholder says so (`gh pr merge --merge`).
 - Report: what users get, review fixes worth knowing, risks/skipped items, test results, steps the stakeholder must do (from CloudOps), the PR link, and the suggested next feature of the epic.

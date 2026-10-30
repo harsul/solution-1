@@ -22,7 +22,7 @@ AskUserQuestion, up to 4 per round, 1–2 rounds, recommended option first. Ask 
 
 ## 4. Size and write
 - At most **3 phases**, each a user-visible increment with Given/When/Then criteria. Bigger → propose a split into several features (same epic, linked via **Depends on**).
-- Next ID: `fdoc.sh next-id`. Create: `fdoc.sh new feature "F<n> – <title>" <file>`, then `fdoc.sh status <issue> plan draft`. Add it to its epic's checklist.
+- Next ID: `fdoc.sh next-id`. Create: `fdoc.sh new feature "F<n> – <title>" <file>`, then `fdoc.sh status <issue> plan draft` and `fdoc.sh link <epic> <issue>` (the feature becomes a sub-issue of its epic). Ask which epic if it isn't clear; a feature without an epic is fine for small extras.
 
 ## 5. Questions or approval
 - Open items → Questions section, `fdoc.sh status <issue> plan questions`, label `needs-answer`; stop: "Answer on the issue or here, then `/fbrainstorm F<n>`."
