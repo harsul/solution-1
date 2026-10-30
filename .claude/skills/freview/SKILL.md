@@ -15,7 +15,7 @@ Feature from the branch `feature/F<n>-...` → `fdoc.sh find F<n>`. Default scop
 
 ## 2. Independent reviews (in parallel, one message)
 Give each agent the scope, the issue number and `CLAUDE.md` – **never** the implementer's reasoning or your opinion:
-- **reviewer** (`.claude/agents/reviewer.md`), always; at the last phase also a security pass over the whole feature;
+- **reviewer** (`.claude/agents/reviewer.md`), always; at the end of a feature also a security pass over the whole feature (see **Review depth** in `/fdeliver`: risky phases are reviewed each, others once per feature);
 - **designer** UI review if frontend files changed;
 - **cloudops** ops review if AppHost, configuration, migrations, `infra/` or workflows changed.
 Also run the built-in `code-review` (and `security-review` at the last phase or for `branch`) without `--fix`/`--comment`, when available; otherwise note it and tell the user to run them.
