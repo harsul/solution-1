@@ -19,15 +19,14 @@ Input: $ARGUMENTS
 Branch `fix/<issue>-<kebab-name>` from an up-to-date `main`. Start the **developer** agent to write a **failing test** that shows the bug (API test, unit test or page test – the lowest level that shows it) and run it to see it fail. Can't reproduce → report what was tried, comment on the issue, stop.
 
 ## 3. Fix
-The **developer** agent fixes the root cause (not the symptom), keeps the new test, adds tests for close variants, formats and runs `/fcommit check`. Look for the same bug elsewhere (same pattern in other endpoints or pages) and fix those too, or list them.
+The **developer** agent fixes the root cause (not the symptom), keeps the new test, adds tests for close variants, runs all checks and commits (`fix(<scope>): …`, `Refs: #<issue>`; the failing test and the fix may be one commit). Look for the same bug elsewhere (same pattern in other endpoints or pages) and fix those too, or list them.
 
 ## 4. Review
-Start the **reviewer** agent on `git diff main...HEAD` plus uncommitted changes with the issue number (and the **designer**/**cloudops** reviews if UI or infrastructure changed). Verify the findings yourself; the developer fixes all must and should findings; `/fcommit check` again.
+Start the **reviewer** agent on `git diff main...HEAD` with the issue number (and the **designer**/**cloudops** reviews if UI or infrastructure changed). Verify the findings yourself; the developer fixes all must and should findings, runs all checks and commits the fixes as new commits.
 
 ## 5. Record and ship
 - `fdoc.sh set <issue> fix <file>`: cause, fix, tests added, related places checked, review findings fixed/skipped.
 - Check the **Definition of Done** in `CLAUDE.md`. If the bug revealed a non-obvious trap, add it to `CLAUDE.md` → **Gotchas**.
-- `/fcommit auto` (`fix(<scope>): …`, `Refs: #<issue>`).
 - Push and open a PR with `Fixes #<issue>` (both need the stakeholder's permission); don't merge unless asked.
 
 Report: cause in one sentence, the fix, tests, review notes, PR link.

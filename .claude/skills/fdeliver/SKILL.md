@@ -45,22 +45,21 @@ When all are back, the **architect** folds design and ops into the final spec. T
 - **Spec gate:** summary → Approve / Request changes. On approve: `spec approved`.
 - After the spec gate everything runs without asking, except a **real decision** (product behaviour, irreversible step, security trade-off, cost), or when a later feature's spec no longer fits what was built – then the architect updates it and you ask.
 
-## 4. Build one feature: per phase implement → review → fix → commit
+## 4. Build one feature: per phase implement + commit → review → fix + commit
 1. **Branch** (first phase): `feature/F<n>-<kebab-name>` from an up-to-date `main` (after the PRs it depends on are merged, or stacked on their branch if not yet); write it into the spec header; `spec in-progress`.
-2. **developer** agent implements phase k. Questions → step 3, then resume.
-3. **Reviews** (in parallel, independent: scope + issue, never the developer's reasoning) – see **Review depth** below:
+2. **developer** agent implements phase k, runs all checks and **commits** (it owns verify + commit; never pushes). It returns the phase's commit range. Questions → step 3, then resume.
+3. **Reviews** (in parallel, independent: the commit range or `git diff main...HEAD` + the issue, never the developer's reasoning) – see **Review depth** below:
    - **reviewer**;
    - **designer** UI review if the frontend changed;
    - **cloudops** ops review if AppHost, configuration, migrations, infra or workflows changed;
    - the built-in `/code-review` and, at the end of the feature, `/security-review` when available (note it when not).
-4. **Verify the findings** against the code; drop false positives. The **developer** fixes all must and should findings with tests (consider-items when cheap); `/fcommit check`.
+4. **Verify the findings** against the code; drop false positives. The **developer** fixes all must and should findings with tests (consider-items when cheap), runs all checks and commits the fixes as new commits.
 5. **Record** `fdoc.sh set <issue> review-p<k> <file>` (or `review` for a feature-end review): fixed / skipped with reason; tick the phase in the plan.
-6. **Definition of Done** (`CLAUDE.md`) met, otherwise back to 4.
-7. **Commit** with `/fcommit auto` (`Refs: F<n> (#<issue>)`).
+6. **Definition of Done** (`CLAUDE.md`) met, otherwise back to 4. The working tree is clean after every phase (`git status`); if not, the developer commits or explains what's left.
 
 ### Review depth
 - **Every phase** gets a review when it touches authentication, authorization or tenant data, payments, personal data, infrastructure/CI, or database migrations.
-- **Otherwise** the phases are committed after `/fcommit check` and the Definition of Done, and the feature gets **one review at the end** over `git diff main...HEAD`.
+- **Otherwise** the developer's verified commits stand, and the feature gets **one review at the end** over `git diff main...HEAD`.
 - The **last review of every feature** always includes the security pass over the whole feature.
 - A 1-phase feature has exactly one review.
 
