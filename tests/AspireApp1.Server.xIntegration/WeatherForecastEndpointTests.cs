@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using AspireApp1.Server.xIntegration.TestDoubles;
 
 namespace AspireApp1.Server.xIntegration;
 
@@ -8,9 +9,9 @@ public class WeatherForecastEndpointTests(ServerFactory factory) : IClassFixture
     private sealed record ForecastDto(DateOnly Date, int TemperatureC, int TemperatureF, string? Summary);
 
     [Fact]
-    public async Task Get_returns_five_future_forecasts()
+    public async Task Get_returns_five_future_forecasts_when_signed_in()
     {
-        var client = factory.CreateClient();
+        var (client, _) = await AuthHelpers.SignedInClientAsync(factory);
         var ct = TestContext.Current.CancellationToken;
 
         var response = await client.GetAsync("/api/weatherforecast", ct);
@@ -26,6 +27,17 @@ public class WeatherForecastEndpointTests(ServerFactory factory) : IClassFixture
             Assert.InRange(f.TemperatureC, -20, 54);
             Assert.False(string.IsNullOrWhiteSpace(f.Summary));
         });
+    }
+
+    [Fact]
+    public async Task Get_without_a_session_returns_401_not_a_redirect()
+    {
+        var client = factory.CreateHttpsClient();
+
+        var response = await client.GetAsync("/api/weatherforecast", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Null(response.Headers.Location);
     }
 
     [Fact]

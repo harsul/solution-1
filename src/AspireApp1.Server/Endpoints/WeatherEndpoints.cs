@@ -14,7 +14,8 @@ internal static class WeatherEndpoints
                         Summaries[Random.Shared.Next(Summaries.Length)]))
                     .ToArray())
             .CacheOutput(p => p.Expire(TimeSpan.FromSeconds(5)))
-            .WithName("GetWeatherForecast");
+            .WithName("GetWeatherForecast")
+            .RequireAuthorization();
 
         return app;
     }

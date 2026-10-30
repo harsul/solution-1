@@ -18,7 +18,11 @@ namespace AspireApp1.Server.xIntegration;
 /// </summary>
 public sealed class ServerFactory(PostgresFixture postgres) : WebApplicationFactory<Program>
 {
+    /// <summary>Marker inside the stub index.html, so tests can recognise the SPA fallback.</summary>
+    public const string IndexHtmlMarker = "<!-- test index.html -->";
+
     private readonly string _connectionString = postgres.NewDatabaseConnectionString();
+    private readonly string _webRoot = CreateStubWebRoot();
 
     public TestLoggerProvider Logs { get; } = new();
 
@@ -31,6 +35,7 @@ public sealed class ServerFactory(PostgresFixture postgres) : WebApplicationFact
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:appdb", _connectionString);
+        builder.UseWebRoot(_webRoot);
 
         // Aspire's Redis client requires a connection string; it is never connected to.
         builder.UseSetting("ConnectionStrings:cache", "localhost:6379,abortConnect=false,connectTimeout=100");
@@ -43,6 +48,21 @@ public sealed class ServerFactory(PostgresFixture postgres) : WebApplicationFact
             services.AddSingleton<IOutputCacheStore, NoCacheOutputStore>();
             services.AddTransient<IStartupFilter, ThrowingEndpointStartupFilter>();
         });
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+        Directory.Delete(_webRoot, recursive: true);
+    }
+
+    /// <summary>A wwwroot with just an index.html, standing in for the published React app.</summary>
+    private static string CreateStubWebRoot()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"aspireapp1-wwwroot-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        File.WriteAllText(Path.Combine(path, "index.html"), $"<!doctype html><html><body>{IndexHtmlMarker}</body></html>");
+        return path;
     }
 
     private sealed class NoCacheOutputStore : IOutputCacheStore

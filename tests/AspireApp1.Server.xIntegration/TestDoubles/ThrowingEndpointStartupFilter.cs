@@ -10,7 +10,9 @@ namespace AspireApp1.Server.xIntegration.TestDoubles;
 /// </summary>
 public sealed class ThrowingEndpointStartupFilter : IStartupFilter
 {
-    public const string Path = "/test/throw";
+    // File-like on purpose: the app's SPA fallback (index.html) serves every non-file path that
+    // no endpoint handles, so only a "file" path falls through to this test-only branch.
+    public const string Path = "/test/throw.json";
     public const string SecretMessage = "Sensitive internal detail";
 
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>

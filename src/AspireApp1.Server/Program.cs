@@ -41,6 +41,11 @@ app.MapDefaultEndpoints();
 
 app.UseFileServer();
 
+// The React app (served from wwwroot when published) owns all other paths, e.g. /signin or a
+// bookmarked deep link: serve index.html for them. Unknown /api routes stay a plain 404.
+app.MapFallback("/api/{**path}", () => Results.NotFound());
+app.MapFallbackToFile("index.html");
+
 app.Run();
 
 // Makes Program visible to WebApplicationFactory<Program> in the integration tests.
