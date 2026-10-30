@@ -2,8 +2,8 @@
 id: F2
 title: Forgot password
 plan: docs/plans/F2-2026-10-30-forgot-password.md
-status: In progress
-phase: 1/2
+status: Done
+phase: 2/2
 created: 2026-10-30
 approved: 2026-10-30
 branch: feature/F2-forgot-password
@@ -127,6 +127,12 @@ State and UX: both pages use `AuthCard`, disabled submit while busy, light/dark,
 - Phase 1: reset links keep `@` unencoded in `email=` (`QueryHelpers` leaves it as is; it is valid in a query string). The frontend reads it with `URLSearchParams`, so both forms work.
 - Phase 1: a malformed or empty email returns **400** ValidationProblem (`email`: "Enter a valid email address.") before any lookup, so it reveals nothing about accounts; the page also blocks it client-side.
 - Phase 1: the Forgot password page shows a generic "Something went wrong" alert for unexpected errors (500/network), separate from the 429 message.
+- Phase 2: no test clock exists for Identity's token provider or lockout, so expiry is tested with the configured lifespan (`Reset_links_are_valid_for_1_hour`) plus a shrunk lifetime (`Expired_reset_link_is_rejected_as_InvalidToken`), and the lock is run out by setting `LockoutEnd` in the past through `UserManager`.
+- Phase 2: the Set new password page shows the account's email and a hidden `username` field, so password managers save the new password for the right account.
+- Phase 2: other 400 errors from the built-in reset (password rules the client doesn't check) are shown as a list; unexpected errors show "Something went wrong".
+- Phase 2 (review fix): `/forgot-password` is **no longer guest-only**, so a signed-in user with an expired link can request a new one (the page is neutral, so this is harmless).
+- Phase 2 (review fix): if signing out after the change fails, the page says "Your password was changed. Please sign out and sign in again…" instead of silently landing on the home page.
+- Phase 2: an expired or used link is detected on **submit**, not on open: Identity has no endpoint to check a reset code without using it. Incomplete links show the expired view on open.
 
 ## Review log
 - 2026-10-30, Phase 1 (independent reviewer; `/code-review` and `/security-review` not available in this session, run them locally):
@@ -135,3 +141,9 @@ State and UX: both pages use `AuthCard`, disabled submit while busy, light/dark,
   - Fixed 🟡 3: test `Forgot_returns_200_when_email_delivery_fails`.
   - Fixed 🟡 4: test `Reset_link_is_accepted_by_the_built_in_reset_once` (link round-trip + single use); the 1-hour expiry test stays in Phase 2.
   - Fixed 🔵 5 (comment only: change-email also uses the default 1 h provider; not offered by the app), 🔵 6 stale comment, 🔵 7 duplicate test removed (kept and renamed the F3 one), 🔵 8 logger category, 🔵 9 frontend tests for 400 and 500.
+- 2026-10-30, Phase 2 + whole-feature security pass (independent reviewer; `/code-review` and `/security-review` not available in this session, run them locally). No 🔴.
+  - Fixed 🟡 1: "Request a new link" was a dead end for signed-in users (`/forgot-password` was guest-only); test added.
+  - Fixed 🟡 2: a failed sign-out after the change lost the success message; now shown on the page; test added (mutation-checked).
+  - Fixed 🔵 4 page title "Set a new password", 🔵 5 rule assertion in the page test, 🔵 7 test that unknown/unconfirmed emails get the same `InvalidToken` as a bad code, 🔵 9 stale "not available yet" log wording.
+  - Recorded 🔵 3: expiry is detected on submit (see Changes).
+  - Skipped 🔵 6 (navigation after leaving the page mid-request; rare and harmless), 🔵 8 (rate limit on `/resetPassword`: codes aren't guessable and invalid codes do no hashing), 🔵 10 (reset code stays in browser history until used or expired, ≤ 1 hour; cross-origin referrers carry only the origin). Candidates for a later hardening task.
