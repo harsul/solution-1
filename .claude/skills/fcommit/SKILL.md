@@ -1,6 +1,6 @@
 ---
 name: fcommit
-description: Verify and commit your own manual changes. Runs all checks (format, build, server and frontend tests, lint, frontend build) and, when they pass, commits as a few logical Conventional Commits. `check` only verifies. Inside /fdeliver and /ffix the developer agent follows the same rules itself. Never pushes.
+description: Verify and commit your own manual changes. Runs all checks (format, build, server and frontend tests, lint, frontend build) and, when they pass, commits as a few logical Conventional Commits. `check` only verifies. Inside /fwork and /ffix the developer agents follow the same rules themselves. Never pushes.
 argument-hint: "[check [server|frontend] | auto] [note about the changes]"
 effort: low
 ---
@@ -9,7 +9,7 @@ effort: low
 
 Arguments: $ARGUMENTS
 - `check [server|frontend]` → only step 1 (verify) and the report; no commit, no fixes.
-- `auto` → verify and commit without asking (the developer agent follows this mode inside `/fdeliver` and `/ffix`).
+- `auto` → verify and commit without asking (the developer agents follow this mode inside `/fwork` and `/ffix`).
 - otherwise → verify, then show the commit proposal and ask.
 
 ## 1. Verify

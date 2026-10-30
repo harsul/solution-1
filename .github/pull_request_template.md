@@ -1,6 +1,6 @@
 ## What and why
 
-<!-- One or two sentences. Closes #<feature issue> / Fixes #<bug issue> -->
+<!-- One or two sentences. Closes #<task> / Fixes #<bug> -->
 
 ## Changes
 
@@ -13,8 +13,9 @@
 ## Checklist (Definition of Done in CLAUDE.md)
 
 - [ ] Acceptance criteria tested; key safeguards mutation-checked
-- [ ] `/fverify` passes (format, build, tests, lint)
-- [ ] UI: states, accessibility, 390 px, dark mode
-- [ ] Security: authorization, no secrets or personal data in logs
-- [ ] Ops: config, secrets, migrations noted; CI covers it
-- [ ] Reviewed (reviewer agent; designer / CloudOps where relevant); review recorded on the issue
+- [ ] `/fcommit check` passes (format, build, tests, lint, frontend build)
+- [ ] UI: states, accessibility, Quality bar (screen sizes, dark mode) from docs/product.md
+- [ ] Security: authorization and tenant scope, no secrets or personal data in logs
+- [ ] Ops: config, secrets, migrations noted; the pipeline covers it
+- [ ] QA and review (code + security; designer / CloudOps where relevant) recorded on the task
+- [ ] Rebased on the latest base branch

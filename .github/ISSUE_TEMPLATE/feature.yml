@@ -1,5 +1,5 @@
 name: Feature idea
-description: Suggest something new; the product owner turns it into a plan
+description: Suggest something new; the product owner turns it into an epic (/fepic)
 title: "Idea: "
 body:
   - type: textarea
@@ -18,4 +18,4 @@ body:
     id: epic
     attributes:
       label: Related epic
-      description: e.g. "#12 Organizations", if you know it.
+      description: e.g. "#12 Organizations" if it belongs to an existing epic.
