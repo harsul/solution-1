@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.4" />
     <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.6.4" />
+    <PackageReference Include="MailKit" Version="4.18.2" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
@@ -26,5 +27,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="AspireApp1.Server.xUnit" />
+    <InternalsVisibleTo Include="AspireApp1.Server.xIntegration" />
   </ItemGroup>
 </Project>

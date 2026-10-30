@@ -1,6 +1,7 @@
 using AspireApp1.Server;
 using AspireApp1.Server.Auth;
 using AspireApp1.Server.Data;
+using AspireApp1.Server.Email;
 using AspireApp1.Server.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,7 @@ builder.AddNpgsqlDbContext<AppDbContext>("appdb");
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.AddAppIdentity();
+builder.AddAppEmail();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

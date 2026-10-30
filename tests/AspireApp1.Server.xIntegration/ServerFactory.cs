@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using AspireApp1.Server.Email;
 using AspireApp1.Server.xIntegration.TestDoubles;
 
 namespace AspireApp1.Server.xIntegration;
@@ -24,7 +25,13 @@ public sealed class ServerFactory(PostgresFixture postgres) : WebApplicationFact
     private readonly string _connectionString = postgres.NewDatabaseConnectionString();
     private readonly string _webRoot = CreateStubWebRoot();
 
+    /// <summary>Public URL the app uses for links in emails during tests.</summary>
+    public const string PublicUrl = "https://app.test";
+
     public TestLoggerProvider Logs { get; } = new();
+
+    /// <summary>Emails the app sent (instead of delivering them to Mailpit).</summary>
+    public CapturingEmailDelivery Emails { get; } = new();
 
     /// <summary>
     /// A client that talks HTTPS, so the Secure auth cookie is sent back on later requests.
@@ -36,6 +43,7 @@ public sealed class ServerFactory(PostgresFixture postgres) : WebApplicationFact
     {
         builder.UseSetting("ConnectionStrings:appdb", _connectionString);
         builder.UseWebRoot(_webRoot);
+        builder.UseSetting("App:PublicUrl", PublicUrl);
 
         // Aspire's Redis client requires a connection string; it is never connected to.
         builder.UseSetting("ConnectionStrings:cache", "localhost:6379,abortConnect=false,connectTimeout=100");
@@ -47,6 +55,8 @@ public sealed class ServerFactory(PostgresFixture postgres) : WebApplicationFact
             services.RemoveAll<IOutputCacheStore>();
             services.AddSingleton<IOutputCacheStore, NoCacheOutputStore>();
             services.AddTransient<IStartupFilter, ThrowingEndpointStartupFilter>();
+            services.RemoveAll<IEmailDelivery>();
+            services.AddSingleton<IEmailDelivery>(Emails);
         });
     }
 
