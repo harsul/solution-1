@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { apiFetch, setUnauthorizedHandler } from './apiFetch';
 
-const respondWith = (status: number) => vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status })));
+const respondWith = (status: number) =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(null, { status })),
+  );
 
 describe('apiFetch', () => {
   it('reports a 401 to the current handler', async () => {
@@ -26,7 +30,7 @@ describe('apiFetch', () => {
     unsubscribe();
   });
 
-  it("a late unsubscribe of an old handler keeps the newer one", async () => {
+  it('a late unsubscribe of an old handler keeps the newer one', async () => {
     const oldHandler = vi.fn();
     const newHandler = vi.fn();
     const unsubscribeOld = setUnauthorizedHandler(oldHandler);

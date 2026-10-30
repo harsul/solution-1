@@ -64,7 +64,13 @@ export default function SignInPage() {
           onChange={(e) => setPassword(e.target.value)}
           fullWidth
         />
-        <Link component={RouterLink} to="/forgot-password" state={{ from }} variant="body2" sx={{ alignSelf: 'flex-end', mt: -1 }}>
+        <Link
+          component={RouterLink}
+          to="/forgot-password"
+          state={{ from }}
+          variant="body2"
+          sx={{ alignSelf: 'flex-end', mt: -1 }}
+        >
           Forgot password?
         </Link>
         <FormControlLabel

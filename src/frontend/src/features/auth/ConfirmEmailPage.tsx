@@ -68,7 +68,8 @@ export default function ConfirmEmailPage() {
   return (
     <AuthCard title="This link is no longer valid">
       <Typography>
-        Confirmation links work for 24 hours. {signedIn ? 'Get a new one below.' : 'Sign in and use "Resend email" to get a new one.'}
+        Confirmation links work for 24 hours.{' '}
+        {signedIn ? 'Get a new one below.' : 'Sign in and use "Resend email" to get a new one.'}
       </Typography>
       {state.status === 'signedIn' ? <ResendAndContinue email={state.email} /> : <ContinueButton signedIn={false} />}
     </AuthCard>

@@ -5,8 +5,7 @@ import App from '../../App';
 import { fakeApi, fakeAuthBackend, json, status } from '../../test/fakeApi';
 import { renderWithProviders } from '../../test/render';
 
-const openDialog = async () =>
-  userEvent.click(await screen.findByRole('button', { name: 'Sign out other devices' }));
+const openDialog = async () => userEvent.click(await screen.findByRole('button', { name: 'Sign out other devices' }));
 
 describe('SignOutOthersSection', () => {
   it('signs out the other devices after confirming and stays signed in', async () => {

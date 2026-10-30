@@ -105,7 +105,9 @@ function SessionBanner() {
     >
       {/* Only the message is a live region; the countdown on the button isn't announced every second. */}
       <Box component="span" role="status">
-        {feedback ? message[feedback] : 'Please confirm your email address. We sent you a link when you created your account.'}
+        {feedback
+          ? message[feedback]
+          : 'Please confirm your email address. We sent you a link when you created your account.'}
       </Box>
     </Alert>
   );

@@ -1,12 +1,9 @@
 import { apiFetch } from '../../api/apiFetch';
 
 export type ChangePasswordResult =
-  | { ok: true }
-  | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'rules'; errors: string[] };
+  { ok: true } | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'rules'; errors: string[] };
 
-export type DeleteAccountResult =
-  | { ok: true }
-  | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'emailMismatch' };
+export type DeleteAccountResult = { ok: true } | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'emailMismatch' };
 
 export type ChangeEmailResult =
   | { ok: true }
@@ -86,7 +83,11 @@ export async function changeEmail(newEmail: string, password: string): Promise<C
 export type ConfirmEmailChangeResult = 'changed' | 'invalid' | 'inUse';
 
 /** Applies a change-email link. Works signed in or not. */
-export async function confirmEmailChange(userId: string, email: string, code: string): Promise<ConfirmEmailChangeResult> {
+export async function confirmEmailChange(
+  userId: string,
+  email: string,
+  code: string,
+): Promise<ConfirmEmailChangeResult> {
   const response = await apiFetch('/api/account/email/confirm', postJson({ userId, email, code }));
   if (response.ok) return 'changed';
   if (response.status === 400) {

@@ -50,7 +50,9 @@ describe('ForgotPasswordPage', () => {
     await userEvent.type(await screen.findByLabelText('Email'), 'ada@example.com');
     await userEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Too many requests. Please wait a few minutes and try again.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Too many requests. Please wait a few minutes and try again.',
+    );
   });
 
   it.each([
