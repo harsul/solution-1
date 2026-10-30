@@ -13,8 +13,12 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 | `tests/AspireApp1.Server.xIntegration` | API tests: server in memory via `WebApplicationFactory<Program>` (`ServerFactory`) |
 | `tests/*/TestDoubles/` | Hand-written test doubles (`TestLogger`, `TestLoggerProvider`, `ThrowingEndpointStartupFilter`) |
 | `src/frontend/src/**/*.test.tsx` | Frontend tests (Vitest + Testing Library, jsdom) |
-| `docs/plans` | Feature plans (product owner, `/fbrainstorm`) |
-| `docs/specs` | Technical specs (architect, `/fplan`) |
+| `docs/roadmap.md` | Product vision and epics (product owner, `/froadmap`) |
+| `docs/design/` | Design system (designer) |
+| `docs/architecture/` | Architecture decision records (architect) |
+| `docs/ops/` | Environments, runbooks, secrets inventory (CloudOps) |
+| `docs/plans`, `docs/specs` | Archive of F1–F5 (newer features live on GitHub Issues) |
+| `.claude/agents/`, `.claude/skills/`, `.claude/scripts/fdoc.sh` | The team: role agents, `/f*` commands, GitHub Issues helper |
 
 ## Commands
 
@@ -25,46 +29,66 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 - Frontend checks: `npm --prefix src/frontend run lint`, `npm --prefix src/frontend test`, `npm --prefix src/frontend run build`
 - **All checks at once: `/fverify`** (used by `/fimplement`, `/freview` and `/fcommit`)
 
-## Feature workflow
+## Team workflow
 
-| Step | Role | Does | Writes |
+We build a **SaaS starter platform** that any kind of business can start from. The work is done by a team of role agents (`.claude/agents/`), tracked on **GitHub Issues**, and run end to end by `/fdeliver`.
+
+### Team
+
+| Role | Agent | Owns | Writes |
 |---|---|---|---|
-| `/fbrainstorm <idea \| F<n>>` | Product owner | Product Q&A, splits big features, approves the plan | `docs/plans/` |
-| `/fplan [F<n>]` | Software architect | Studies the code, asks architecture questions, approves the spec | `docs/specs/`, Conventions below |
-| `/fimplement [F<n>]` | Developer | Picks an Approved spec, creates the branch, implements **one phase** | code, tests |
-| `/freview [branch]` | Code reviewer | Independent review, fixes only what you approve | Review log in the spec |
-| `/fcommit` | – | Verifies, then logical Conventional Commits after confirmation; never pushes | commits |
-| `/fverify [server\|frontend]` | – | Build, test and lint with a pass/fail table; called by the skills above | – |
-| `/foptions [skill]` | – | Lists all workflow skills, where you are, and the suggested next command | – |
+| Product owner | `product-owner` | roadmap, epics, feature plans, acceptance criteria | `docs/roadmap.md`, issue bodies, `plan:*` labels |
+| Designer | `designer` | flows, screen states, copy, accessibility, design system, UI review | `design` section, `docs/design/` |
+| Software architect | `architect` | specs, conventions, decision records | `spec` section, `spec:*` labels, `CLAUDE.md` Conventions, `docs/architecture/` |
+| CloudOps | `cloudops` | Azure Container Apps, AppHost, CI/CD, secrets, migrations, monitoring, cost, ops review | `ops` section, AppHost, `infra/`, `.github/workflows/`, `docs/ops/` |
+| Developer | `developer` | one phase at a time, with tests | code, tests, "Changes during implementation" |
+| Code reviewer | `reviewer` | independent code + security review (read-only) | findings only |
+| Delivery lead | you, via `/fdeliver` | runs the team, batches questions, gates, commits, PR | `review-p<k>` sections, commits |
 
-Loop per phase: `fimplement → freview → fcommit`.
+Subagents can't talk to the stakeholder: they return questions, and the delivery lead asks them in one batch.
 
-### Features, files and branches
+### Commands
 
-- Feature ID: `F<n>`, numbered sequentially and never reused. A feature has at most 3 phases; bigger ones are split into several IDs.
-- Plan: `docs/plans/F<n>-<YYYY-MM-DD>-<name>.md`. Spec: the same file name in `docs/specs/`.
-- Branch: `feature/F<n>-<name>`, created by the developer when implementation starts. Commits end with `Refs: F<n>`.
+| Command | Role | Does |
+|---|---|---|
+| `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → `docs/roadmap.md` + epic issues |
+| `/fdeliver F<n> \| epic #<n> \| "idea"` | Delivery lead | Whole team run: plan gate → design ∥ spec ∥ ops → spec gate → per phase implement → reviews → fixes → commit → PR |
+| `/fbrainstorm <idea \| F<n>>` | Product owner | Interactive plan for one feature |
+| `/fdesign F<n> \| system \| review F<n>` | Designer | Design section, design system, or UI review from screenshots |
+| `/fops F<n> \| ci \| deploy \| review` | CloudOps | Ops section, or delivery work (CI/CD, deployment, environments) |
+| `/fplan [F<n>]` | Architect | Interactive spec, conventions, ADRs |
+| `/fimplement [F<n>]` | Developer | One phase on the feature branch |
+| `/freview [branch]` | Reviewer (+ Designer, CloudOps) | Independent reviews, verified findings, fixes, review record |
+| `/fcommit [auto]` | – | Verifies, then logical Conventional Commits; never pushes |
+| `/fverify [server\|frontend]` | – | Build, test, lint table |
+| `/foptions [name]` | – | Team, commands, where you are, next command |
 
-### Statuses (frontmatter `status:`)
+Gates: the stakeholder approves the **plan** and the **spec**; after that `/fdeliver` runs on its own and only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
 
-| Plan (PO) | Spec (Architect → Developer) |
-|---|---|
-| Draft → Questions → **Approved** → Done | Draft → Questions → **Approved** → In progress → Done |
+### Work items on GitHub Issues
 
-- Only an **Approved** plan can be specified, and only an **Approved** spec can be implemented.
-- Open questions live in the file's **Questions** section with `_pending_` answers. Answer them in the file or in chat, then re-run the owning skill (`/fbrainstorm F<n>` for plans, `/fplan F<n>` for specs).
-- Questions flow upstream: Developer → spec → Architect; Architect (product issue) → plan → PO.
+All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in; run `fdoc.sh init-labels` once).
+
+- **Epic:** issue `Epic: <name>`, label `type:epic`; body = goal, success criteria, checklist of features.
+- **Feature:** issue `F<n> – <title>`, label `type:feature`; **body = plan**. `F<n>` is sequential and never reused (`fdoc.sh next-id`). At most 3 phases; bigger → several features.
+- **Sections** = one comment each, updated in place: `design`, `ops`, `spec`, `review-p<k>`.
+- **Status labels:** `plan:draft → questions → approved → done`, `spec:draft → questions → approved → in-progress → done`, plus `needs-answer` while waiting for the stakeholder.
+- **Branch** `feature/F<n>-<name>` (CloudOps work: `ops/<name>`); commits end with `Refs: F<n> (#<issue>)`; one PR per feature with `Closes #<issue>`.
+- Questions flow upstream: Developer → spec (Architect) → plan (PO) → stakeholder.
+- F1–F5 were built before this setup; their plans and specs stay in `docs/plans` and `docs/specs` as an archive.
 
 ## Principles
 
 - Keep it simple: no new layers, libraries or abstractions unless the feature needs them or they are listed under Conventions.
 - Features are small vertical slices: API + UI + tests. Every phase leaves the solution building and the tests passing.
-- Code is never committed to `main` directly (plans and specs may be). Never push without being asked.
+- Code is never committed to `main` directly (roadmap, docs and `.claude/` may be). Never push without being asked.
 
 ## Conventions
 
 Decided conventions. `/fplan` adds to this list when you answer an architecture question, so it is not asked again.
 
+- Work tracking: GitHub Issues through `.claude/scripts/fdoc.sh` (epics, features `F<n>`, sections, status labels); one PR per feature.
+- Hosting: Azure Container Apps, deployed from the Aspire AppHost (`aspire publish`/azd); CI/CD with GitHub Actions using OIDC federated credentials; secrets in Key Vault / Container Apps secrets, never in the repo.
 - Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.
 - Database: PostgreSQL via Aspire (`appdb`, pgAdmin in dev) with EF Core; DbContext, migrations and DB helpers in `Data/`. Migrations apply automatically at startup in Development only. Create them with `dotnet ef migrations add <Name> -o Data/Migrations` (local tool).
 - Auth: ASP.NET Core Identity with cookie sessions (same origin, `HttpOnly`, `SameSite=Strict`); API returns 401/403, never redirects. Protect endpoints with `.RequireAuthorization()`.
