@@ -19,7 +19,7 @@ Input: $ARGUMENTS
   - `F<n>` → `fdoc.sh find F<n>`; `#<n>` → that issue;
   - `epic #<n>` → `fdoc.sh children <n>`: the first open feature whose dependencies are done (in-progress first); if no open feature is left, ask the product owner agent to propose the next one from the epic's planned features;
   - an idea → new feature (step 1).
-- Resume from the issue's labels: `plan:approved` without spec → step 2; `spec:approved`/`spec:in-progress` → step 4 at the next unchecked phase; `*:questions` → collect answers (step 3) first.
+- Resume from the issue's labels: `plan:draft` (e.g. a draft from `/froadmap`) → step 1, the product owner completes the plan in the issue; `plan:approved` without spec → step 2; `spec:approved`/`spec:in-progress` → step 4 at the next unchecked phase; `*:questions` → collect answers (step 3) first.
 
 ## 1. Plan (product owner)
 Start the **product-owner** agent with the idea or issue, the epic, related features and `docs/roadmap.md`. It creates or updates the feature issue (`F<next-id> – <title>`, body = plan) and returns questions. Then go to the **plan gate** (step 3).
