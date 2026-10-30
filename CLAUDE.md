@@ -33,6 +33,7 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Vite 8 / TypeScript fro
 | `/freview [branch]` | Code reviewer | Independent review, fixes only what you approve | Review log in the spec |
 | `/fcommit` | – | Verifies, then logical Conventional Commits after confirmation; never pushes | commits |
 | `/fverify [server\|frontend]` | – | Build, test and lint with a pass/fail table; called by the skills above | – |
+| `/foptions [skill]` | – | Lists all workflow skills, where you are, and the suggested next command | – |
 
 Loop per phase: `fimplement → freview → fcommit`.
 
