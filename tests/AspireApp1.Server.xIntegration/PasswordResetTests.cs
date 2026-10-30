@@ -1,9 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using AspireApp1.Server.xIntegration.TestDoubles;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.WebUtilities;
 using static AspireApp1.Server.xIntegration.TestDoubles.AuthHelpers;
 using static AspireApp1.Server.xIntegration.TestDoubles.EmailHelpers;
@@ -125,20 +128,131 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
         Assert.Equal(email, QueryHelpers.ParseQuery(link.Query)["email"]);
     }
 
+    private const string NewPassword = "N3wPassw0rd!";
+
+    /// <summary>Requests a reset for <paramref name="email"/> on <paramref name="client"/> and returns the link's values.</summary>
+    private async Task<(string Email, string Code)> ResetLinkAsync(HttpClient client, string email)
+    {
+        (await ForgotAsync(client, email)).EnsureSuccessStatusCode();
+        var query = QueryHelpers.ParseQuery(LinkIn(factory.Emails.SentTo(email).Last().TextBody).Query);
+        return (query["email"].ToString(), query["code"].ToString());
+    }
+
+    private static Task<HttpResponseMessage> ResetAsync(HttpClient client, (string Email, string Code) link, string newPassword = NewPassword) =>
+        client.PostAsJsonAsync("/api/auth/resetPassword", new { email = link.Email, resetCode = link.Code, newPassword }, Ct);
+
+    private static async Task<string[]> ErrorCodesAsync(HttpResponseMessage response)
+    {
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        return json.RootElement.GetProperty("errors").EnumerateObject().Select(e => e.Name).ToArray();
+    }
+
     [Fact]
-    public async Task Reset_link_is_accepted_by_the_built_in_reset_once()
+    public async Task Reset_with_link_values_changes_the_password()
     {
         var client = factory.CreateHttpsClient();
         var email = await RegisterConfirmedAsync(factory, client);
-        await ForgotAsync(client, email);
-        var query = QueryHelpers.ParseQuery(LinkIn(factory.Emails.SentTo(email).Last().TextBody).Query);
-        var body = new { email = query["email"].ToString(), resetCode = query["code"].ToString(), newPassword = "N3wPassw0rd!" };
 
-        var first = await client.PostAsJsonAsync("/api/auth/resetPassword", body, Ct);
-        var second = await client.PostAsJsonAsync("/api/auth/resetPassword", body, Ct);
+        var response = await ResetAsync(client, await ResetLinkAsync(client, email));
 
-        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email, NewPassword)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Reset_link_works_only_once()
+    {
+        var client = factory.CreateHttpsClient();
+        var email = await RegisterConfirmedAsync(factory, client);
+        var link = await ResetLinkAsync(client, email);
+        (await ResetAsync(client, link)).EnsureSuccessStatusCode();
+
+        var second = await ResetAsync(client, link, "An0therPassw0rd!");
+
         Assert.Equal(HttpStatusCode.BadRequest, second.StatusCode);
+        Assert.Contains("InvalidToken", await ErrorCodesAsync(second));
+    }
+
+    [Fact]
+    public async Task Reset_for_unknown_or_unconfirmed_email_looks_like_a_bad_code()
+    {
+        var client = factory.CreateHttpsClient();
+        var unconfirmed = NewEmail();
+        await RegisterAsync(client, unconfirmed);
+
+        foreach (var email in new[] { NewEmail(), unconfirmed })
+        {
+            var response = await ResetAsync(client, (email, "bm90LWEtdG9rZW4"));
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(["InvalidToken"], await ErrorCodesAsync(response));
+        }
+    }
+
+    [Fact]
+    public void Reset_links_are_valid_for_1_hour()
+    {
+        var options = factory.Services.GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>().Value;
+
+        Assert.Equal(TimeSpan.FromHours(1), options.TokenLifespan);
+    }
+
+    [Fact]
+    public async Task Expired_reset_link_is_rejected_as_InvalidToken()
+    {
+        // Identity's token provider has no test clock, so shrink the lifetime and let it pass.
+        await using var shortLived = factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
+            s.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromMilliseconds(1))));
+        var client = shortLived.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var email = await RegisterConfirmedAsync(factory, factory.CreateHttpsClient());
+        var link = await ResetLinkAsync(client, email);
+        await Task.Delay(TimeSpan.FromMilliseconds(50), Ct);
+
+        var response = await ResetAsync(client, link);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("InvalidToken", await ErrorCodesAsync(response));
+    }
+
+    [Theory]
+    [InlineData("short1", "PasswordTooShort")]
+    [InlineData("nodigitshere", "PasswordRequiresDigit")]
+    public async Task Reset_with_a_weak_password_returns_the_rule_code(string newPassword, string expectedCode)
+    {
+        var client = factory.CreateHttpsClient();
+        var email = await RegisterConfirmedAsync(factory, client);
+
+        var response = await ResetAsync(client, await ResetLinkAsync(client, email), newPassword);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains(expectedCode, await ErrorCodesAsync(response));
+    }
+
+    [Fact]
+    public async Task Reset_does_not_lift_lockout_until_it_expires()
+    {
+        var client = factory.CreateHttpsClient();
+        var email = await RegisterConfirmedAsync(factory, client);
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            await LoginAsync(client, email, "Wrong-passw0rd");
+        }
+
+        (await ResetAsync(client, await ResetLinkAsync(client, email))).EnsureSuccessStatusCode();
+        var whileLocked = await LoginAsync(factory.CreateHttpsClient(), email, NewPassword);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, whileLocked.StatusCode);
+        Assert.Contains("LockedOut", await whileLocked.Content.ReadAsStringAsync(Ct));
+
+        // Let the lock run out (no test clock in Identity), then the new password works.
+        using (var scope = factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            var user = await users.FindByEmailAsync(email);
+            await users.SetLockoutEndDateAsync(user!, DateTimeOffset.UtcNow.AddSeconds(-1));
+        }
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email, NewPassword)).StatusCode);
     }
 
     [Fact]
