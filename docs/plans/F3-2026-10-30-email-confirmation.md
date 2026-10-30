@@ -45,10 +45,10 @@ Users confirm that the email address on their account is really theirs. This kee
 
 ### Phase 1 – Confirmation email and confirm page
 **Goal:** every new account gets a working confirmation link.
-- [ ] Given I create a new account, when registration succeeds, then a "Confirm your email address" email with a link arrives in the test mailbox, and I'm signed in as before.
-- [ ] Given I open a valid confirmation link, when the page loads, then I see "Email confirmed" with a button to the app (or Sign in when I'm not signed in).
-- [ ] Given my email is already confirmed, when I open the link again, then I still see "Email confirmed".
-- [ ] Given a link older than 24 hours or a tampered link, when I open it, then I see "This link is no longer valid" with a way to get a new one.
+- [x] Given I create a new account, when registration succeeds, then a "Confirm your email address" email with a link arrives in the test mailbox, and I'm signed in as before.
+- [x] Given I open a valid confirmation link, when the page loads, then I see "Email confirmed" with a button to the app (or Sign in when I'm not signed in).
+- [x] Given my email is already confirmed, when I open the link again, then I still see "Email confirmed".
+- [x] Given a link older than 24 hours or a tampered link, when I open it, then I see "This link is no longer valid" with a way to get a new one.
 
 ### Phase 2 – Reminder and resend
 **Goal:** unconfirmed users (new and existing) are reminded and can get the email again.

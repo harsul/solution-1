@@ -2,11 +2,11 @@
 id: F3
 title: Email confirmation
 plan: docs/plans/F3-2026-10-30-email-confirmation.md
-status: Approved
-phase: 0/2
+status: In progress
+phase: 1/2
 created: 2026-10-30
 approved: 2026-10-30
-branch:
+branch: feature/F3-email-confirmation
 ---
 
 # Spec F3 – Email confirmation
@@ -128,7 +128,16 @@ Test infrastructure: `ServerFactory` replaces `IEmailDelivery` with `TestDoubles
 - F2 builds on this: default token provider lifetime 1 h for reset, `/forgotPassword` added to the rate limiter, reset email + "confirm first" email for unconfirmed accounts.
 
 ## Changes during implementation
-- _filled in by /fimplement_
+- Phase 1: Identity's `DataProtectorTokenProvider` has no `TimeProvider` (only the security-stamp validator does), so expiry is tested with the spec's fallback plus a behaviour test: `Confirmation_tokens_are_valid_for_24_hours` (configured lifespan) and `Expired_confirmation_link_returns_401` (lifetime shrunk to 1 ms via `WithWebHostBuilder`, then the link is rejected).
+- Phase 1: the confirm page's "Resend email" button (invalid link, signed in) is already in phase 1, calling the built-in `/resendConfirmationEmail`; phase 2 adds the banner and the rate limit.
+- Phase 1: a "Something went wrong" state on the confirm page for unexpected server errors (500/network), separate from "no longer valid".
+- Phase 1: `InternalsVisibleTo` for the integration test project too (tests read the internal token options).
+- Phase 1 (review fix): links are built by `Email/EmailLinks` (planned for F2, introduced now): it appends to `App:PublicUrl` and keeps any path (`https://example.com/app` → `…/app/confirm-email`). `App:PublicUrl` is validated on start as an absolute http(s) URL with a message naming the setting.
+- Phase 1 (review fix): Mailpit is added **only in run mode**; a published app has no Mailpit, so confirmation emails fail and are logged until a real email provider is configured.
 
 ## Review log
-- _filled in by /freview_
+- **2026-10-30, Phase 1** – independent review: 0 must-fix, 4 should-fix, 5 consider. Confirmed OK: 24 h provider wiring (reset tokens untouched; the expiry test proves it), no host-header injection, HTML-encoded links, no tokens in logs, StrictMode-safe confirm call, no `dotnet ef` breakage from `ValidateOnStart`.
+  - Fixed: (1) link building could throw outside the error handling → inside the `try`, missing `userId`/`code` logged and skipped, `App:PublicUrl` validated properly; (2) a path in `App:PublicUrl` was dropped → `EmailLinks` keeps it, unit tests with/without trailing slash; (3) a confirmed user opening an old link saw "no longer valid" + Resend → shows "Email confirmed"; (4) the delivery-failure test couldn't fail → counts attempts, extra test hosts disposed; (5) the tampered-link test hit a decoding error → changes a character mid-code; (6) Mailpit was published to production → run mode only; (8) startup error now names `App:PublicUrl`; (9) test for the confirm page's error state.
+  - Noted: (7) `/resendConfirmationEmail` is unlimited until phase 2 adds the rate limit, and SMTP timing hints whether an account exists → don't release phase 1 alone; sending email in the background is a later option.
+  - Built-in `/code-review` and `/security-review` not run (not available in this session).
+  - Verified after fixes: server 70/70, frontend 56/56, lint, type check and build clean.
