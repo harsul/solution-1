@@ -6,7 +6,7 @@
 # The name users see (app title, emails, colors) is separate: /finit update (brand.ts, Branding.cs).
 #
 # Run from a clean working tree; review the result with `git status` / `git diff --stat`, then build,
-# test and commit (the /frename skill does all of this).
+# test and commit (/finit does all of this: /finit update name).
 set -euo pipefail
 
 die() { echo "rename: $*" >&2; exit 1; }

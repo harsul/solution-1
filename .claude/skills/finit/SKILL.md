@@ -1,7 +1,7 @@
 ---
 name: finit
-description: Product setup for a new project started from this template. Asks the stakeholder about the product (name, customers, tenancy, sign-in, billing, modules, brand, hosting, compliance, team workflow), writes the product profile docs/product.md that every agent reads, and applies the basics to the code (product name, tagline, brand color). Re-run to update the profile.
-argument-hint: "[update | <topic>]"
+description: The one setup command. For a new project from this template it asks about the product (name, customers, tenancy, sign-in, billing, modules, brand, hosting, compliance, team workflow, ticket IDs), writes the product profile docs/product.md and applies it to the code - code name (solution, projects, namespaces), display name, brand colors, ticket prefix. Re-run any time to change any of it, e.g. /finit update name or /finit update brand.
+argument-hint: "[update [name | brand | tickets | <section>]]"
 disable-model-invocation: true
 effort: high
 ---
@@ -14,7 +14,8 @@ Input: $ARGUMENTS
 
 ## 1. Context (silently)
 - Read `CLAUDE.md`, `docs/product.md` if it exists, `src/frontend/src/theme.ts`, `src/frontend/src/App.tsx` and what is already built (`src/frontend/src/features/`, `src/AspireApp1.Server/Endpoints/`).
-- **Profile exists** → update mode: show a 5-line summary of it and ask which sections to change (or the `<topic>` given); ask only those rounds. **No profile** → all rounds below.
+- **Profile exists** → update mode: show a 5-line summary of it and ask which sections to change (or take the topic given: `name` = code name and/or display name, `brand` = name users see, tagline, colors, `tickets` = ticket prefix, or any profile section); ask only those questions, then apply only those changes (step 5). **No profile** → all rounds below.
+- The current code name is the prefix of `src/*.AppHost` (e.g. `AspireApp1`), the solution is the `*.slnx` file.
 
 ## 2. Free-text basics (in chat, one message)
 Ask in plain text, as one short list, and wait for the answer:
@@ -87,8 +88,10 @@ Name · short name · one sentence · tagline · company/sender · support conta
 Project-wide technical rules that follow from the answers (data region, environments, auto-merge, sign-in providers) also go as one-liners into `CLAUDE.md` → Conventions, replacing the template's defaults where they differ. Replace the first lines of `CLAUDE.md` (title + one-sentence description) with the product's.
 
 ## 5. Apply the basics to the code
-On a branch `chore/finit` from an up-to-date `main`:
-- **Code name** (if it changes): run `.claude/scripts/rename.sh <CodeName>` first (see `/frename`), so the following edits land in the renamed projects.
+Working tree clean (otherwise ask to commit or stash first); a branch `chore/finit` (update mode: `chore/finit-<topic>`) from an up-to-date `main`. Apply only what changed:
+- **Code name** (if it changes) – first, so the following edits land in the renamed projects:
+  - tell the stakeholder in two lines what happens: folders, project files and namespaces move; the local Aspire Postgres starts empty once (its volume is named after the AppHost; migrations recreate the schema; the old volume stays until removed); the IDE must reopen the new `.slnx`;
+  - run `.claude/scripts/rename.sh <CodeName>`; check that `git status` shows renames (not deletions plus additions) and that `git grep -n "<OldName>"` finds nothing outside `docs/plans` and `docs/specs` (the F1–F5 archive keeps its wording).
 - **Ticket IDs**: write `ID_PREFIX` and `ID_START` into `.claude/workflow.conf`.
 - Start the **developer** agent with the profile and these tasks only:
   - `src/frontend/src/brand.ts`: `name`, `tagline`, `primary` (main color), `secondary` (accent; derive a harmonious one if only a main color was given), `defaultMode`. Remove `primaryDark`/`secondaryDark` unless the stakeholder gave dark-mode shades – the theme then derives readable lighter shades, the backgrounds and the app bar gradient from the brand colors.
@@ -96,7 +99,7 @@ On a branch `chore/finit` from an up-to-date `main`:
   - `src/frontend/index.html`: `<title>`.
   - Check contrast: text on `primary` buttons and the app bar gradient must stay readable (WCAG AA); adjust the shades in `brand.ts` if not.
   - Nothing else – modules, sign-in methods, billing and so on become roadmap features, not setup changes.
-Then `fverify`, the **designer** agent reviews the brand change from screenshots (light/dark, 390 px) if the color changed, and `/fcommit auto` (`chore: set up <product name>`). Commit `docs/product.md` and `CLAUDE.md` with it. Leave merging and pushing to the stakeholder.
+Then `fverify` (format, build, all tests, frontend) – fix only what setup broke – the **designer** agent reviews the brand change from screenshots (light/dark, 390 px) if the colors changed, and `/fcommit auto`: a rename as its own commit (`refactor: rename the project to <CodeName>`), then `chore: set up <product name>` (brand, profile, `CLAUDE.md`, `workflow.conf`). Record every change in the profile's Decisions log. Leave merging and pushing to the stakeholder; after a rename tell them to reopen `<CodeName>.slnx`, and that renaming the GitHub repository (Settings → General) and the local folder is optional and separate.
 
 ## 6. Next
-Report: the profile summary, what changed in the code, and the next step – `/froadmap`, which turns the profile's v1 modules and main entities into epics and features without asking the same questions again.
+Report: the profile summary, what changed in the code, and the next step – for a new project `/froadmap`, which turns the profile's v1 modules and main entities into epics and features without asking the same questions again.
