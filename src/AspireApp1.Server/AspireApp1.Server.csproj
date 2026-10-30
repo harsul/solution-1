@@ -17,4 +17,8 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AspireApp1.Server.xUnit" />
+  </ItemGroup>
 </Project>
