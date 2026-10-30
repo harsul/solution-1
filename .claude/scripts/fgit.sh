@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# fdoc.sh – the only way the team reads and writes GitHub Issues (via the gh CLI).
+# fgit.sh – the only way the team reads and writes GitHub Issues (via the gh CLI).
 #
 # Model (see CLAUDE.md → Team workflow):
 #   epic   issue "Epic: <name>", label epic + epic:<draft|approved|planned>; body = the epic (product owner);
@@ -8,33 +8,33 @@
 #          incl. a line "**Blocked by:** #12, #15" (or "–"); label in-progress while a developer works on it;
 #          label ops = infrastructure task (AppHost, infra, workflows), done by CloudOps only
 #   bug    issue from the bug template, label bug; fixed with /ffix
-#   sections  one comment per section, first line "<!-- fdoc:<name> -->" (qa, review, fix), updated in place
+#   sections  one comment per section, first line "<!-- fgit:<name> -->" (qa, review, fix), updated in place
 #   <ID>   ID_PREFIX + number from .claude/workflow.conf, e.g. F6 or ENG-1
 #
 # Usage:
-#   fdoc.sh check                          gh installed, signed in, repo detected
-#   fdoc.sh config [KEY]                   validated settings from .claude/workflow.conf (all, or one value)
-#   fdoc.sh init-labels                    create/refresh the labels (idempotent)
-#   fdoc.sh next-id                        next free task ID, e.g. F6 or ENG-1
-#   fdoc.sh find <ID>                      issue number of the task with that ID (exit 1 if none)
-#   fdoc.sh new epic|task|bug "<title>" <body-file>   create an issue, print its number
-#   fdoc.sh link <epic> <task>             make the task a sub-issue of the epic (idempotent)
-#   fdoc.sh children <epic>                the epic's tasks: "#<n> <state> <labels> <title>"
-#   fdoc.sh ready <epic>                   open tasks nobody works on whose blockers are all closed,
+#   fgit.sh check                          gh installed, signed in, repo detected
+#   fgit.sh config [KEY]                   validated settings from .claude/workflow.conf (all, or one value)
+#   fgit.sh init-labels                    create/refresh the labels (idempotent)
+#   fgit.sh next-id                        next free task ID, e.g. F6 or ENG-1
+#   fgit.sh find <ID>                      issue number of the task with that ID (exit 1 if none)
+#   fgit.sh new epic|task|bug "<title>" <body-file>   create an issue, print its number
+#   fgit.sh link <epic> <task>             make the task a sub-issue of the epic (idempotent)
+#   fgit.sh children <epic>                the epic's tasks: "#<n> <state> <labels> <title>"
+#   fgit.sh ready <epic>                   open tasks nobody works on whose blockers are all closed,
 #                                          best first: "<priority> #<n> <title>" (empty = nothing ready)
-#   fdoc.sh blockers <issue>               "#<n> <state>" for each issue in its "Blocked by" line
-#   fdoc.sh claim <issue> <who>            mark a task in progress (label + comment "Taken by <who>")
-#   fdoc.sh release <issue> [reason]       give a task back (remove the label, comment the reason)
-#   fdoc.sh epic-status <epic> draft|approved|planned   set the epic's status label
-#   fdoc.sh body <issue> / set-body <issue> <file>      read / replace the issue body
-#   fdoc.sh get <issue> <section>          a section comment without its marker (exit 1 if none)
-#   fdoc.sh set <issue> <section> <file>   create or update a section comment
-#   fdoc.sh comment <issue> <file>         add a plain comment (questions, notes)
-#   fdoc.sh comments <issue>               all comments (author, date, body), e.g. to read answers
-#   fdoc.sh labels <issue>                 the issue's labels, one per line
+#   fgit.sh blockers <issue>               "#<n> <state>" for each issue in its "Blocked by" line
+#   fgit.sh claim <issue> <who>            mark a task in progress (label + comment "Taken by <who>")
+#   fgit.sh release <issue> [reason]       give a task back (remove the label, comment the reason)
+#   fgit.sh epic-status <epic> draft|approved|planned   set the epic's status label
+#   fgit.sh body <issue> / set-body <issue> <file>      read / replace the issue body
+#   fgit.sh get <issue> <section>          a section comment without its marker (exit 1 if none)
+#   fgit.sh set <issue> <section> <file>   create or update a section comment
+#   fgit.sh comment <issue> <file>         add a plain comment (questions, notes)
+#   fgit.sh comments <issue>               all comments (author, date, body), e.g. to read answers
+#   fgit.sh labels <issue>                 the issue's labels, one per line
 set -euo pipefail
 
-die() { echo "fdoc: $*" >&2; exit 1; }
+die() { echo "fgit: $*" >&2; exit 1; }
 need_file() { [[ -f "$1" ]] || die "file not found: $1"; }
 
 # ---- settings ------------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ if [[ -f "$conf" ]]; then  # read, never execute: KEY=value, # comments allowed
   while IFS='=' read -r key value; do
     value="$(printf '%s' "${value%%#*}" | tr -d '\r' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
     if [[ " ${config_keys[*]} " == *" $key "* ]]; then printf -v "$key" '%s' "$value"
-    else echo "fdoc: unknown setting $key in .claude/workflow.conf (ignored)" >&2; fi
+    else echo "fgit: unknown setting $key in .claude/workflow.conf (ignored)" >&2; fi
   done < <(grep -E '^[A-Z_]+=' "$conf")
 fi
 check_setting() { [[ "$2" =~ $3 ]] || die "$1 in .claude/workflow.conf must be $4 (is: $2)"; }
@@ -61,7 +61,7 @@ check_setting MERGE_METHOD "$MERGE_METHOD" '^(rebase|squash|merge)$' "rebase, sq
 check_setting AUTO_MERGE "$AUTO_MERGE" '^(on|off)$' "on or off"
 check_setting COST "$COST" '^(economy|balanced|max)$' "economy, balanced or max"
 
-marker() { printf '<!-- fdoc:%s -->' "$1"; }
+marker() { printf '<!-- fgit:%s -->' "$1"; }
 section_comment_id() { # <issue> <section>
   gh api "repos/{owner}/{repo}/issues/$1/comments" --paginate \
     --jq ".[] | select(.body | startswith(\"$(marker "$2")\")) | .id" | head -n1

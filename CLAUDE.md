@@ -18,7 +18,7 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 | `docs/architecture/` | Architecture decision records (architect) |
 | `docs/ops/` | Environments, runbooks, secrets inventory (CloudOps) |
 | `docs/plans`, `docs/specs` | Archive of F1–F5 (newer features live on GitHub Issues) |
-| `.claude/agents/`, `.claude/skills/`, `.claude/scripts/`, `.claude/workflow.conf` | The team: role agents, `/f*` commands, GitHub Issues helper (`fdoc.sh`), rename helper, workflow settings |
+| `.claude/agents/`, `.claude/skills/`, `.claude/scripts/`, `.claude/workflow.conf` | The team: role agents, `/f*` commands, GitHub Issues helper (`fgit.sh`), rename helper, workflow settings |
 
 ## Commands
 
@@ -62,11 +62,11 @@ Approvals (`GATES`, default `epic+tasks`): you approve the **epic** and its **ta
 
 ### Epics and tasks on GitHub Issues
 
-All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in; `fdoc.sh init-labels` once per repo).
+All reads and writes go through `.claude/scripts/fgit.sh` (needs `gh`, signed in; `fgit.sh init-labels` once per repo).
 
 - **Epic:** issue `Epic: <name>`, label `epic`, status `epic:draft → epic:approved → epic:planned`, closed when done. Size: one working day of the agent team – at most `EPIC_MAX_TASKS` tasks.
-- **Task:** issue `<ID> – <title>`, label `task` + priority `P1`/`P2`/`P3`, a **sub-issue** of its epic. Body: goal, acceptance criteria, technical/UI/ops notes, `**Blocked by:** #<n>, …` (or `–`). At most `TASK_MAX_LINES` changed lines (tests and lock files not counted). IDs: prefix + sequential number, never reused (`fdoc.sh next-id`; `ID_PREFIX`/`ID_START`, here `F` → `F6`).
-- **Ready** = open, not `in-progress`, all blockers closed (`fdoc.sh ready <epic>`, best first). A developer takes one with `fdoc.sh claim`; a merged PR (`Closes #<task>`) closes it.
+- **Task:** issue `<ID> – <title>`, label `task` + priority `P1`/`P2`/`P3`, a **sub-issue** of its epic. Body: goal, acceptance criteria, technical/UI/ops notes, `**Blocked by:** #<n>, …` (or `–`). At most `TASK_MAX_LINES` changed lines (tests and lock files not counted). IDs: prefix + sequential number, never reused (`fgit.sh next-id`; `ID_PREFIX`/`ID_START`, here `F` → `F6`).
+- **Ready** = open, not `in-progress`, all blockers closed (`fgit.sh ready <epic>`, best first). A developer takes one with `fgit.sh claim`; a merged PR (`Closes #<task>`) closes it.
 - **Sections** (one comment each, updated in place): `qa`, `review`, `fix`.
 - **Bug:** label `bug` (bug template); `/ffix` on `fix/<issue>-<name>`, PR with `Fixes #<issue>`.
 - **Branches:** `feature/<ID>-<name>` from the latest `BASE_BRANCH`; before the PR: rebase on `origin/<BASE_BRANCH>`, resolve conflicts, all checks again. Force pushes only `--force-with-lease` on your own task branch.
@@ -112,8 +112,8 @@ Non-obvious traps the team ran into. `/fwork` adds new ones after each epic (ret
 
 Decided conventions. The architect adds to this list when the stakeholder answers an architecture question (during `/finit`, `/fplan` or `/fwork`), so it is not asked again.
 
-- Work tracking: GitHub Issues through `.claude/scripts/fdoc.sh`: epics (label `epic`) and their tasks (sub-issues, label `task`, priorities `P1`–`P3`, `Blocked by` lines); one branch and one PR per task.
-- Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/fdoc.sh config`): task IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), team size (`DEVELOPERS`), epic and task size (`EPIC_MAX_TASKS`, `TASK_MAX_LINES`), `BASE_BRANCH`, `MERGE_METHOD`, `AUTO_MERGE` (switch to `on` only once the pipeline has required checks and branch protection), and the model per role (`COST`). `/finit` sets them; edit them any time.
+- Work tracking: GitHub Issues through `.claude/scripts/fgit.sh`: epics (label `epic`) and their tasks (sub-issues, label `task`, priorities `P1`–`P3`, `Blocked by` lines); one branch and one PR per task.
+- Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/fgit.sh config`): task IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), team size (`DEVELOPERS`), epic and task size (`EPIC_MAX_TASKS`, `TASK_MAX_LINES`), `BASE_BRANCH`, `MERGE_METHOD`, `AUTO_MERGE` (switch to `on` only once the pipeline has required checks and branch protection), and the model per role (`COST`). `/finit` sets them; edit them any time.
 - Infrastructure ownership: only CloudOps changes the AppHost, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles and `docs/ops/`, through one `ops` task per epic (label `ops`, P1) when the epic needs it; tasks that depend on it are `Blocked by` it, the others start at once. Developers keep migrations, `Program.cs` wiring and `appsettings` bindings and stop when they need an infra change; the reviewer flags violations.
 - Hosting: Azure Container Apps (dev environment only for now; production comes later, as its own epic), deployed from the Aspire AppHost (`aspire publish`/azd); CI/CD with GitHub Actions using OIDC federated credentials; secrets in Key Vault / Container Apps secrets, never in the repo.
 - Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.

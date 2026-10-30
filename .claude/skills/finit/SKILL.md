@@ -99,7 +99,7 @@ Working tree clean (otherwise ask to commit or stash first); a branch `chore/fin
 - **Code name** (if it changes) – first, so the following edits land in the renamed projects:
   - tell the stakeholder in two lines what happens: folders, project files and namespaces move; the local Aspire Postgres starts empty once (its volume is named after the AppHost; migrations recreate the schema; the old volume stays until removed); the IDE must reopen the new `.slnx`;
   - run `.claude/scripts/rename.sh <CodeName>`; check that `git status` shows renames (not deletions plus additions) and that `git grep -n "<OldName>"` finds nothing outside `docs/plans` and `docs/specs` (the F1–F5 archive keeps its wording).
-- **Workflow settings**: write the chosen values into `.claude/workflow.conf` (keep its comments) and check them with `.claude/scripts/fdoc.sh config`.
+- **Workflow settings**: write the chosen values into `.claude/workflow.conf` (keep its comments) and check them with `.claude/scripts/fgit.sh config`.
 - **Cost**: set `model:` in the agents' frontmatter (`.claude/agents/*.md`) – `economy`: `sonnet` for every agent except `reviewer` (`inherit`); `balanced`: `sonnet` for `product-owner`, `designer` and `qa`, `inherit` for the rest; `max`: `inherit` everywhere.
 - Start the **developer** agent with the profile and these tasks only:
   - `src/frontend/src/brand.ts`: `name`, `tagline`, `primary` (main color), `secondary` (accent; derive a harmonious one if only a main color was given), `defaultMode`. Remove `primaryDark`/`secondaryDark` unless the stakeholder gave dark-mode shades – the theme then derives readable lighter shades, the backgrounds and the app bar gradient from the brand colors.

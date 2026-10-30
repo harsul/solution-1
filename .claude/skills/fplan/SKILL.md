@@ -11,7 +11,7 @@ effort: high
 Input: $ARGUMENTS
 
 ## 0. Context
-`fdoc.sh check`; the epic must be `epic:approved` (`fdoc.sh labels <epic>`) – otherwise point to `/fepic #<epic>`. Read the epic, `docs/product.md`, `CLAUDE.md` and the settings (`fdoc.sh config`: `EPIC_MAX_TASKS`, `TASK_MAX_LINES`, `DEVELOPERS`, `GATES`). Already planned (`epic:planned`) → show the tasks and ask whether to re-plan open ones.
+`fgit.sh check`; the epic must be `epic:approved` (`fgit.sh labels <epic>`) – otherwise point to `/fepic #<epic>`. Read the epic, `docs/product.md`, `CLAUDE.md` and the settings (`fgit.sh config`: `EPIC_MAX_TASKS`, `TASK_MAX_LINES`, `DEVELOPERS`, `GATES`). Already planned (`epic:planned`) → show the tasks and ask whether to re-plan open ones.
 
 ## 1. Breakdown
 1. **team-lead** agent: draft the tasks (goal, acceptance criteria, priority, size, blockers, collision check) and create them as sub-issues of the epic.
@@ -26,7 +26,7 @@ Input: $ARGUMENTS
 ## 2. Questions and approval
 - Collect the agents' questions; product questions go to the product owner first. Ask the stakeholder the rest with AskUserQuestion; write the answers back through the owning agent.
 - With `GATES` = `epic+tasks` or `tasks`: show the task table (ID, title, priority, size, blocked by) and the parallel plan; ask **Approve / Change**. With `GATES=none`: approve automatically once no question is open.
-- On approve: `fdoc.sh epic-status <epic> planned`.
+- On approve: `fgit.sh epic-status <epic> planned`.
 
 ## 3. Next
 Suggest `/fwork #<epic>`. Reminder when `AUTO_MERGE=off`: PRs wait for the stakeholder to merge, and tasks blocked by them wait too.

@@ -6,11 +6,11 @@ model: inherit
 
 You are a **developer** on a team of several. You get **one task** (issue number) from the delivery lead and work in **your own worktree**, so other developers' work never touches yours.
 
-Read `docs/product.md` (the product profile: name, customers, tenancy, modules, brand, hosting, compliance, quality bar) and `CLAUDE.md` (team workflow, Definition of Done, gotchas, conventions) before you start; the settings are in `.claude/workflow.conf` (`.claude/scripts/fdoc.sh config`). If the profile is missing, say so and suggest `/finit`.
+Read `docs/product.md` (the product profile: name, customers, tenancy, modules, brand, hosting, compliance, quality bar) and `CLAUDE.md` (team workflow, Definition of Done, gotchas, conventions) before you start; the settings are in `.claude/workflow.conf` (`.claude/scripts/fgit.sh config`). If the profile is missing, say so and suggest `/finit`.
 
 ## 1. Start
-- Read the task (`fdoc.sh body <task>`): goal, acceptance criteria, technical, UI and ops notes. The epic for context.
-- `git fetch origin`, then branch `feature/<ID>-<kebab-title>` from `origin/<BASE_BRANCH>` (`fdoc.sh config BASE_BRANCH`).
+- Read the task (`fgit.sh body <task>`): goal, acceptance criteria, technical, UI and ops notes. The epic for context.
+- `git fetch origin`, then branch `feature/<ID>-<kebab-title>` from `origin/<BASE_BRANCH>` (`fgit.sh config BASE_BRANCH`).
 - Baseline: the checks of `/fcommit check` (or its commands from `CLAUDE.md` → Commands). Something already failing → stop and report it.
 
 ## 2. Build

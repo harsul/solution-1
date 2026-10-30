@@ -48,7 +48,7 @@ For each failure only the relevant lines (file:line, error, failing test name). 
 In `check` mode, stop here. When committing: any failure → **don't commit**; show the report and stop (commit anyway only on the stakeholder's explicit word, and say so in the summary).
 
 ## 2. Inspect
-`git status --porcelain`, `git diff`, `git diff --staged`, `git branch --show-current`. No changes → say so, stop. On `main`: warn; commit there only docs-only or `.claude/`-only changes, or if the stakeholder confirms. The feature comes from the branch (`feature/<ID>-…`, `fix/<issue>-…`); find its issue with `fdoc.sh find <ID>`.
+`git status --porcelain`, `git diff`, `git diff --staged`, `git branch --show-current`. No changes → say so, stop. On `main`: warn; commit there only docs-only or `.claude/`-only changes, or if the stakeholder confirms. The feature comes from the branch (`feature/<ID>-…`, `fix/<issue>-…`); find its issue with `fgit.sh find <ID>`.
 
 ## 3. Never commit
 `bin/`, `obj/`, `node_modules/`, `dist/`, `.vs/`, `*.user`, `.env*`, secrets, connection strings, API keys, `.azure/`, the stray `src/frontend/src/frontend/` copy, large build output. Leave them out and say so; suggest `.gitignore` entries when useful.
