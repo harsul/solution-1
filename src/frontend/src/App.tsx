@@ -18,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import aspireLogo from '/Aspire.png';
+import ColorModeToggle from './components/ColorModeToggle';
 import { aspireGradient } from './theme';
 
 interface WeatherForecast {
@@ -90,6 +91,7 @@ function App() {
               Modern distributed application development
             </Typography>
           </Box>
+          <ColorModeToggle />
         </Toolbar>
       </AppBar>
 
