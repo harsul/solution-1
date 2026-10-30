@@ -14,6 +14,8 @@ export type ResendResult = 'sent' | 'tooSoon';
 
 export type ForgotResult = 'sent' | 'tooManyRequests' | 'invalidEmail';
 
+export type ResetResult = { ok: true } | { ok: false; expired: boolean; errors: string[] };
+
 export type RegisterResult = { ok: true } | { ok: false; duplicate: boolean; errors: string[] };
 
 interface ProblemDetails {
@@ -93,5 +95,17 @@ export async function requestPasswordReset(email: string): Promise<ForgotResult>
   if (response.ok) return 'sent';
   if (response.status === 429) return 'tooManyRequests';
   if (response.status === 400) return 'invalidEmail';
+  throw unexpected(response);
+}
+
+/** Sets a new password with the values from a reset link; `expired` when the link is used, expired or invalid. */
+export async function resetPassword(email: string, code: string, newPassword: string): Promise<ResetResult> {
+  const response = await fetch('/api/auth/resetPassword', postJson({ email, resetCode: code, newPassword }));
+  if (response.ok) return { ok: true };
+  if (response.status === 400) {
+    const problem: ProblemDetails | null = await response.json().catch(() => null);
+    const errors = problem?.errors ?? {};
+    return { ok: false, expired: 'InvalidToken' in errors, errors: Object.values(errors).flat() };
+  }
   throw unexpected(response);
 }

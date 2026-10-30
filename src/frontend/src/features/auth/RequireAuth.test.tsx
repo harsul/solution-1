@@ -34,14 +34,7 @@ function TestRoutes() {
           </GuestOnly>
         }
       />
-      <Route
-        path="/forgot-password"
-        element={
-          <GuestOnly>
-            <ForgotPasswordPage />
-          </GuestOnly>
-        }
-      />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
         path="/reports"
         element={

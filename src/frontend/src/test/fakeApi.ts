@@ -28,6 +28,7 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
   const confirmed = new Set<string>(signedInAs && emailConfirmed ? [signedInAs] : []);
   const resent: string[] = [];
   const resetRequests: string[] = [];
+  const usedResetCodes = new Set<string>();
   const users = new Map<string, string>(signedInAs ? [[signedInAs, 'Passw0rd!']] : []);
 
   const fetchMock = fakeApi({
@@ -41,6 +42,16 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
     },
     'POST /api/auth/password/forgot': (init) => {
       resetRequests.push(JSON.parse(String(init?.body)).email);
+      return status(200);
+    },
+    // Reset links in tests: code = 'valid' (works once per email).
+    'POST /api/auth/resetPassword': (init) => {
+      const { email, resetCode, newPassword } = JSON.parse(String(init?.body));
+      if (resetCode !== 'valid' || !users.has(email) || usedResetCodes.has(email)) {
+        return json({ errors: { InvalidToken: ['Invalid token.'] } }, 400);
+      }
+      usedResetCodes.add(email);
+      users.set(email, newPassword);
       return status(200);
     },
     'POST /api/auth/resendConfirmationEmail': (init) => {
