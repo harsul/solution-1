@@ -13,7 +13,7 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 | `tests/AspireApp1.Server.xIntegration` | API tests: server in memory via `WebApplicationFactory<Program>` (`ServerFactory`) |
 | `tests/*/TestDoubles/` | Hand-written test doubles (`TestLogger`, `TestLoggerProvider`, `ThrowingEndpointStartupFilter`) |
 | `src/frontend/src/**/*.test.tsx` | Frontend tests (Vitest + Testing Library, jsdom) |
-| `docs/roadmap.md` | Product vision and epics (product owner, `/froadmap`) |
+| GitHub: pinned **Roadmap** issue | Product vision and epic order (product owner, `/froadmap`) |
 | `docs/design/` | Design system (designer) |
 | `docs/architecture/` | Architecture decision records (architect) |
 | `docs/ops/` | Environments, runbooks, secrets inventory (CloudOps) |
@@ -37,7 +37,7 @@ We build a **SaaS starter platform** that any kind of business can start from. T
 
 | Role | Agent | Owns | Writes |
 |---|---|---|---|
-| Product owner | `product-owner` | roadmap, epics, feature plans, acceptance criteria | `docs/roadmap.md`, issue bodies, `plan:*` labels |
+| Product owner | `product-owner` | roadmap, epics, feature plans, acceptance criteria | Roadmap issue, epic and feature issue bodies, `plan:*` labels |
 | Designer | `designer` | flows, screen states, copy, accessibility, design system, UI review | `design` section, `docs/design/` |
 | Software architect | `architect` | specs, conventions, decision records | `spec` section, `spec:*` labels, `CLAUDE.md` Conventions, `docs/architecture/` |
 | CloudOps | `cloudops` | Azure Container Apps, AppHost, CI/CD, secrets, migrations, monitoring, cost, ops review | `ops` section, AppHost, `infra/`, `.github/workflows/`, `docs/ops/` |
@@ -51,7 +51,7 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 
 | Command | Role | Does |
 |---|---|---|
-| `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → `docs/roadmap.md` + epic issues |
+| `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → pinned Roadmap issue + epic and draft feature issues |
 | `/fdeliver F<n> \| epic #<n> \| "idea"` | Delivery lead | Whole team run: plan gate → design ∥ spec ∥ ops → spec gate → per phase implement → reviews → fixes → commit → PR |
 | `/fbrainstorm <idea \| F<n>>` | Product owner | Interactive plan for one feature |
 | `/fdesign F<n> \| system \| review F<n>` | Designer | Design section, design system, or UI review from screenshots |
@@ -69,6 +69,7 @@ Gates: the stakeholder approves the **plan** and the **spec**; after that `/fdel
 
 All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in; run `fdoc.sh init-labels` once).
 
+- **Roadmap:** one pinned issue `Roadmap` (label `type:roadmap`); body = vision, target customers, principles, epics in order.
 - **Epic:** issue `Epic: <name>`, label `type:epic`; body = goal, success criteria, planned features. Its features are **sub-issues** (`fdoc.sh link <epic> <feature>`, `fdoc.sh children <epic>`), so GitHub shows the epic's progress.
 - **Feature:** issue `F<n> – <title>`, label `type:feature`; **body = plan**. `F<n>` is sequential and never reused (`fdoc.sh next-id`). At most 3 phases; bigger → several features.
 - **Sections** = one comment each, updated in place: `design`, `ops`, `spec`, `review-p<k>`.
@@ -81,7 +82,7 @@ All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in
 
 - Keep it simple: no new layers, libraries or abstractions unless the feature needs them or they are listed under Conventions.
 - Features are small vertical slices: API + UI + tests. Every phase leaves the solution building and the tests passing.
-- Code is never committed to `main` directly (roadmap, docs and `.claude/` may be). Never push without being asked.
+- Code is never committed to `main` directly (docs and `.claude/` may be). Never push without being asked.
 
 ## Conventions
 

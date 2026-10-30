@@ -36,7 +36,7 @@ Tables: **Agents** (role, owns, tools) and **Commands** (command + argument hint
 | reviewed changes not committed | `/fcommit` |
 | `spec:in-progress` or `spec:approved` | `/fdeliver F<n>` (or `/fimplement F<n>`) |
 | `plan:approved` without spec | `/fdeliver F<n>` (or `/fplan F<n>`) |
-| no roadmap | `/froadmap` |
+| no roadmap issue (`fdoc.sh roadmap` fails) | `/froadmap` |
 | nothing open | `/fdeliver epic #<n>` for the next epic |
 
 End with: "Details: `/foptions <name>`."

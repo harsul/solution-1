@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # fdoc.sh – the only way the workflow reads and writes GitHub Issues (via the gh CLI).
 #
-# Model (see CLAUDE.md → Feature workflow):
+# Model (see CLAUDE.md → Team workflow):
+#   roadmap issue  title "Roadmap",                label type:roadmap, pinned; body = vision, customers, epic order
 #   epic issue     title "Epic: <name>",        label type:epic,    body = goal, success criteria, planned features
 #                  its features are GitHub sub-issues (link / children)
 #   feature issue  title "F<n> – <title>",      label type:feature, body = the plan (product owner)
@@ -15,6 +16,8 @@
 #   fdoc.sh next-id                       next free F<n> number (issues + legacy docs/plans)
 #   fdoc.sh find F<n>                     issue number of feature F<n> (exit 1 if none)
 #   fdoc.sh new feature|epic "<title>" <body-file>   create an issue, print its number
+#   fdoc.sh roadmap                       print the roadmap issue body (exit 1 if there is none)
+#   fdoc.sh set-roadmap <file>            create (and pin) or update the roadmap issue, print its number
 #   fdoc.sh link <epic> <feature>         make the feature issue a sub-issue of the epic (idempotent)
 #   fdoc.sh children <epic>               list the sub-issues: "#<n> <state> <title>"
 #   fdoc.sh body <issue>                  print the issue body
@@ -56,6 +59,7 @@ case "$cmd" in
   init-labels)
     gh label create type:epic --color 5319e7 --description "Roadmap epic" --force
     gh label create type:feature --color 1d76db --description "Feature F<n>" --force
+    gh label create type:roadmap --color 0e8a16 --description "Product roadmap (pinned)" --force
     for v in "${plan_values[@]}"; do gh label create "plan:$v" --color c5def5 --description "Plan status" --force; done
     for v in "${spec_values[@]}"; do gh label create "spec:$v" --color bfdadc --description "Spec status" --force; done
     gh label create needs-answer --color d93f0b --description "Waiting for an answer from the stakeholder" --force
@@ -93,6 +97,23 @@ case "$cmd" in
     ;;
   children)
     gh api "repos/{owner}/{repo}/issues/$1/sub_issues" --paginate --jq '.[] | "#\(.number) \(.state) \(.title)"'
+    ;;
+  roadmap)
+    n="$(gh issue list --state open --label type:roadmap --limit 1 --json number --jq '.[0].number // empty')"
+    [[ -n "$n" ]] || die "no roadmap issue yet (run /froadmap)"
+    gh issue view "$n" --json body --jq .body
+    ;;
+  set-roadmap)
+    need_file "${1:-}"
+    n="$(gh issue list --state open --label type:roadmap --limit 1 --json number --jq '.[0].number // empty')"
+    if [[ -n "$n" ]]; then
+      gh issue edit "$n" --body-file "$1" >/dev/null
+    else
+      url="$(gh issue create --title "Roadmap" --body-file "$1" --label type:roadmap)"
+      n="${url##*/}"
+      gh issue pin "$n" >/dev/null || echo "fdoc: couldn't pin #$n; pin it on GitHub" >&2
+    fi
+    echo "$n"
     ;;
   body)      gh issue view "$1" --json body --jq .body ;;
   set-body)  need_file "${2:-}"; gh issue edit "$1" --body-file "$2" >/dev/null ;;

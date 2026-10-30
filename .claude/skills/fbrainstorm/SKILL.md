@@ -12,7 +12,7 @@ You act as the **product owner** – follow `.claude/agents/product-owner.md` (r
 Input: $ARGUMENTS
 
 ## 1. Context (silently)
-`.claude/scripts/fdoc.sh check`; read `CLAUDE.md`, `docs/roadmap.md` and the open epics/features (`gh issue list --label type:feature --state open`), and the current UI in `src/frontend/src` to know what users see today.
+`.claude/scripts/fdoc.sh check`; read `CLAUDE.md`, the **Roadmap** issue (`fdoc.sh roadmap`) and the open epics/features (`gh issue list --label type:feature --state open`), and the current UI in `src/frontend/src` to know what users see today.
 
 ## 2. Resume (`F<n>`)
 `fdoc.sh find F<n>`, read the body, labels and comments (answers may be in comments). With `plan:questions`: fold the answers in, ask the remaining ones. With `plan:approved`/`done`: ask whether to reopen (→ `plan:draft`; warn that the spec needs review). Then step 5.

@@ -14,7 +14,7 @@ Input: $ARGUMENTS
 
 ## 0. Preconditions
 - `.claude/scripts/fdoc.sh check` must print the repo. If not, stop and tell the user how to fix it (install `gh`, `gh auth login`). Run `fdoc.sh init-labels` once per repo (idempotent).
-- Read `CLAUDE.md` and `docs/roadmap.md` (if present).
+- Read `CLAUDE.md` and the **Roadmap** issue (`fdoc.sh roadmap`), if there is one.
 - Resolve the input to a feature issue:
   - `F<n>` → `fdoc.sh find F<n>`; `#<n>` → that issue;
   - `epic #<n>` → `fdoc.sh children <n>`: the first open feature whose dependencies are done (in-progress first); if no open feature is left, ask the product owner agent to propose the next one from the epic's planned features;
@@ -22,7 +22,7 @@ Input: $ARGUMENTS
 - Resume from the issue's labels: `plan:draft` (e.g. a draft from `/froadmap`) → step 1, the product owner completes the plan in the issue; `plan:approved` without spec → step 2; `spec:approved`/`spec:in-progress` → step 4 at the next unchecked phase; `*:questions` → collect answers (step 3) first.
 
 ## 1. Plan (product owner)
-Start the **product-owner** agent with the idea or issue, the epic, related features and `docs/roadmap.md`. It creates or updates the feature issue (`F<next-id> – <title>`, body = plan) and returns questions. Then go to the **plan gate** (step 3).
+Start the **product-owner** agent with the idea or issue, the epic, related features and the roadmap. It creates or updates the feature issue (`F<next-id> – <title>`, body = plan) and returns questions. Then go to the **plan gate** (step 3).
 
 ## 2. Design, architecture and operations (in parallel)
 Start these agents **in one message** so they run concurrently, each with the issue number:
@@ -61,4 +61,4 @@ When all three are back, run the **architect** once more to fold the design and 
 ## Rules
 - Keep the stakeholder's time small: one sentence when you start, questions only at gates or for real decisions, a short report at the end. Progress is visible on the issue and in the task list.
 - Each document has one owner; you never edit a section yourself.
-- Never push, merge, delete or touch cloud resources without permission. Never commit to `main` directly (roadmap, epics and issues are fine).
+- Never push, merge, delete or touch cloud resources without permission. Never commit code to `main` directly.
