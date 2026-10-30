@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.AspNetCore.Identity;
 
 namespace AspireApp1.Server.Auth;
@@ -9,7 +10,9 @@ internal sealed class RequireLetterPasswordValidator : IPasswordValidator<Identi
 
     public Task<IdentityResult> ValidateAsync(UserManager<IdentityUser> manager, IdentityUser user, string? password)
     {
-        var result = password is not null && password.Any(char.IsLetter)
+        // Check whole Unicode characters (runes), like the frontend's /\p{L}/u, so letters outside
+        // the Basic Multilingual Plane (e.g. 𝐀) count on both sides.
+        var result = password is not null && password.EnumerateRunes().Any(Rune.IsLetter)
             ? IdentityResult.Success
             : IdentityResult.Failed(new IdentityError
             {
