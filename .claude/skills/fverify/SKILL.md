@@ -15,8 +15,10 @@ Run from the repository root. Don't fix anything here; only report. The calling 
 
 | # | Check | Command | Scope |
 |---|---|---|---|
+| 0 | Server format | `dotnet format whitespace Solution1.slnx --verify-no-changes` | server |
 | 1 | Server build | `dotnet build Solution1.slnx --nologo -v q` | server |
 | 2 | Server tests | `dotnet test --no-build` | server (skip if 1 failed) |
+| 3a | Frontend format | `npm --prefix src/frontend run format:check` | frontend |
 | 3 | Frontend lint | `npm --prefix src/frontend run lint` | frontend |
 | 4 | Frontend tests | `npm --prefix src/frontend test` | frontend |
 | 5 | Frontend build | `npm --prefix src/frontend run build` | frontend |
@@ -34,8 +36,10 @@ Keep it short:
 ```
 | Check          | Result |
 |----------------|--------|
+| Server format  | ✅ / ❌ (fix: `dotnet format whitespace Solution1.slnx`) |
 | Server build   | ✅ / ❌ / ⏭ skipped / ⚠ not run |
 | Server tests   | ✅ 12 passed / ❌ 2 of 12 failed |
+| Frontend format| ✅ / ❌ (fix: `npm --prefix src/frontend run format`) |
 | Frontend lint  | ...    |
 | Frontend tests | ✅ 3 passed / ... |
 | Frontend build | ...    |

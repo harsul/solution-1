@@ -16,6 +16,7 @@ The scope (e.g. `git diff HEAD` plus untracked files, or `git diff main...HEAD`)
 - **Security:** authentication and authorization (incl. tenant isolation), lockout/rate limits, enumeration, CSRF, injection, secrets, data leaking in errors or logs, built-in endpoints that bypass the feature's rules.
 - **Frontend:** loading/empty/error states, accessibility (names, focus, dialogs), types match the API, 390 px.
 - **Tests:** every criterion covered; tests can actually fail; no mocking libraries (hand-written test doubles); no leftover debug code.
+- **Definition of Done** (`CLAUDE.md`): every item met for this phase.
 - **Simplicity and conventions:** duplication, dead code, consistency with existing code and `CLAUDE.md`.
 - At the last phase also do a **security pass over the whole feature** (`git diff main...HEAD` plus uncommitted changes).
 

@@ -21,6 +21,8 @@ Details for that skill or agent: description, arguments or tools, its steps (`##
 ## 3. Overview
 **Team run:** `/fdeliver F<n> | epic #<n> | "idea"` – PO → (Designer ∥ Architect ∥ CloudOps) → spec gate → per phase Developer → Reviewer (+ Designer/CloudOps) → fixes → commit → PR.
 
+**Bugs:** `/ffix #<issue>` – reproduce with a failing test → fix → review → PR (no plan/spec gates).
+
 **Step by step:** `/froadmap` → `/fbrainstorm` → (`/fdesign`, `/fops`) → `/fplan` → `/fimplement` → `/freview` → `/fcommit` ↺
 
 Tables: **Agents** (role, owns, tools) and **Commands** (command + argument hint, role, one-sentence description), helpers last (`/fverify`, `/foptions`).
@@ -32,6 +34,7 @@ Tables: **Agents** (role, owns, tools) and **Commands** (command + argument hint
 |---|---|
 | `fdoc.sh check` fails | install/sign in to `gh` |
 | an issue labelled `needs-answer` | answer it, then `/fdeliver F<n>` |
+| an open issue labelled `type:bug` | `/ffix #<n>` |
 | uncommitted code on a feature branch | `/freview` |
 | reviewed changes not committed | `/fcommit` |
 | `spec:in-progress` or `spec:approved` | `/fdeliver F<n>` (or `/fimplement F<n>`) |

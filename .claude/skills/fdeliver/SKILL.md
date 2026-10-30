@@ -50,12 +50,14 @@ When all three are back, run the **architect** once more to fold the design and 
    Also run the built-in `/code-review` and `/security-review` (last phase) when available; note it when they aren't.
 4. **Verify the findings yourself** against the code; drop false positives. Then the **developer** agent fixes **all must and should** findings with tests (consider-items when cheap); re-run the checks (`fverify`).
 5. **Record** on the issue: `fdoc.sh set <issue> review-p<k> <file>` with findings fixed / skipped (with reason); tick the phase in the plan.
-6. **Commit** with `/fcommit auto` (logical Conventional Commits, `Refs: F<n> (#<issue>)`).
+6. **Definition of Done**: the phase meets every item in `CLAUDE.md` (the reviewers check it too); otherwise back to step 4.
+7. **Commit** with `/fcommit auto` (logical Conventional Commits, `Refs: F<n> (#<issue>)`).
 
 ## 5. Finish the feature
 - Plan and spec labels → `done`. The PR's `Closes #<issue>` closes the feature, which updates the epic's sub-issue progress; when all its sub-issues are closed and the epic's goal is met, close the epic too.
 - Push the branch and open a PR (`gh pr create --fill --body` with summary + `Closes #<issue>`); pushing and creating the PR need the stakeholder's permission (settings ask). If pushing isn't possible here, give the exact commands.
 - Don't merge the PR yourself unless the stakeholder says so (`gh pr merge --merge`).
+- **Retro:** from the agents' reports (developer gotchas) and the review findings, pick the non-obvious lessons that would have saved time – traps in libraries, test setup, project patterns – and add each as a one-liner to `CLAUDE.md` → **Gotchas** (no duplicates, no feature-specific details). Commit it with the feature's docs.
 - Report: what users get, review fixes worth knowing, risks/skipped items, test results, steps the stakeholder must do (from CloudOps), the PR link, and the suggested next feature of the epic.
 
 ## Rules
