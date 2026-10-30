@@ -1,49 +1,26 @@
 import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import App from './App';
-import { renderWithTheme } from './test/render';
+import { fakeAuthBackend } from './test/fakeApi';
+import { renderWithProviders } from './test/render';
 
-const forecasts = [
-  { date: '2026-11-01', temperatureC: 20, temperatureF: 67, summary: 'Mild' },
-  { date: '2026-11-02', temperatureC: -5, temperatureF: 24, summary: 'Chilly' },
-];
+describe('App', () => {
+  it('shows the sign-in page instead of the forecast when signed out', async () => {
+    fakeAuthBackend();
 
-function mockFetch(response: Partial<Response>) {
-  const fetchMock = vi.fn().mockResolvedValue(response);
-  vi.stubGlobal('fetch', fetchMock);
-  return fetchMock;
-}
+    renderWithProviders(<App />);
 
-describe('App weather forecast', () => {
-  it('loads and shows the forecasts from the API', async () => {
-    const fetchMock = mockFetch({ ok: true, json: async () => forecasts });
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.queryByText('Weather Forecast')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create an account' })).toHaveAttribute('href', '/register');
+  });
 
-    renderWithTheme(<App />);
+  it('shows the forecast and the account menu when signed in', async () => {
+    fakeAuthBackend({ signedInAs: 'ada@example.com' });
+
+    renderWithProviders(<App />);
 
     expect(await screen.findByText('Mild')).toBeInTheDocument();
-    expect(screen.getByText('Chilly')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/weatherforecast');
-  });
-
-  it('switches between Fahrenheit and Celsius', async () => {
-    mockFetch({ ok: true, json: async () => forecasts });
-    renderWithTheme(<App />);
-    await screen.findByText('Mild');
-
-    expect(screen.getByLabelText('Temperature: 67 degrees Fahrenheit')).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole('button', { name: 'Celsius' }));
-
-    expect(screen.getByLabelText('Temperature: 20 degrees Celsius')).toBeInTheDocument();
-  });
-
-  it('shows an error when the API fails', async () => {
-    mockFetch({ ok: false, status: 500 });
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    renderWithTheme(<App />);
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('HTTP error! status: 500');
+    expect(screen.getByRole('button', { name: 'Account menu for ada@example.com' })).toBeInTheDocument();
   });
 });
