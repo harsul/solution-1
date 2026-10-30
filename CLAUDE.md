@@ -79,7 +79,7 @@ All reads and writes go through `.claude/scripts/fgit.sh` (needs `gh`, signed in
 
 - Keep it simple: no new layers, libraries or abstractions unless the feature needs them or they are listed under Conventions.
 - Tasks are small vertical slices: API + UI + tests. Every commit leaves the solution building and the tests passing.
-- Code is never committed to the base branch (`BASE_BRANCH`, default `main`) directly (docs and `.claude/` may be). Never push without being asked.
+- Nothing is committed to the base branch (`BASE_BRANCH`, default `main`) directly – code, docs and `.claude/` all go through a PR; branch protection enforces it, for admins too (required checks `Server (format, build, tests)` and `Frontend (format, lint, tests, build)`, no approvals needed). Never push without being asked.
 
 ## Definition of Done
 
