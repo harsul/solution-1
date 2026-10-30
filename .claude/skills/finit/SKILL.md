@@ -60,13 +60,14 @@ Skip any question the free-text answers or the existing profile already settle. 
 - Product analytics: none / privacy-friendly (e.g. Plausible) / full (e.g. PostHog).
 
 **Round F – how the team works** (written to `.claude/workflow.conf`; explain that it can be edited any time)
-- Approvals `GATES`: plan + spec, once per epic (recommended, `plan+spec`) / specs only (`spec`) / none, only real decisions (`none`).
-- Reviews `REVIEW`: risk-based (recommended, `risk`) / every phase (`every-phase`) / once per feature (`end-only`).
-- Auto-merge `AUTO_MERGE`: off until CI and branch protection exist (recommended) / on.
-- Cost `COST`: balanced (recommended: faster model for the product owner and designer) / economy (faster model for every role except the reviewer) / max (strongest model everywhere).
-- `MAX_PHASES` (default 3) and `BASE_BRANCH` (default `main`): ask only if the stakeholder wants to change them.
+- Approvals `GATES`: epic + task list (recommended, `epic+tasks`) / task list only (`tasks`) / none, only real decisions (`none`).
+- Team size `DEVELOPERS`: 3 developers + QA (recommended) / 2 (cheaper) / 4–5 (faster, more conflicts and cost).
+- Epic and task size: an epic is one working day of the agent team – `EPIC_MAX_TASKS` (default 9) tasks of up to `TASK_MAX_LINES` (default 400) changed lines; ask only if the stakeholder wants other limits.
+- Merging `MERGE_METHOD`: rebase, linear history (recommended) / squash, one commit per task / merge commits. `AUTO_MERGE`: off until the pipeline and branch protection exist (recommended) / on.
+- Cost `COST`: balanced (recommended: faster model for the product owner, designer and QA) / economy (faster model for every role except the reviewer) / max (strongest model everywhere).
+- `BASE_BRANCH` (default `main`): ask only if the stakeholder wants another one.
 - Work tracking: GitHub Issues (current tooling) / something else (note it; the tooling stays GitHub-based for now).
-- **Ticket IDs**: prefix and first number – `F` → F1, F2 (template default) / `ENG-` → ENG-1 / a project key like `BKG-`. Written to `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`); change it only before the first ticket.
+- **Task IDs**: prefix and first number – `F` → F1, F2 (template default) / `ENG-` → ENG-1 / a project key like `BKG-`. Written to `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`); change it only before the first task.
 
 ## 4. Write the profile
 Show a compact summary (one line per section) and ask **Save / Change something**. Then write `docs/product.md`:
@@ -99,14 +100,14 @@ Working tree clean (otherwise ask to commit or stash first); a branch `chore/fin
   - tell the stakeholder in two lines what happens: folders, project files and namespaces move; the local Aspire Postgres starts empty once (its volume is named after the AppHost; migrations recreate the schema; the old volume stays until removed); the IDE must reopen the new `.slnx`;
   - run `.claude/scripts/rename.sh <CodeName>`; check that `git status` shows renames (not deletions plus additions) and that `git grep -n "<OldName>"` finds nothing outside `docs/plans` and `docs/specs` (the F1–F5 archive keeps its wording).
 - **Workflow settings**: write the chosen values into `.claude/workflow.conf` (keep its comments) and check them with `.claude/scripts/fdoc.sh config`.
-- **Cost**: set `model:` in the agents' frontmatter (`.claude/agents/*.md`) – `economy`: `sonnet` for every agent except `reviewer` (`inherit`); `balanced`: `sonnet` for `product-owner` and `designer`, `inherit` for the rest; `max`: `inherit` everywhere.
+- **Cost**: set `model:` in the agents' frontmatter (`.claude/agents/*.md`) – `economy`: `sonnet` for every agent except `reviewer` (`inherit`); `balanced`: `sonnet` for `product-owner`, `designer` and `qa`, `inherit` for the rest; `max`: `inherit` everywhere.
 - Start the **developer** agent with the profile and these tasks only:
   - `src/frontend/src/brand.ts`: `name`, `tagline`, `primary` (main color), `secondary` (accent; derive a harmonious one if only a main color was given), `defaultMode`. Remove `primaryDark`/`secondaryDark` unless the stakeholder gave dark-mode shades – the theme then derives readable lighter shades, the backgrounds and the app bar gradient from the brand colors.
   - `src/<Code>.Server/Branding.cs`: `ProductName` (emails and the email sender).
   - `src/frontend/index.html`: `<title>`.
   - Check contrast: text on `primary` buttons and the app bar gradient must stay readable (WCAG AA); adjust the shades in `brand.ts` if not.
-  - Nothing else – modules, sign-in methods, billing and so on become roadmap features, not setup changes.
+  - Nothing else – modules, sign-in methods, billing and so on become epics, not setup changes.
 Then `/fcommit check` (format, build, all tests, frontend) – fix only what setup broke – the **designer** agent reviews the brand change from screenshots (light/dark, 390 px) if the colors changed, and `/fcommit auto`: a rename as its own commit (`refactor: rename the project to <CodeName>`), then `chore: set up <product name>` (brand, profile, `CLAUDE.md`, `workflow.conf`). Record every change in the profile's Decisions log. Leave merging and pushing to the stakeholder; after a rename tell them to reopen `<CodeName>.slnx`, and that renaming the GitHub repository (Settings → General) and the local folder is optional and separate.
 
 ## 6. Next
-Report: the profile summary, what changed in the code, and the next step – for a new project `/froadmap`, which turns the profile's v1 modules and main entities into epics and features without asking the same questions again.
+Report: the profile summary, what changed in the code, and the next step – for a new project `/fepic`, which turns the profile's v1 modules and main entities into the first epics without asking the same questions again. Also tell the stakeholder what `AUTO_MERGE=on` needs (a pipeline with required checks and branch protection on `BASE_BRANCH` – usually the first epic) and the `.claude/settings.json` permissions for pushing task branches and creating PRs.
