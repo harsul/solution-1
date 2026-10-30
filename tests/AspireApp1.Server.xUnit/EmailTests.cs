@@ -113,6 +113,18 @@ public class EmailTests
     }
 
     [Fact]
+    public void AccountDeletedMessage_says_it_cannot_be_undone_and_has_no_link()
+    {
+        var message = AccountDeletedMessage.Create("ada@example.com");
+
+        Assert.Equal("ada@example.com", message.To);
+        Assert.Equal("Your account was deleted", message.Subject);
+        Assert.Contains("can't be undone", message.TextBody);
+        Assert.Contains("can't be undone", message.HtmlBody);
+        Assert.DoesNotContain("http", message.TextBody);
+    }
+
+    [Fact]
     public void ResetPasswordMessage_has_the_link_and_says_1_hour()
     {
         const string link = "https://app.test/reset-password?email=ada%40example.com&code=x<y";

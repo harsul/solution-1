@@ -8,6 +8,8 @@ namespace AspireApp1.Server.Endpoints;
 
 public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
 
+public sealed record DeleteAccountRequest(string? Password, string? Email);
+
 internal static class AccountEndpoints
 {
     /// <summary>
@@ -20,6 +22,7 @@ internal static class AccountEndpoints
 
         account.MapPost("/password", ChangePasswordAsync);
         account.MapPost("/sign-out-others", SignOutOthersAsync);
+        account.MapPost("/delete", DeleteAsync);
 
         return app;
     }
@@ -89,6 +92,53 @@ internal static class AccountEndpoints
         return TypedResults.NoContent();
     }
 
+    /// <summary>Deletes the account for good after the password and the typed email match; signs out.</summary>
+    private static async Task<Results<NoContent, ValidationProblem, UnauthorizedHttpResult>> DeleteAsync(
+        DeleteAccountRequest request,
+        ClaimsPrincipal principal,
+        UserManager<IdentityUser> userManager,
+        SignInManager<IdentityUser> signInManager,
+        IEmailDelivery delivery,
+        ILoggerFactory loggers,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.GetUserAsync(principal);
+        if (user is null)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        if (await VerifyPasswordAsync(signInManager, user, request.Password) is { } failure)
+        {
+            return failure;
+        }
+
+        var email = await userManager.GetEmailAsync(user);
+        if (email is null || !string.Equals(request.Email?.Trim(), email, StringComparison.OrdinalIgnoreCase))
+        {
+            return Problem("EmailMismatch", "The email address doesn't match this account.");
+        }
+
+        var notifyTo = await userManager.IsEmailConfirmedAsync(user) ? email : null;
+
+        // Identity's own rows (logins, claims, tokens, ...) cascade with the user.
+        var result = await userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"Deleting the account failed: {string.Join(", ", result.Errors.Select(e => e.Code))}");
+        }
+
+        await signInManager.SignOutAsync();
+
+        if (notifyTo is not null)
+        {
+            await SendAsync(delivery, loggers, AccountDeletedMessage.Create(notifyTo), user.Id, cancellationToken);
+        }
+
+        return TypedResults.NoContent();
+    }
+
     /// <summary>Checks the password and counts a wrong one towards the lockout; null when it is correct.</summary>
     private static async Task<ValidationProblem?> VerifyPasswordAsync(
         SignInManager<IdentityUser> signInManager, IdentityUser user, string? password)
@@ -122,13 +172,20 @@ internal static class AccountEndpoints
             return;
         }
 
+        await SendAsync(delivery, loggers, createMessage(email), user.Id, cancellationToken);
+    }
+
+    /// <summary>Sends a notification; a failure is logged and never fails the request.</summary>
+    private static async Task SendAsync(
+        IEmailDelivery delivery, ILoggerFactory loggers, EmailMessage message, string userId, CancellationToken cancellationToken)
+    {
         try
         {
-            await delivery.SendAsync(createMessage(email), cancellationToken);
+            await delivery.SendAsync(message, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            loggers.CreateLogger(typeof(AccountEndpoints)).LogError(ex, "Sending the account notification failed for user {UserId}", user.Id);
+            loggers.CreateLogger(typeof(AccountEndpoints)).LogError(ex, "Sending the account notification failed for user {UserId}", userId);
         }
     }
 }

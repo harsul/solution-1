@@ -17,6 +17,9 @@ public class AccountEndpointsTests(ServerFactory factory) : IClassFixture<Server
     private static Task<HttpResponseMessage> ChangePasswordAsync(HttpClient client, string currentPassword, string newPassword = NewPassword) =>
         client.PostAsJsonAsync("/api/account/password", new { currentPassword, newPassword }, Ct);
 
+    private static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string password, string email) =>
+        client.PostAsJsonAsync("/api/account/delete", new { password, email }, Ct);
+
     private static Task<HttpResponseMessage> InfoAsync(HttpClient client) => client.GetAsync("/api/auth/manage/info", Ct);
 
     private static async Task<string[]> ErrorCodesAsync(HttpResponseMessage response)
@@ -36,6 +39,7 @@ public class AccountEndpointsTests(ServerFactory factory) : IClassFixture<Server
     [Theory]
     [InlineData("/api/account/password")]
     [InlineData("/api/account/sign-out-others")]
+    [InlineData("/api/account/delete")]
     public async Task Account_endpoints_require_a_session(string route)
     {
         var response = await factory.CreateHttpsClient().PostAsJsonAsync(route, new { }, Ct);
@@ -173,5 +177,101 @@ public class AccountEndpointsTests(ServerFactory factory) : IClassFixture<Server
         (await ChangePasswordAsync(client, ValidPassword)).EnsureSuccessStatusCode();
 
         Assert.DoesNotContain(factory.Emails.SentTo(email), m => m.Subject == "Your password was changed");
+    }
+
+    [Fact]
+    public async Task Delete_removes_the_account_and_signs_out()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+
+        var response = await DeleteAsync(client, ValidPassword, email.ToUpperInvariant());
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await InfoAsync(client)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Deleted_email_can_register_again()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        (await DeleteAsync(client, ValidPassword, email)).EnsureSuccessStatusCode();
+
+        var again = factory.CreateHttpsClient();
+
+        Assert.Equal(HttpStatusCode.OK, (await RegisterAsync(again, email, NewPassword)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(again, email, NewPassword)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_with_wrong_password_keeps_the_account()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+
+        var response = await DeleteAsync(client, "Wrong-passw0rd", email);
+
+        Assert.Equal(["PasswordMismatch"], await ErrorCodesAsync(response));
+        Assert.Equal(HttpStatusCode.OK, (await InfoAsync(client)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_with_other_email_returns_EmailMismatch()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+
+        var response = await DeleteAsync(client, ValidPassword, NewEmail());
+
+        Assert.Equal(["EmailMismatch"], await ErrorCodesAsync(response));
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_counts_wrong_passwords_towards_the_lockout()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        for (var attempt = 1; attempt <= 4; attempt++)
+        {
+            await DeleteAsync(client, "Wrong-passw0rd", email);
+        }
+
+        var fifth = await DeleteAsync(client, "Wrong-passw0rd", email);
+        var correct = await DeleteAsync(client, ValidPassword, email);
+
+        Assert.Equal(["LockedOut"], await ErrorCodesAsync(fifth));
+        Assert.Equal(["LockedOut"], await ErrorCodesAsync(correct));
+    }
+
+    [Fact]
+    public async Task Delete_notifies_confirmed_address()
+    {
+        var client = factory.CreateHttpsClient();
+        var email = await RegisterConfirmedAsync(factory, client);
+        (await LoginAsync(client, email)).EnsureSuccessStatusCode();
+
+        (await DeleteAsync(client, ValidPassword, email)).EnsureSuccessStatusCode();
+
+        Assert.Equal("Your account was deleted", factory.Emails.SentTo(email).Last().Subject);
+    }
+
+    [Fact]
+    public async Task Delete_does_not_notify_unconfirmed_address()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+
+        (await DeleteAsync(client, ValidPassword, email)).EnsureSuccessStatusCode();
+
+        Assert.DoesNotContain(factory.Emails.SentTo(email), m => m.Subject == "Your account was deleted");
+    }
+
+    [Fact]
+    public async Task Delete_signs_out_other_sessions()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        var other = await OtherDeviceAsync(email);
+
+        (await DeleteAsync(client, ValidPassword, email)).EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await InfoAsync(other)).StatusCode);
     }
 }
