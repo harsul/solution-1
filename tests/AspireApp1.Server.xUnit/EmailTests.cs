@@ -100,6 +100,31 @@ public class EmailTests
     }
 
     [Fact]
+    public void PasswordChangedMessage_says_when_and_what_to_do_if_it_was_not_you()
+    {
+        var message = PasswordChangedMessage.Create("ada@example.com", new DateTimeOffset(2026, 10, 30, 12, 5, 0, TimeSpan.FromHours(1)));
+
+        Assert.Equal("ada@example.com", message.To);
+        Assert.Equal("Your password was changed", message.Subject);
+        Assert.Contains("2026-10-30 11:05 UTC", message.TextBody);
+        Assert.Contains("If this wasn't you", message.TextBody);
+        Assert.Contains("2026-10-30 11:05 UTC", message.HtmlBody);
+        Assert.DoesNotContain("http", message.TextBody);
+    }
+
+    [Fact]
+    public void AccountDeletedMessage_says_it_cannot_be_undone_and_has_no_link()
+    {
+        var message = AccountDeletedMessage.Create("ada@example.com");
+
+        Assert.Equal("ada@example.com", message.To);
+        Assert.Equal("Your account was deleted", message.Subject);
+        Assert.Contains("can't be undone", message.TextBody);
+        Assert.Contains("can't be undone", message.HtmlBody);
+        Assert.DoesNotContain("http", message.TextBody);
+    }
+
+    [Fact]
     public void ResetPasswordMessage_has_the_link_and_says_1_hour()
     {
         const string link = "https://app.test/reset-password?email=ada%40example.com&code=x<y";

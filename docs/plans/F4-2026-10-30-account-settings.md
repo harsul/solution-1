@@ -1,7 +1,7 @@
 ---
 id: F4
 title: Account settings
-status: Approved
+status: Done
 created: 2026-10-30
 approved: 2026-10-30
 depends-on: F1, F3
@@ -52,27 +52,27 @@ Signed-in users can manage their own account: change their password, sign out de
 
 ### Phase 1 – Account page and change password
 **Goal:** users can change their password from a new Account settings page.
-- [ ] Given I'm signed in, when I open the user menu, then I see "Account settings", which opens `/account`.
-- [ ] Given I'm signed out, when I open `/account`, then I'm sent to Sign in and come back to `/account` afterwards.
-- [ ] Given I enter my correct current password and a valid new password twice, when I click Change password, then I see "Your password was changed.", the new password works for signing in and the old one doesn't.
-- [ ] Given I'm signed in on two devices, when I change my password on one, then the other is signed out on its next request and this one stays signed in.
-- [ ] Given my current password is wrong, when I submit, then I see "Your current password is incorrect." and the password isn't changed; after 5 wrong tries I see the F1 lockout message.
-- [ ] Given the new password breaks a rule or the two new passwords differ, when I try to submit, then I see which rule fails and can't submit.
-- [ ] Given my email is confirmed, when I change my password, then I receive a "Your password was changed" email; given it isn't confirmed, no email is sent.
+- [x] Given I'm signed in, when I open the user menu, then I see "Account settings", which opens `/account`.
+- [x] Given I'm signed out, when I open `/account`, then I'm sent to Sign in and come back to `/account` afterwards.
+- [x] Given I enter my correct current password and a valid new password twice, when I click Change password, then I see "Your password was changed.", the new password works for signing in and the old one doesn't.
+- [x] Given I'm signed in on two devices, when I change my password on one, then the other is signed out on its next request and this one stays signed in.
+- [x] Given my current password is wrong, when I submit, then I see "Your current password is incorrect." and the password isn't changed; after 5 wrong tries I see the F1 lockout message.
+- [x] Given the new password breaks a rule or the two new passwords differ, when I try to submit, then I see which rule fails and can't submit.
+- [x] Given my email is confirmed, when I change my password, then I receive a "Your password was changed" email; given it isn't confirmed, no email is sent.
 
 ### Phase 2 – Sign out other devices
 **Goal:** users can end all their other sessions.
-- [ ] Given I'm signed in on two devices, when I click "Sign out other devices" and confirm, then I see "You've been signed out on all other devices.", the other device is signed out on its next request, and I stay signed in.
-- [ ] Given I open the confirmation, when I cancel, then nothing changes.
+- [x] Given I'm signed in on two devices, when I click "Sign out other devices" and confirm, then I see "You've been signed out on all other devices.", the other device is signed out on its next request, and I stay signed in.
+- [x] Given I open the confirmation, when I cancel, then nothing changes.
 
 ### Phase 3 – Delete account
 **Goal:** users can delete their account for good.
-- [ ] Given I open Delete account, when the typed email doesn't match my address or the password is empty, then "Delete my account" is disabled.
-- [ ] Given I enter my password and my email, when I confirm, then the account is deleted, I'm signed out, I see "Your account was deleted." on Sign in, and I can't sign in with it anymore.
-- [ ] Given the account is deleted, when someone registers with the same email, then it works like a new account.
-- [ ] Given my password is wrong, when I confirm, then I see "Your password is incorrect." and nothing is deleted.
-- [ ] Given my email was confirmed, when I delete my account, then I receive an "Your account was deleted" email.
-- [ ] Given I was signed in on another device, when I delete my account here, then the other device is signed out on its next request.
+- [x] Given I open Delete account, when the typed email doesn't match my address or the password is empty, then "Delete my account" is disabled.
+- [x] Given I enter my password and my email, when I confirm, then the account is deleted, I'm signed out, I see "Your account was deleted." on Sign in, and I can't sign in with it anymore.
+- [x] Given the account is deleted, when someone registers with the same email, then it works like a new account.
+- [x] Given my password is wrong, when I confirm, then I see "Your password is incorrect." and nothing is deleted.
+- [x] Given my email was confirmed, when I delete my account, then I receive an "Your account was deleted" email.
+- [x] Given I was signed in on another device, when I delete my account here, then the other device is signed out on its next request.
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F4. Asked by: PO | Architect -->

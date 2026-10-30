@@ -29,6 +29,7 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
   const resent: string[] = [];
   const resetRequests: string[] = [];
   const usedResetCodes = new Set<string>();
+  const signedOutOthers: string[] = [];
   const users = new Map<string, string>(signedInAs ? [[signedInAs, 'Passw0rd!']] : []);
 
   const fetchMock = fakeApi({
@@ -54,6 +55,31 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       users.set(email, newPassword);
       return status(200);
     },
+    'POST /api/account/password': (init) => {
+      if (!session) return status(401);
+      const { currentPassword, newPassword } = JSON.parse(String(init?.body));
+      if (users.get(session) !== currentPassword) {
+        return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
+      }
+      users.set(session, newPassword);
+      return status(204);
+    },
+    'POST /api/account/sign-out-others': () => {
+      if (!session) return status(401);
+      signedOutOthers.push(session);
+      return status(204);
+    },
+    'POST /api/account/delete': (init) => {
+      if (!session) return status(401);
+      const { password, email } = JSON.parse(String(init?.body));
+      if (users.get(session) !== password) return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
+      if (String(email).trim().toLowerCase() !== session.toLowerCase()) {
+        return json({ errors: { EmailMismatch: ["The email address doesn't match this account."] } }, 400);
+      }
+      users.delete(session);
+      session = null;
+      return status(204);
+    },
     'POST /api/auth/resendConfirmationEmail': (init) => {
       resent.push(JSON.parse(String(init?.body)).email);
       return status(200);
@@ -78,5 +104,5 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       json([{ date: '2026-11-01', temperatureC: 20, temperatureF: 67, summary: 'Mild' }]),
   });
 
-  return { fetchMock, users, confirmed, resent, resetRequests };
+  return { fetchMock, users, confirmed, resent, resetRequests, signedOutOthers };
 }

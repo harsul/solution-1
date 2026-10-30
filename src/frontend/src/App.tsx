@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
+import AccountPage from './features/account/AccountPage';
 import ConfirmEmailBanner from './features/auth/ConfirmEmailBanner';
 import ConfirmEmailPage from './features/auth/ConfirmEmailPage';
 import ForgotPasswordPage from './features/auth/ForgotPasswordPage';
@@ -77,6 +78,14 @@ function App() {
             element={
               <RequireAuth>
                 <WeatherPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth>
+                <AccountPage />
               </RequireAuth>
             }
           />

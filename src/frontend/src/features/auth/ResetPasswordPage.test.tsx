@@ -43,7 +43,7 @@ describe('ResetPasswordPage', () => {
     renderWithProviders(<App />, { route: link() });
 
     await choosePassword('short');
-    expect(screen.getByText(/At least 8 characters/)).toBeInTheDocument();
+    expect(screen.getByLabelText('New password')).toHaveAccessibleDescription(/At least 8 characters: not met/);
     expect(screen.getByRole('button', { name: 'Change password' })).toBeDisabled();
 
     await userEvent.clear(screen.getByLabelText('New password'));
