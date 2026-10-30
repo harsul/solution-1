@@ -28,7 +28,7 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 - Build: `dotnet build Solution1.slnx`
 - Test: `dotnet test` (the runner is set to Microsoft.Testing.Platform in `global.json`)
 - Frontend checks: `npm --prefix src/frontend run lint`, `npm --prefix src/frontend test`, `npm --prefix src/frontend run build`
-- **All checks at once: `/fverify`** (used by `/fimplement`, `/freview` and `/fcommit`)
+- **All checks at once: `/fcommit check`** (format, build, tests, lint, frontend build; used by the agents and `/fdeliver`)
 
 ## Team workflow
 
@@ -55,15 +55,8 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 | `/finit [update [name \| brand \| tickets \| section]]` | Product owner + Architect | The one setup command: product questions → `docs/product.md`, then applies code name (rename), display name, brand colors and ticket prefix. Re-run with `update` to change any of it |
 | `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → pinned Roadmap issue + epic and draft feature issues |
 | `/fdeliver epic #<n> \| F<n> \| "idea"` | Delivery lead | Epic: one planning round and one approval for all features, then each feature built, reviewed, committed and PR'd, epic closed. Feature: the same for one feature |
-| `/fbrainstorm <idea \| F<n>>` | Product owner | Interactive plan for one feature |
-| `/fdesign F<n> \| system \| review F<n>` | Designer | Design section, design system, or UI review from screenshots |
-| `/fops F<n> \| ci \| deploy \| review` | CloudOps | Ops section, or delivery work (CI/CD, deployment, environments) |
-| `/fplan [F<n>]` | Architect | Interactive spec, conventions, ADRs |
-| `/fimplement [F<n>]` | Developer | One phase on the feature branch |
-| `/freview [branch]` | Reviewer (+ Designer, CloudOps) | Independent reviews, verified findings, fixes, review record |
 | `/ffix #<issue>` | Developer + Reviewer | Bug: reproduce with a failing test, fix, review, commit, PR |
-| `/fcommit [auto]` | – | Verifies, then logical Conventional Commits; never pushes |
-| `/fverify [server\|frontend]` | – | Build, test, lint table |
+| `/fcommit [check \| auto]` | – | Verifies (format, build, tests, lint, frontend build) and commits in logical Conventional Commits; `check` only verifies; never pushes |
 | `/foptions [name]` | – | Team, commands, where you are, next command |
 
 Gates: the stakeholder approves the **plans** and the **specs** – once per epic with `/fdeliver epic #<n>`, or per feature; after that `/fdeliver` runs on its own and only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
@@ -93,7 +86,7 @@ All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in
 Every phase (and every bug fix) is done only when:
 
 - [ ] Its acceptance criteria are met and each has a test; key safeguards are mutation-checked (break it once, a test fails).
-- [ ] `/fverify` passes: format, build, all server and frontend tests, lint, frontend build.
+- [ ] `/fcommit check` passes: format, build, all server and frontend tests, lint, frontend build.
 - [ ] UI: loading, empty and error states; accessible names; focus stays in the form after actions; works at 390 px and in dark mode; copy matches the design section.
 - [ ] Security: authorization (and tenant scope) on every new endpoint; no secrets, tokens or personal data in code, logs or errors; built-in endpoints can't bypass the feature's rules.
 - [ ] Operations: new configuration, secrets, migrations or resources are in the `ops` section and the AppHost; CI still covers the change.
@@ -117,7 +110,7 @@ Non-obvious traps the team ran into. `/fdeliver` adds new ones after each featur
 
 ## Conventions
 
-Decided conventions. `/fplan` adds to this list when you answer an architecture question, so it is not asked again.
+Decided conventions. The architect adds to this list when the stakeholder answers an architecture question (during `/finit` or `/fdeliver`), so it is not asked again.
 
 - Work tracking: GitHub Issues through `.claude/scripts/fdoc.sh` (epics, features `F<n>`, sections, status labels); one PR per feature.
 - Auto-merge: **off** – `/fdeliver` leaves PRs for the stakeholder. Switch to **on** once CI and branch protection exist (F6): PRs then merge automatically when the required checks pass and no must/should finding is open.
@@ -141,7 +134,7 @@ Decided conventions. `/fplan` adds to this list when you answer an architecture 
 - Unit tests (`xUnit` project): pure logic, no HTTP. Server internals are visible to it via `InternalsVisibleTo`.
 - API tests (`xIntegration` project): `IClassFixture<ServerFactory>` and `factory.CreateClient()`. `ServerFactory` swaps Redis output caching for a no-op store and gets its own database on one shared Postgres server per test run (`PostgresFixture`: Testcontainers, so `dotnet test` needs Docker; or set `TEST_POSTGRES_CONNECTION` to use an existing server). Use a unique email per test. Assert status codes and JSON bodies, using test-local DTO records.
 - Branding: the name users see and the colors live in `src/frontend/src/brand.ts` (theme, app bar gradient and dark-mode shades are derived from it) and `Branding.ProductName` on the server (emails); never hard-code the product name or brand colors elsewhere.
-- Code style: `.editorconfig` for everything (LF, UTF-8, 4 spaces; 2 for web files), `dotnet format` for C#, Prettier for the frontend (`src/frontend/.prettierrc.json`: single quotes, width 120). `/fverify` checks both; fix with `npm --prefix src/frontend run format` and `dotnet format whitespace Solution1.slnx`.
+- Code style: `.editorconfig` for everything (LF, UTF-8, 4 spaces; 2 for web files), `dotnet format` for C#, Prettier for the frontend (`src/frontend/.prettierrc.json`: single quotes, width 120). `/fcommit check` checks both; fix with `npm --prefix src/frontend run format` and `dotnet format whitespace Solution1.slnx`.
 - Frontend tests: `<Component>.test.tsx` next to the component, rendered with `renderWithTheme` (`src/test/render.tsx`). Use Testing Library queries by role or label, `userEvent` for interaction, and stub `fetch` with `vi.stubGlobal`. Shared setup (incl. `matchMedia` stub) is in `src/test/setup.ts`.
 - No mocking libraries: write small test doubles by hand in a `TestDoubles/` folder (C#) or inline (TS).
 - Each acceptance criterion maps to at least one test: API behaviour → `xIntegration`, logic → `xUnit`, UI behaviour → Vitest.
