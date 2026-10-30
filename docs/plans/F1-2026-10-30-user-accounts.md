@@ -46,12 +46,12 @@ Make the app private: people create an account with their email and a password, 
 
 ### Phase 1 – Create an account, sign in and sign out
 **Goal:** the basic account loop works end to end.
-- [ ] Given I'm not signed in, when I open the app, then I see the Sign in page with a link to Create an account.
-- [ ] Given I'm on Create an account, when I enter a new email and matching valid passwords and submit, then I'm signed in and see the weather forecast.
-- [ ] Given I have an account, when I sign in with the right email and password, then I see the weather forecast.
-- [ ] Given I enter a wrong email or password, when I sign in, then I see "Email or password is incorrect" and stay on Sign in.
-- [ ] Given I'm signed in, when I look at the app bar, then I see my email; when I choose Sign out, then I'm back on the Sign in page.
-- [ ] Given a request is in progress, when I submit a form, then the button shows progress and can't be pressed twice.
+- [x] Given I'm not signed in, when I open the app, then I see the Sign in page with a link to Create an account.
+- [x] Given I'm on Create an account, when I enter a new email and matching valid passwords and submit, then I'm signed in and see the weather forecast.
+- [x] Given I have an account, when I sign in with the right email and password, then I see the weather forecast.
+- [x] Given I enter a wrong email or password, when I sign in, then I see "Email or password is incorrect" and stay on Sign in.
+- [x] Given I'm signed in, when I look at the app bar, then I see my email; when I choose Sign out, then I'm back on the Sign in page.
+- [x] Given a request is in progress, when I submit a form, then the button shows progress and can't be pressed twice.
 
 ### Phase 2 – Safe and convenient accounts
 **Goal:** password rules, protection against guessing, and Remember me.

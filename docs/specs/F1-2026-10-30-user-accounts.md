@@ -2,11 +2,11 @@
 id: F1
 title: User accounts (register, sign in, sign out)
 plan: docs/plans/F1-2026-10-30-user-accounts.md
-status: Approved
-phase: 0/3
+status: In progress
+phase: 1/3
 created: 2026-10-30
 approved: 2026-10-30
-branch:
+branch: feature/F1-user-accounts
 ---
 
 # Spec F1 – User accounts (register, sign in, sign out)
@@ -185,7 +185,16 @@ Test infrastructure: `ServerFactory` implements `IAsyncLifetime`, starts a `Post
 - **Migrations in production** aren't automatic; decide before the first deployment.
 
 ## Changes during implementation
-- _filled in by /fimplement_
+- Phase 1: the local tool manifest is `dotnet-tools.json` at the repo root (the .NET 10 default), not `.config/dotnet-tools.json`. Run `dotnet tool restore` once.
+- Phase 1: one shared Postgres server per test run (`PostgresFixture`, an xunit assembly fixture); each `ServerFactory` gets its own fresh database on it. It also accepts `TEST_POSTGRES_CONNECTION` (an existing server; the run's databases are dropped afterwards). Without it, Testcontainers is used as specified.
+  Reason: with one container per test class, parallel fixtures raced to start Testcontainers' resource reaper on Rancher Desktop (`ResourceReaperException`), and the first connection right after "ready" was dropped while the port forwarding to Windows came up (`EndOfStreamException`). The fixture now waits until a real connection from the host succeeds. The variable lets environments without Docker image access (and later CI) run the API tests.
+- Phase 1: `AuthContext` is split into `AuthContext.ts` (context + `useAuth`) and `AuthProvider.tsx` (component), so React fast refresh keeps working (lint rule `only-export-components`).
+- Phase 1: added `AuthCard.tsx` (shared layout of the sign-in and register pages) and `src/test/fakeApi.ts` (a small in-memory fake backend for frontend tests, no mocking library).
+- Phase 1: the API client and auth state already handle `lockedOut` and Remember me; phase 2 adds the UI for them.
+- Phase 1: frontend bundle is now 174 kB gzipped (was 137 kB), mostly React Router; Vite may warn about the 500 kB chunk size. Code splitting can come later if needed.
 
 ## Review log
-- _filled in by /freview_
+- **2026-10-30, Phase 1** – independent review (spec, correctness, security, frontend, tests): 0 must-fix, 5 should-fix, 2 consider. Built-in `/code-review` and `/security-review` not run (not available in this session; run them before the pull request).
+  - Fixed: (1) a late session check from page load could overwrite a successful sign-in → only the newest check updates the state; (2) a failed sign-out was silent → error snackbar, user stays signed in; (3) the cookie test only checked HttpOnly → also asserts `Secure` and `SameSite=Strict` (fails if removed); (4) account created but automatic sign-in failed → sign-in page with "Account created, please sign in."; (5) double-submit test couldn't fail and Create account had none → both forms tested with a second submit, plus a guard in the handlers; (6) App test now checks the "Create an account" link.
+  - Skipped: (7) server errors on the session check look like "signed out". Revisit with phase 3's session handling.
+  - Verified after fixes: server 16/16, frontend 19/19, lint, type check and build clean. The new race and cookie tests fail when their fix is removed.
