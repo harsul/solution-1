@@ -1,14 +1,20 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using System.Text;
 using AspireApp1.Server.Email;
 using AspireApp1.Server.Email.Messages;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace AspireApp1.Server.Endpoints;
 
 public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
 
 public sealed record DeleteAccountRequest(string? Password, string? Email);
+
+public sealed record ChangeEmailRequest(string? NewEmail, string? Password);
 
 internal static class AccountEndpoints
 {
@@ -23,6 +29,7 @@ internal static class AccountEndpoints
         account.MapPost("/password", ChangePasswordAsync);
         account.MapPost("/sign-out-others", SignOutOthersAsync);
         account.MapPost("/delete", DeleteAsync);
+        account.MapPost("/email", RequestEmailChangeAsync);
 
         return app;
     }
@@ -138,6 +145,56 @@ internal static class AccountEndpoints
 
         return TypedResults.NoContent();
     }
+
+    /// <summary>Emails a link to the new address (F5); nothing changes until it is opened.</summary>
+    private static async Task<Results<NoContent, ValidationProblem, UnauthorizedHttpResult>> RequestEmailChangeAsync(
+        ChangeEmailRequest request,
+        ClaimsPrincipal principal,
+        UserManager<IdentityUser> userManager,
+        SignInManager<IdentityUser> signInManager,
+        IEmailDelivery delivery,
+        IOptions<EmailOptions> options,
+        ILoggerFactory loggers,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.GetUserAsync(principal);
+        if (user is null)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        // The password comes first, so nothing about other accounts is revealed without it.
+        if (await VerifyPasswordAsync(signInManager, user, request.Password) is { } failure)
+        {
+            return failure;
+        }
+
+        var newEmail = request.NewEmail?.Trim();
+        if (string.IsNullOrEmpty(newEmail) || !new EmailAddressAttribute().IsValid(newEmail))
+        {
+            return Problem("InvalidEmail", "Enter a valid email address.");
+        }
+
+        if (string.Equals(newEmail, await userManager.GetEmailAsync(user), StringComparison.OrdinalIgnoreCase))
+        {
+            return Problem("SameEmail", "This is already your email address.");
+        }
+
+        if (await userManager.FindByEmailAsync(newEmail) is not null)
+        {
+            return Problem("DuplicateEmail", "This email address is already in use.");
+        }
+
+        var token = await userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+        var link = EmailLinks.ConfirmEmailChange(
+            options.Value.PublicUrl, await userManager.GetUserIdAsync(user), newEmail, Encode(token));
+        await SendAsync(delivery, loggers, ChangeEmailMessage.Create(newEmail, link), user.Id, cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+
+    /// <summary>Same encoding as Identity's built-in endpoints (Base64Url of the UTF-8 token).</summary>
+    private static string Encode(string token) => WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
     /// <summary>Checks the password and counts a wrong one towards the lockout; null when it is correct.</summary>
     private static async Task<ValidationProblem?> VerifyPasswordAsync(
