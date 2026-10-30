@@ -35,6 +35,7 @@ public class AccountEndpointsTests(ServerFactory factory) : IClassFixture<Server
 
     [Theory]
     [InlineData("/api/account/password")]
+    [InlineData("/api/account/sign-out-others")]
     public async Task Account_endpoints_require_a_session(string route)
     {
         var response = await factory.CreateHttpsClient().PostAsJsonAsync(route, new { }, Ct);
@@ -65,6 +66,21 @@ public class AccountEndpointsTests(ServerFactory factory) : IClassFixture<Server
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await InfoAsync(other)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await InfoAsync(client)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Sign_out_others_ends_other_sessions_but_keeps_this_one()
+    {
+        var (client, email) = await SignedInClientAsync(factory);
+        var other = await OtherDeviceAsync(email);
+        Assert.Equal(HttpStatusCode.OK, (await InfoAsync(other)).StatusCode);
+
+        var response = await client.PostAsync("/api/account/sign-out-others", null, Ct);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await InfoAsync(other)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await InfoAsync(client)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(factory.CreateHttpsClient(), email)).StatusCode);
     }
 
     [Theory]
