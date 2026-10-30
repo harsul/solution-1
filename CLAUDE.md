@@ -52,14 +52,14 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 
 | Command | Role | Does |
 |---|---|---|
-| `/finit [update [name \| brand \| tickets \| section]]` | Product owner + Architect | The one setup command: product questions → `docs/product.md`, then applies code name (rename), display name, brand colors and ticket prefix. Re-run with `update` to change any of it |
+| `/finit [update [name \| brand \| tickets \| workflow \| quality \| section]]` | Product owner + Architect | The one setup command: product questions → `docs/product.md`, then applies code name (rename), display name, brand colors and ticket prefix. Re-run with `update` to change any of it |
 | `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → pinned Roadmap issue + epic and draft feature issues |
 | `/fdeliver epic #<n> \| F<n> \| "idea"` | Delivery lead | Epic: one planning round and one approval for all features, then each feature built, reviewed, committed and PR'd, epic closed. Feature: the same for one feature |
 | `/ffix #<issue>` | Developer + Reviewer | Bug: reproduce with a failing test, fix, review, commit, PR |
 | `/fcommit [check]` | – | For your own manual changes: verifies (format, build, tests, lint, frontend build), then commits in logical Conventional Commits; `check` only verifies. Inside `/fdeliver` the developer verifies and commits itself; never pushes |
 | `/foptions [name]` | – | Team, commands, where you are, next command |
 
-Gates: the stakeholder approves the **plans** and the **specs** – once per epic with `/fdeliver epic #<n>`, or per feature; after that `/fdeliver` runs on its own and only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
+Gates (`GATES` in `.claude/workflow.conf`; default `plan+spec`): the stakeholder approves the **plans** and the **specs** – once per epic with `/fdeliver epic #<n>`, or per feature; after that `/fdeliver` runs on its own and only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
 
 ### Work items on GitHub Issues
 
@@ -67,7 +67,7 @@ All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in
 
 - **Roadmap:** one pinned issue `Roadmap` (label `type:roadmap`); body = vision, target customers, principles, epics in order.
 - **Epic:** issue `Epic: <name>`, label `type:epic`; body = goal, success criteria, planned features. Its features are **sub-issues** (`fdoc.sh link <epic> <feature>`, `fdoc.sh children <epic>`), so GitHub shows the epic's progress.
-- **Feature:** issue `<ID> – <title>`, label `type:feature`; **body = plan**. IDs are a prefix plus a sequential number, never reused (`fdoc.sh next-id`); the prefix and first number are set in `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`; here `F`, e.g. `F6`; another project might use `ENG-` → `ENG-1`). In skills and agents, `F<n>` stands for such an ID. 1–3 phases (one is fine); bigger → several features.
+- **Feature:** issue `<ID> – <title>`, label `type:feature`; **body = plan**. IDs are a prefix plus a sequential number, never reused (`fdoc.sh next-id`); the prefix and first number are set in `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`; here `F`, e.g. `F6`; another project might use `ENG-` → `ENG-1`). In skills and agents, `F<n>` stands for such an ID. 1 to `MAX_PHASES` phases (one is fine); bigger → several features.
 - **Sections** = one comment each, updated in place: `design`, `ops`, `spec`, `review-p<k>`.
 - **Status labels:** `plan:draft → questions → approved → done`, `spec:draft → questions → approved → in-progress → done`, plus `needs-answer` while waiting for the stakeholder.
 - **Bug:** issue from the bug template, label `type:bug`; fixed with `/ffix` on `fix/<issue>-<name>`, PR with `Fixes #<issue>`.
@@ -79,7 +79,7 @@ All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in
 
 - Keep it simple: no new layers, libraries or abstractions unless the feature needs them or they are listed under Conventions.
 - Features are small vertical slices: API + UI + tests. Every phase leaves the solution building and the tests passing.
-- Code is never committed to `main` directly (docs and `.claude/` may be). Never push without being asked.
+- Code is never committed to the base branch (`BASE_BRANCH`, default `main`) directly (docs and `.claude/` may be). Never push without being asked.
 
 ## Definition of Done
 
@@ -87,7 +87,7 @@ Every phase (and every bug fix) is done only when:
 
 - [ ] Its acceptance criteria are met and each has a test; key safeguards are mutation-checked (break it once, a test fails).
 - [ ] `/fcommit check` passes: format, build, all server and frontend tests, lint, frontend build.
-- [ ] UI: loading, empty and error states; accessible names; focus stays in the form after actions; works at 390 px and in dark mode; copy matches the design section.
+- [ ] UI: loading, empty and error states; accessible names; focus stays in the form after actions; meets the **Quality bar** in `docs/product.md` (default: works at 390 px, light and dark mode, WCAG 2.1 AA, current Chrome/Edge/Safari/Firefox); copy matches the design section.
 - [ ] Security: authorization (and tenant scope) on every new endpoint; no secrets, tokens or personal data in code, logs or errors; built-in endpoints can't bypass the feature's rules.
 - [ ] Operations: new configuration, secrets, migrations or resources are in the `ops` section and the AppHost; CI still covers the change.
 - [ ] No debug code, unused code or unrelated changes.
@@ -113,8 +113,7 @@ Non-obvious traps the team ran into. `/fdeliver` adds new ones after each featur
 Decided conventions. The architect adds to this list when the stakeholder answers an architecture question (during `/finit` or `/fdeliver`), so it is not asked again.
 
 - Work tracking: GitHub Issues through `.claude/scripts/fdoc.sh` (epics, features `F<n>`, sections, status labels); one PR per feature.
-- Auto-merge: **off** – `/fdeliver` leaves PRs for the stakeholder. Switch to **on** once CI and branch protection exist (F6): PRs then merge automatically when the required checks pass and no must/should finding is open.
-- Reviews: every phase that touches auth, permissions or tenant data, payments, personal data, infrastructure/CI or migrations is reviewed on its own; other features get one review at the end; the last review always includes a security pass.
+- Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/fdoc.sh config`): ticket IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), review depth (`REVIEW`), `AUTO_MERGE` (switch to `on` only once CI and branch protection exist), `MAX_PHASES`, `BASE_BRANCH`, and the model per role (`COST`). `/finit` sets them; edit them any time.
 - Hosting: Azure Container Apps (dev environment only for now; production is on the roadmap's Later list), deployed from the Aspire AppHost (`aspire publish`/azd); CI/CD with GitHub Actions using OIDC federated credentials; secrets in Key Vault / Container Apps secrets, never in the repo.
 - Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.
 - Database: PostgreSQL via Aspire (`appdb`, pgAdmin in dev) with EF Core; DbContext, migrations and DB helpers in `Data/`. Migrations apply automatically at startup in Development only. Create them with `dotnet ef migrations add <Name> -o Data/Migrations` (local tool).

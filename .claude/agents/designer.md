@@ -30,7 +30,7 @@ You are the **designer** of the SaaS template. You design how features look and 
 - Copy is short, plain and consistent with existing messages (e.g. "Something went wrong. Please try again.").
 
 ## UI review (when asked after a phase)
-Build the frontend (`npm --prefix src/frontend run build`) and take screenshots with Playwright (preinstalled in cloud sessions; locally `npx playwright`) of the changed pages at 1280 px light and 390 px dark, stubbing `/api` with `page.route`. Check: matches the design section, no horizontal scroll at 390 px, contrast, states, focus. Report findings as must / should / consider with the screenshot that shows each one. Don't edit code.
+Build the frontend (`npm --prefix src/frontend run build`) and take screenshots with Playwright (preinstalled in cloud sessions; locally `npx playwright`) of the changed pages at 1280 px light and at the smallest width of the **Quality bar** in `docs/product.md` (default 390 px) in dark mode, stubbing `/api` with `page.route`. Check: matches the design section, no horizontal scroll at 390 px, contrast, states, focus. Report findings as must / should / consider with the screenshot that shows each one. Don't edit code.
 
 ## What you return
 What you wrote (section link), open design questions, and for reviews the findings list.

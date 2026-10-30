@@ -1,7 +1,7 @@
 ---
 name: finit
 description: The one setup command. For a new project from this template it asks about the product (name, customers, tenancy, sign-in, billing, modules, brand, hosting, compliance, team workflow, ticket IDs), writes the product profile docs/product.md and applies it to the code - code name (solution, projects, namespaces), display name, brand colors, ticket prefix. Re-run any time to change any of it, e.g. /finit update name or /finit update brand.
-argument-hint: "[update [name | brand | tickets | <section>]]"
+argument-hint: "[update [name | brand | tickets | workflow | quality | <section>]]"
 disable-model-invocation: true
 effort: high
 ---
@@ -14,7 +14,7 @@ Input: $ARGUMENTS
 
 ## 1. Context (silently)
 - Read `CLAUDE.md`, `docs/product.md` if it exists, `src/frontend/src/theme.ts`, `src/frontend/src/App.tsx` and what is already built (`src/frontend/src/features/`, `src/AspireApp1.Server/Endpoints/`).
-- **Profile exists** → update mode: show a 5-line summary of it and ask which sections to change (or take the topic given: `name` = code name and/or display name, `brand` = name users see, tagline, colors, `tickets` = ticket prefix, or any profile section); ask only those questions, then apply only those changes (step 5). **No profile** → all rounds below.
+- **Profile exists** → update mode: show a 5-line summary of it and ask which sections to change (or take the topic given: `name` = code name and/or display name, `brand` = name users see, tagline, colors, `tickets` = ticket prefix, `workflow` = the workflow settings and cost, `quality` = the quality bar, or any profile section); ask only those questions, then apply only those changes (step 5). **No profile** → all rounds below.
 - The current code name is the prefix of `src/*.AppHost` (e.g. `AspireApp1`), the solution is the `*.slnx` file.
 
 ## 2. Free-text basics (in chat, one message)
@@ -44,10 +44,12 @@ Skip any question the free-text answers or the existing profile already settle. 
 **Round C – v1 modules** (multi-select; the rest goes to Later)
 - Admin console for operators · audit log · notifications (email + in-app) · file uploads · API keys and webhooks · data export and deletion (GDPR) · reporting/dashboards · translations (which languages).
 
-**Round D – look and feel**
+**Round D – look and feel, and the quality bar**
 - Default theme: follow the system / light / dark.
 - Density and tone: friendly and plain (recommended) / formal / playful.
 - Layout: top app bar (current) / side navigation for app-like products.
+- Quality bar (multi-select; becomes part of the Definition of Done): phones from 390 px wide (recommended) / dark mode (recommended) / WCAG 2.1 AA (recommended) / WCAG 2.2 AA. Also ask the browsers: current Chrome, Edge, Safari, Firefox (recommended) / plus older versions.
+- Tests: mutation checks for key safeguards (recommended) / a coverage minimum in CI (e.g. 80 %) / both.
 
 **Round E – hosting and compliance**
 - Hosting: Azure Container Apps (current) / other.
@@ -57,9 +59,12 @@ Skip any question the free-text answers or the existing profile already settle. 
 - Compliance needs: GDPR basics / SOC 2 later / HIPAA / none special.
 - Product analytics: none / privacy-friendly (e.g. Plausible) / full (e.g. PostHog).
 
-**Round F – how the team works**
-- Delivery: `/fdeliver epic` with plan + spec approval (recommended) / approve every feature / fully automatic.
-- Auto-merge after CI: off until CI exists (recommended) / on.
+**Round F – how the team works** (written to `.claude/workflow.conf`; explain that it can be edited any time)
+- Approvals `GATES`: plan + spec, once per epic (recommended, `plan+spec`) / specs only (`spec`) / none, only real decisions (`none`).
+- Reviews `REVIEW`: risk-based (recommended, `risk`) / every phase (`every-phase`) / once per feature (`end-only`).
+- Auto-merge `AUTO_MERGE`: off until CI and branch protection exist (recommended) / on.
+- Cost `COST`: balanced (recommended: faster model for the product owner and designer) / economy (faster model for every role except the reviewer) / max (strongest model everywhere).
+- `MAX_PHASES` (default 3) and `BASE_BRANCH` (default `main`): ask only if the stakeholder wants to change them.
 - Work tracking: GitHub Issues (current tooling) / something else (note it; the tooling stays GitHub-based for now).
 - **Ticket IDs**: prefix and first number – `F` → F1, F2 (template default) / `ENG-` → ENG-1 / a project key like `BKG-`. Written to `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`); change it only before the first ticket.
 
@@ -81,7 +86,8 @@ Name · short name · one sentence · tagline · company/sender · support conta
 ## Brand and UI      (primary color, logo, theme default, tone, layout)
 ## Hosting and data  (platform, region, environments, email provider, analytics)
 ## Compliance
-## Team workflow     (delivery mode, auto-merge, tracking)
+## Quality bar       (screen sizes, color modes, accessibility level, browsers, test rules)
+## Team workflow     (tracking; the settings themselves live in .claude/workflow.conf)
 ## Decisions log     (date – decision – reason, appended on every update)
 ```
 
@@ -92,7 +98,8 @@ Working tree clean (otherwise ask to commit or stash first); a branch `chore/fin
 - **Code name** (if it changes) – first, so the following edits land in the renamed projects:
   - tell the stakeholder in two lines what happens: folders, project files and namespaces move; the local Aspire Postgres starts empty once (its volume is named after the AppHost; migrations recreate the schema; the old volume stays until removed); the IDE must reopen the new `.slnx`;
   - run `.claude/scripts/rename.sh <CodeName>`; check that `git status` shows renames (not deletions plus additions) and that `git grep -n "<OldName>"` finds nothing outside `docs/plans` and `docs/specs` (the F1–F5 archive keeps its wording).
-- **Ticket IDs**: write `ID_PREFIX` and `ID_START` into `.claude/workflow.conf`.
+- **Workflow settings**: write the chosen values into `.claude/workflow.conf` (keep its comments) and check them with `.claude/scripts/fdoc.sh config`.
+- **Cost**: set `model:` in the agents' frontmatter (`.claude/agents/*.md`) – `economy`: `sonnet` for every agent except `reviewer` (`inherit`); `balanced`: `sonnet` for `product-owner` and `designer`, `inherit` for the rest; `max`: `inherit` everywhere.
 - Start the **developer** agent with the profile and these tasks only:
   - `src/frontend/src/brand.ts`: `name`, `tagline`, `primary` (main color), `secondary` (accent; derive a harmonious one if only a main color was given), `defaultMode`. Remove `primaryDark`/`secondaryDark` unless the stakeholder gave dark-mode shades – the theme then derives readable lighter shades, the backgrounds and the app bar gradient from the brand colors.
   - `src/<Code>.Server/Branding.cs`: `ProductName` (emails and the email sender).
