@@ -28,7 +28,7 @@ Input: $ARGUMENTS
 6. Then build without stopping: step 4 for each feature in dependency order (independent features may run in parallel in separate worktrees or cloud sessions), step 5 after each, step 6 at the end.
 
 ## 1F. Feature planning
-**product-owner** agent with the idea or issue, its epic, related features and the roadmap: it creates or completes the feature issue (`F<next-id> – <title>`, body = plan, linked to its epic) and returns questions. Then the **plan gate**.
+**product-owner** agent with the idea or issue, its epic, related features and the roadmap: it creates or completes the feature issue (`<next ID from fdoc.sh next-id> – <title>`, body = plan, linked to its epic) and returns questions. Then the **plan gate**.
 
 ## 2. Design, architecture and operations (in parallel)
 Start in **one message** (each with the issue number):

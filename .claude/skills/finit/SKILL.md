@@ -18,11 +18,11 @@ Input: $ARGUMENTS
 
 ## 2. Free-text basics (in chat, one message)
 Ask in plain text, as one short list, and wait for the answer:
-1. **Product name** (and short name for tight spaces, if different).
+1. **Product name** (and short name for tight spaces, if different), and the **code name** for the solution and projects (PascalCase, e.g. `BookingHub`; suggest one from the product name, or keep the template's).
 2. **One sentence**: what it does and for whom.
 3. **Tagline** for the app bar (optional; suggest one).
 4. **Main entities** the product manages (e.g. projects, invoices, bookings) – these become the first product features.
-5. **Brand**: primary color (hex) or "keep the template's purple"; logo now or later.
+5. **Brand**: main color (hex) and optionally an accent color, or "keep the template's purple and blue"; logo now or later.
 6. **Company / sender** name for emails, and support contact (email or URL) if there is one.
 
 ## 3. Option rounds (AskUserQuestion)
@@ -60,6 +60,7 @@ Skip any question the free-text answers or the existing profile already settle. 
 - Delivery: `/fdeliver epic` with plan + spec approval (recommended) / approve every feature / fully automatic.
 - Auto-merge after CI: off until CI exists (recommended) / on.
 - Work tracking: GitHub Issues (current tooling) / something else (note it; the tooling stays GitHub-based for now).
+- **Ticket IDs**: prefix and first number – `F` → F1, F2 (template default) / `ENG-` → ENG-1 / a project key like `BKG-`. Written to `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`); change it only before the first ticket.
 
 ## 4. Write the profile
 Show a compact summary (one line per section) and ask **Save / Change something**. Then write `docs/product.md`:
@@ -86,10 +87,15 @@ Name · short name · one sentence · tagline · company/sender · support conta
 Project-wide technical rules that follow from the answers (data region, environments, auto-merge, sign-in providers) also go as one-liners into `CLAUDE.md` → Conventions, replacing the template's defaults where they differ. Replace the first lines of `CLAUDE.md` (title + one-sentence description) with the product's.
 
 ## 5. Apply the basics to the code
-On a branch `chore/finit` from an up-to-date `main`, start the **developer** agent with the profile and these tasks only:
-- Replace the template name ("Aspire Starter") and tagline everywhere they appear (`git grep -n "Aspire Starter"`: frontend title and app bar, `index.html`, email messages, `EmailOptions.FromName`) with the product name, tagline and sender; keep tests passing (update expected texts).
-- Brand color: set `primary` in `src/frontend/src/theme.ts` for light and dark (a lighter shade for dark mode, readable contrast); default theme mode if chosen.
-- Nothing else – modules, sign-in methods, billing and so on become roadmap features, not setup changes.
+On a branch `chore/finit` from an up-to-date `main`:
+- **Code name** (if it changes): run `.claude/scripts/rename.sh <CodeName>` first (see `/frename`), so the following edits land in the renamed projects.
+- **Ticket IDs**: write `ID_PREFIX` and `ID_START` into `.claude/workflow.conf`.
+- Start the **developer** agent with the profile and these tasks only:
+  - `src/frontend/src/brand.ts`: `name`, `tagline`, `primary` (main color), `secondary` (accent; derive a harmonious one if only a main color was given), `defaultMode`. Remove `primaryDark`/`secondaryDark` unless the stakeholder gave dark-mode shades – the theme then derives readable lighter shades, the backgrounds and the app bar gradient from the brand colors.
+  - `src/<Code>.Server/Branding.cs`: `ProductName` (emails and the email sender).
+  - `src/frontend/index.html`: `<title>`.
+  - Check contrast: text on `primary` buttons and the app bar gradient must stay readable (WCAG AA); adjust the shades in `brand.ts` if not.
+  - Nothing else – modules, sign-in methods, billing and so on become roadmap features, not setup changes.
 Then `fverify`, the **designer** agent reviews the brand change from screenshots (light/dark, 390 px) if the color changed, and `/fcommit auto` (`chore: set up <product name>`). Commit `docs/product.md` and `CLAUDE.md` with it. Leave merging and pushing to the stakeholder.
 
 ## 6. Next

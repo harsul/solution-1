@@ -53,6 +53,7 @@ Subagents can't talk to the stakeholder: they return questions, and the delivery
 | Command | Role | Does |
 |---|---|---|
 | `/finit [update \| topic]` | Product owner + Architect | Product setup: asks about the product and options, writes `docs/product.md`, applies name/tagline/brand color |
+| `/frename <NewName> ["Display name"]` | Developer | Renames the code base (solution, projects, namespaces) and/or the name users see; rebuilds, tests, commits on a branch |
 | `/froadmap [topic \| review]` | Product owner | Vision, target businesses, epics → pinned Roadmap issue + epic and draft feature issues |
 | `/fdeliver epic #<n> \| F<n> \| "idea"` | Delivery lead | Epic: one planning round and one approval for all features, then each feature built, reviewed, committed and PR'd, epic closed. Feature: the same for one feature |
 | `/fbrainstorm <idea \| F<n>>` | Product owner | Interactive plan for one feature |
@@ -74,7 +75,7 @@ All reads and writes go through `.claude/scripts/fdoc.sh` (needs `gh`, signed in
 
 - **Roadmap:** one pinned issue `Roadmap` (label `type:roadmap`); body = vision, target customers, principles, epics in order.
 - **Epic:** issue `Epic: <name>`, label `type:epic`; body = goal, success criteria, planned features. Its features are **sub-issues** (`fdoc.sh link <epic> <feature>`, `fdoc.sh children <epic>`), so GitHub shows the epic's progress.
-- **Feature:** issue `F<n> – <title>`, label `type:feature`; **body = plan**. `F<n>` is sequential and never reused (`fdoc.sh next-id`). 1–3 phases (one is fine); bigger → several features.
+- **Feature:** issue `<ID> – <title>`, label `type:feature`; **body = plan**. IDs are a prefix plus a sequential number, never reused (`fdoc.sh next-id`); the prefix and first number are set in `.claude/workflow.conf` (`ID_PREFIX`, `ID_START`; here `F`, e.g. `F6`; another project might use `ENG-` → `ENG-1`). In skills and agents, `F<n>` stands for such an ID. 1–3 phases (one is fine); bigger → several features.
 - **Sections** = one comment each, updated in place: `design`, `ops`, `spec`, `review-p<k>`.
 - **Status labels:** `plan:draft → questions → approved → done`, `spec:draft → questions → approved → in-progress → done`, plus `needs-answer` while waiting for the stakeholder.
 - **Bug:** issue from the bug template, label `type:bug`; fixed with `/ffix` on `fix/<issue>-<name>`, PR with `Fixes #<issue>`.
@@ -140,6 +141,7 @@ Decided conventions. `/fplan` adds to this list when you answer an architecture 
 - Tests: xunit.v3 with `[Fact]`/`[Theory]`, global `using Xunit`; pass `TestContext.Current.CancellationToken` to async calls.
 - Unit tests (`xUnit` project): pure logic, no HTTP. Server internals are visible to it via `InternalsVisibleTo`.
 - API tests (`xIntegration` project): `IClassFixture<ServerFactory>` and `factory.CreateClient()`. `ServerFactory` swaps Redis output caching for a no-op store and gets its own database on one shared Postgres server per test run (`PostgresFixture`: Testcontainers, so `dotnet test` needs Docker; or set `TEST_POSTGRES_CONNECTION` to use an existing server). Use a unique email per test. Assert status codes and JSON bodies, using test-local DTO records.
+- Branding: the name users see and the colors live in `src/frontend/src/brand.ts` (theme, app bar gradient and dark-mode shades are derived from it) and `Branding.ProductName` on the server (emails); never hard-code the product name or brand colors elsewhere.
 - Code style: `.editorconfig` for everything (LF, UTF-8, 4 spaces; 2 for web files), `dotnet format` for C#, Prettier for the frontend (`src/frontend/.prettierrc.json`: single quotes, width 120). `/fverify` checks both; fix with `npm --prefix src/frontend run format` and `dotnet format whitespace Solution1.slnx`.
 - Frontend tests: `<Component>.test.tsx` next to the component, rendered with `renderWithTheme` (`src/test/render.tsx`). Use Testing Library queries by role or label, `userEvent` for interaction, and stub `fetch` with `vi.stubGlobal`. Shared setup (incl. `matchMedia` stub) is in `src/test/setup.ts`.
 - No mocking libraries: write small test doubles by hand in a `TestDoubles/` folder (C#) or inline (TS).
