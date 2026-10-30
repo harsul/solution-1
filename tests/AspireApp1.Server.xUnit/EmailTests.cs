@@ -99,6 +99,41 @@ public class EmailTests
         Assert.DoesNotContain("evil.example", message.TextBody);
     }
 
+    [Fact]
+    public void ResetPasswordMessage_has_the_link_and_says_1_hour()
+    {
+        const string link = "https://app.test/reset-password?email=ada%40example.com&code=x<y";
+
+        var message = ResetPasswordMessage.Create("ada@example.com", link);
+
+        Assert.Equal("Reset your password", message.Subject);
+        Assert.Contains(link, message.TextBody);
+        Assert.Contains("1 hour", message.TextBody);
+        Assert.Contains("code=x&lt;y", message.HtmlBody);
+        Assert.DoesNotContain("x<y", message.HtmlBody);
+    }
+
+    [Fact]
+    public void ConfirmBeforeResetMessage_explains_to_confirm_first_and_request_again()
+    {
+        const string link = "https://app.test/confirm-email?userId=u1&code=c1";
+
+        var message = ConfirmBeforeResetMessage.Create("ada@example.com", link);
+
+        Assert.Equal("Confirm your email address first", message.Subject);
+        Assert.Contains(link, message.TextBody);
+        Assert.Contains("request the password reset again", message.TextBody);
+        Assert.Contains("https://app.test/confirm-email?userId=u1&amp;code=c1", message.HtmlBody);
+    }
+
+    [Theory]
+    [InlineData("https://app.test", "https://app.test/reset-password?email=ada@example.com&code=c%2B1")] // "@" is valid in a query
+    [InlineData("https://example.com/app/", "https://example.com/app/reset-password?email=ada@example.com&code=c%2B1")] // "@" is valid in a query
+    public void Reset_link_keeps_the_public_url_path_and_encodes_values(string publicUrl, string expected)
+    {
+        Assert.Equal(expected, EmailLinks.ResetPassword(publicUrl, "ada@example.com", "c+1"));
+    }
+
     private sealed class RecordingDelivery : IEmailDelivery
     {
         public List<EmailMessage> Sent { get; } = [];

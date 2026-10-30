@@ -17,6 +17,8 @@ public sealed class FixedWindowLimit
 public sealed class RateLimitOptions
 {
     public FixedWindowLimit ResendConfirmation { get; set; } = new() { PermitLimit = 1, Window = TimeSpan.FromMinutes(1) };
+
+    public FixedWindowLimit ForgotPassword { get; set; } = new() { PermitLimit = 5, Window = TimeSpan.FromMinutes(15) };
 }
 
 internal static class RateLimitSetup
@@ -30,6 +32,7 @@ internal static class RateLimitSetup
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["/api/auth/resendConfirmationEmail"] = o => o.ResendConfirmation,
+            ["/api/auth/password/forgot"] = o => o.ForgotPassword,
         };
 
     /// <summary>

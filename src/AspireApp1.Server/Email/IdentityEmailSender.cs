@@ -43,7 +43,7 @@ internal sealed class IdentityEmailSender(
         }
     }
 
-    // Password reset emails are F2's job; until then the built-in /forgotPassword must not send anything.
+    // Password reset emails come from POST /api/auth/password/forgot (F2); the built-in /forgotPassword must not send anything.
     public Task SendPasswordResetLinkAsync(IdentityUser user, string email, string resetLink) => NotSentYet(user);
 
     public Task SendPasswordResetCodeAsync(IdentityUser user, string email, string resetCode) => NotSentYet(user);

@@ -35,6 +35,11 @@ internal static class IdentitySetup
             .AddPasswordValidator<RequireLetterPasswordValidator>()
             .AddTokenProvider<EmailConfirmationTokenProvider>(EmailConfirmationTokenProvider.ProviderName);
 
+        // Password reset links (default token provider) are valid for 1 hour; email confirmation has
+        // its own provider and options (24 h), so this doesn't affect it. Note: the built-in change-email
+        // flow also uses the default provider (1 h); the app doesn't offer changing the email yet.
+        builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(1));
+
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true;
