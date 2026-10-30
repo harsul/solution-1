@@ -8,26 +8,34 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AuthCard from './AuthCard';
 import { useAuth } from './AuthContext';
+import PasswordRules from './PasswordRules';
+import { isPasswordValid, isValidEmail } from './passwordRules';
+
+type FormError = { kind: 'duplicate' } | { kind: 'messages'; messages: string[] };
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [error, setError] = useState<FormError | null>(null);
 
   const mismatch = confirm.length > 0 && confirm !== password;
-  const canSubmit = email !== '' && password !== '' && confirm === password;
+  const passwordsReady = isPasswordValid(password) && confirm === password;
+  // Show the email hint after leaving the field, or as soon as it's the only thing blocking submit.
+  const emailInvalid = email !== '' && !isValidEmail(email) && (emailTouched || passwordsReady);
+  const canSubmit = isValidEmail(email) && passwordsReady;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (busy || !canSubmit) return;
     setBusy(true);
-    setErrors([]);
+    setError(null);
     try {
-      const result = await register({ email, password });
+      const result = await register({ email: email.trim(), password });
       if (result.ok) {
         navigate(result.signedIn ? '/' : '/signin', {
           replace: true,
@@ -35,9 +43,9 @@ export default function RegisterPage() {
         });
         return;
       }
-      setErrors(result.errors);
+      setError(result.duplicate ? { kind: 'duplicate' } : { kind: 'messages', messages: result.errors });
     } catch {
-      setErrors(['Something went wrong. Please try again.']);
+      setError({ kind: 'messages', messages: ['Something went wrong. Please try again.'] });
     }
     setBusy(false);
   };
@@ -45,9 +53,17 @@ export default function RegisterPage() {
   return (
     <AuthCard title="Create an account">
       <Stack component="form" onSubmit={handleSubmit} noValidate spacing={2}>
-        {errors.length > 0 && (
+        {error?.kind === 'duplicate' && (
           <Alert severity="error">
-            {errors.map((message) => (
+            An account with this email already exists.{' '}
+            <Link component={RouterLink} to="/signin" color="inherit" sx={{ fontWeight: 500 }}>
+              Sign in
+            </Link>
+          </Alert>
+        )}
+        {error?.kind === 'messages' && (
+          <Alert severity="error">
+            {error.messages.map((message) => (
               <div key={message}>{message}</div>
             ))}
           </Alert>
@@ -58,6 +74,9 @@ export default function RegisterPage() {
           autoComplete="username"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => setEmailTouched(true)}
+          error={emailInvalid}
+          helperText={emailInvalid ? 'Enter a valid email address' : ' '}
           fullWidth
         />
         <TextField
@@ -66,8 +85,10 @@ export default function RegisterPage() {
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          slotProps={{ htmlInput: { 'aria-describedby': 'password-rules' } }}
           fullWidth
         />
+        <PasswordRules id="password-rules" password={password} />
         <TextField
           label="Repeat password"
           type="password"

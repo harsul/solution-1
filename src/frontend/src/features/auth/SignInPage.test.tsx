@@ -78,4 +78,36 @@ describe('SignInPage', () => {
     expect(screen.getByText('Mild')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Sign in' })).not.toBeInTheDocument();
   });
+
+  it('tells a locked-out user when to try again', async () => {
+    fakeApi({
+      'GET /api/auth/manage/info': () => status(401),
+      'POST /api/auth/login': () => json({ detail: 'LockedOut' }, 401),
+    });
+    renderWithProviders(<App />, { route: '/signin' });
+
+    await fillAndSubmit('ada@example.com', 'Passw0rd!');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This account is temporarily locked. Try again in 5 minutes.',
+    );
+  });
+
+  it.each([
+    [true, 'useCookies=true'],
+    [false, 'useSessionCookies=true'],
+  ])('Remember me %s signs in with %s', async (rememberMe, expectedQuery) => {
+    const { fetchMock, users } = fakeAuthBackend();
+    users.set('ada@example.com', 'Passw0rd!');
+    renderWithProviders(<App />, { route: '/signin' });
+
+    await userEvent.type(await screen.findByLabelText('Email'), 'ada@example.com');
+    await userEvent.type(screen.getByLabelText('Password'), 'Passw0rd!');
+    if (rememberMe) await userEvent.click(screen.getByLabelText('Remember me'));
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await screen.findByText('Mild');
+    const loginUrl = fetchMock.mock.calls.map(([url]) => String(url)).find((url) => url.startsWith('/api/auth/login'));
+    expect(loginUrl).toBe(`/api/auth/login?${expectedQuery}`);
+  });
 });

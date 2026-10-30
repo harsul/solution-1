@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import App from '../../App';
@@ -33,7 +33,51 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('button', { name: 'Create account' })).toBeDisabled();
   });
 
-  it('shows the server errors when registration fails', async () => {
+  it('shows which password rules fail and blocks submitting until all are met', async () => {
+    fakeAuthBackend();
+    renderWithProviders(<App />, { route: '/register' });
+
+    await fillForm('new@example.com', 'short');
+
+    const passwordField = screen.getByLabelText('Password');
+    expect(passwordField).toHaveAccessibleDescription(/At least 8 characters: not met/);
+    expect(passwordField).toHaveAccessibleDescription(/At least one letter: met/);
+    expect(passwordField).toHaveAccessibleDescription(/At least one number: not met/);
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeDisabled();
+
+    await userEvent.clear(screen.getByLabelText('Password'));
+    await userEvent.type(screen.getByLabelText('Password'), 'short123');
+    await userEvent.clear(screen.getByLabelText('Repeat password'));
+    await userEvent.type(screen.getByLabelText('Repeat password'), 'short123');
+
+    expect(passwordField).toHaveAccessibleDescription(/At least 8 characters: met/);
+    expect(passwordField).toHaveAccessibleDescription(/At least one number: met/);
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeEnabled();
+  });
+
+  it('flags an invalid email address and blocks submitting', async () => {
+    fakeAuthBackend();
+    renderWithProviders(<App />, { route: '/register' });
+
+    await fillForm('not-an-email', 'Passw0rd!');
+
+    expect(screen.getByText('Enter a valid email address')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeDisabled();
+  });
+
+  it('explains an invalid email right away when it is the only thing blocking submit', async () => {
+    fakeAuthBackend();
+    renderWithProviders(<App />, { route: '/register' });
+
+    await userEvent.type(await screen.findByLabelText('Password'), 'Passw0rd!');
+    await userEvent.type(screen.getByLabelText('Repeat password'), 'Passw0rd!');
+    await userEvent.type(screen.getByLabelText('Email'), 'ada@example'); // still in the field
+
+    expect(screen.getByText('Enter a valid email address')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeDisabled();
+  });
+
+  it('shows a duplicate-email message with a link to sign in', async () => {
     const { users } = fakeAuthBackend();
     users.set('taken@example.com', 'Passw0rd!');
     renderWithProviders(<App />, { route: '/register' });
@@ -41,7 +85,10 @@ describe('RegisterPage', () => {
     await fillForm('taken@example.com', 'Passw0rd!');
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent("Username 'taken@example.com' is already taken.");
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('An account with this email already exists.');
+    await userEvent.click(within(alert).getByRole('link', { name: 'Sign in' }));
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
 
   it('sends the user to sign in with a notice when the account was created but signing in failed', async () => {

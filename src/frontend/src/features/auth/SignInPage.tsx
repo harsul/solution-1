@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -21,6 +23,7 @@ export default function SignInPage() {
   const notice = (useLocation().state as { notice?: string } | null)?.notice;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +33,7 @@ export default function SignInPage() {
     setBusy(true);
     setError(null);
     try {
-      const result = await signIn({ email, password }, false);
+      const result = await signIn({ email: email.trim(), password }, rememberMe);
       if (result === 'ok') {
         navigate('/', { replace: true });
         return;
@@ -62,6 +65,11 @@ export default function SignInPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           fullWidth
+        />
+        <FormControlLabel
+          control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />}
+          label="Remember me"
+          sx={{ mt: -1 }}
         />
         <Button type="submit" variant="contained" size="large" loading={busy} disabled={!email || !password}>
           Sign in
