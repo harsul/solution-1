@@ -29,6 +29,7 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
   const resent: string[] = [];
   const resetRequests: string[] = [];
   const usedResetCodes = new Set<string>();
+  const signedOutOthers: string[] = [];
   const users = new Map<string, string>(signedInAs ? [[signedInAs, 'Passw0rd!']] : []);
 
   const fetchMock = fakeApi({
@@ -63,6 +64,11 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       users.set(session, newPassword);
       return status(204);
     },
+    'POST /api/account/sign-out-others': () => {
+      if (!session) return status(401);
+      signedOutOthers.push(session);
+      return status(204);
+    },
     'POST /api/auth/resendConfirmationEmail': (init) => {
       resent.push(JSON.parse(String(init?.body)).email);
       return status(200);
@@ -87,5 +93,5 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       json([{ date: '2026-11-01', temperatureC: 20, temperatureF: 67, summary: 'Mild' }]),
   });
 
-  return { fetchMock, users, confirmed, resent, resetRequests };
+  return { fetchMock, users, confirmed, resent, resetRequests, signedOutOthers };
 }

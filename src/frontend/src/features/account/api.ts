@@ -34,3 +34,9 @@ export async function changePassword(currentPassword: string, newPassword: strin
   }
   throw unexpected(response);
 }
+
+/** Ends every other session of this account; this browser stays signed in. */
+export async function signOutOtherDevices(): Promise<void> {
+  const response = await apiFetch('/api/account/sign-out-others', postJson());
+  if (!response.ok) throw unexpected(response);
+}
