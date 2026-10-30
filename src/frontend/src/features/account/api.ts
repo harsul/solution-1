@@ -8,6 +8,10 @@ export type DeleteAccountResult =
   | { ok: true }
   | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'emailMismatch' };
 
+export type ChangeEmailResult =
+  | { ok: true }
+  | { ok: false; code: 'wrongPassword' | 'lockedOut' | 'invalidEmail' | 'sameEmail' | 'inUse' | 'tooManyRequests' };
+
 interface ValidationProblem {
   errors?: Record<string, string[]>;
 }
@@ -54,6 +58,40 @@ export async function deleteAccount(password: string, email: string): Promise<De
     if ('LockedOut' in errors) return { ok: false, code: 'lockedOut' };
     if ('PasswordMismatch' in errors) return { ok: false, code: 'wrongPassword' };
     if ('EmailMismatch' in errors) return { ok: false, code: 'emailMismatch' };
+  }
+  throw unexpected(response);
+}
+
+const changeEmailCodes = {
+  LockedOut: 'lockedOut',
+  PasswordMismatch: 'wrongPassword',
+  InvalidEmail: 'invalidEmail',
+  SameEmail: 'sameEmail',
+  DuplicateEmail: 'inUse',
+} as const;
+
+/** Sends a confirmation link to the new address; the email changes only when it is opened. */
+export async function changeEmail(newEmail: string, password: string): Promise<ChangeEmailResult> {
+  const response = await apiFetch('/api/account/email', postJson({ newEmail, password }));
+  if (response.ok) return { ok: true };
+  if (response.status === 429) return { ok: false, code: 'tooManyRequests' };
+  if (response.status === 400) {
+    const errors = await readErrors(response);
+    const known = (Object.keys(changeEmailCodes) as (keyof typeof changeEmailCodes)[]).find((code) => code in errors);
+    if (known) return { ok: false, code: changeEmailCodes[known] };
+  }
+  throw unexpected(response);
+}
+
+export type ConfirmEmailChangeResult = 'changed' | 'invalid' | 'inUse';
+
+/** Applies a change-email link. Works signed in or not. */
+export async function confirmEmailChange(userId: string, email: string, code: string): Promise<ConfirmEmailChangeResult> {
+  const response = await apiFetch('/api/account/email/confirm', postJson({ userId, email, code }));
+  if (response.ok) return 'changed';
+  if (response.status === 400) {
+    const errors = await readErrors(response);
+    return 'DuplicateEmail' in errors ? 'inUse' : 'invalid';
   }
   throw unexpected(response);
 }

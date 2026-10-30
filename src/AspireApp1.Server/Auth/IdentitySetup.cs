@@ -30,14 +30,15 @@ internal static class IdentitySetup
 
                 // Email confirmation links use their own provider (24 h lifetime).
                 options.Tokens.EmailConfirmationTokenProvider = EmailConfirmationTokenProvider.ProviderName;
+                // Change-email links (F5) live as long as confirmation links.
+                options.Tokens.ChangeEmailTokenProvider = EmailConfirmationTokenProvider.ProviderName;
             })
             .AddEntityFrameworkStores<AppDbContext>()
             .AddPasswordValidator<RequireLetterPasswordValidator>()
             .AddTokenProvider<EmailConfirmationTokenProvider>(EmailConfirmationTokenProvider.ProviderName);
 
         // Password reset links (default token provider) are valid for 1 hour; email confirmation has
-        // its own provider and options (24 h), so this doesn't affect it. Note: the built-in change-email
-        // flow also uses the default provider (1 h); the app doesn't offer changing the email yet.
+        // its own provider and options (24 h), so this doesn't affect it; neither are change-email links.
         builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(1));
 
         // Check the security stamp on every request, so changing it (password change, "sign out other

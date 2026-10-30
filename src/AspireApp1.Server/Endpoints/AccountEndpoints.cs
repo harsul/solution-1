@@ -1,14 +1,22 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using System.Text;
 using AspireApp1.Server.Email;
 using AspireApp1.Server.Email.Messages;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace AspireApp1.Server.Endpoints;
 
 public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
 
 public sealed record DeleteAccountRequest(string? Password, string? Email);
+
+public sealed record ChangeEmailRequest(string? NewEmail, string? Password);
+
+public sealed record ConfirmEmailChangeRequest(string? UserId, string? Email, string? Code);
 
 internal static class AccountEndpoints
 {
@@ -23,6 +31,9 @@ internal static class AccountEndpoints
         account.MapPost("/password", ChangePasswordAsync);
         account.MapPost("/sign-out-others", SignOutOthersAsync);
         account.MapPost("/delete", DeleteAsync);
+        account.MapPost("/email", RequestEmailChangeAsync);
+        // The link may be opened in any browser, signed in or not.
+        account.MapPost("/email/confirm", ConfirmEmailChangeAsync).AllowAnonymous();
 
         return app;
     }
@@ -138,6 +149,136 @@ internal static class AccountEndpoints
 
         return TypedResults.NoContent();
     }
+
+    /// <summary>Emails a link to the new address (F5); nothing changes until it is opened.</summary>
+    private static async Task<Results<NoContent, ValidationProblem, UnauthorizedHttpResult>> RequestEmailChangeAsync(
+        ChangeEmailRequest request,
+        ClaimsPrincipal principal,
+        UserManager<IdentityUser> userManager,
+        SignInManager<IdentityUser> signInManager,
+        IEmailDelivery delivery,
+        IOptions<EmailOptions> options,
+        ILoggerFactory loggers,
+        CancellationToken cancellationToken)
+    {
+        var user = await userManager.GetUserAsync(principal);
+        if (user is null)
+        {
+            return TypedResults.Unauthorized();
+        }
+
+        // The password comes first, so nothing about other accounts is revealed without it.
+        if (await VerifyPasswordAsync(signInManager, user, request.Password) is { } failure)
+        {
+            return failure;
+        }
+
+        var newEmail = request.NewEmail?.Trim();
+        if (string.IsNullOrEmpty(newEmail) || !new EmailAddressAttribute().IsValid(newEmail))
+        {
+            return Problem("InvalidEmail", "Enter a valid email address.");
+        }
+
+        // The address becomes the sign-in name, so it must also pass Identity's user name rules
+        // (e.g. no apostrophes or accented letters); otherwise the change would fail at confirm.
+        var allowed = userManager.Options.User.AllowedUserNameCharacters;
+        if (!string.IsNullOrEmpty(allowed) && newEmail.Any(c => !allowed.Contains(c)))
+        {
+            return Problem("InvalidEmail", "This email address can't be used to sign in.");
+        }
+
+        if (string.Equals(newEmail, await userManager.GetEmailAsync(user), StringComparison.OrdinalIgnoreCase))
+        {
+            return Problem("SameEmail", "This is already your email address.");
+        }
+
+        if (await userManager.FindByEmailAsync(newEmail) is not null)
+        {
+            return Problem("DuplicateEmail", "This email address is already in use.");
+        }
+
+        var token = await userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+        var link = EmailLinks.ConfirmEmailChange(
+            options.Value.PublicUrl, await userManager.GetUserIdAsync(user), newEmail, Encode(token));
+        await SendAsync(delivery, loggers, ChangeEmailMessage.Create(newEmail, link), user.Id, cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+
+    /// <summary>
+    /// Applies a change-email link (F5): the email changes and counts as confirmed, the sign-in name
+    /// follows it, every session ends except this browser's (if it is the same user), and the old
+    /// confirmed address is told.
+    /// </summary>
+    private static async Task<Results<NoContent, ValidationProblem>> ConfirmEmailChangeAsync(
+        ConfirmEmailChangeRequest request,
+        ClaimsPrincipal principal,
+        UserManager<IdentityUser> userManager,
+        SignInManager<IdentityUser> signInManager,
+        IEmailDelivery delivery,
+        ILoggerFactory loggers,
+        CancellationToken cancellationToken)
+    {
+        var invalid = Problem("InvalidToken", "This link is no longer valid.");
+        var newEmail = request.Email?.Trim();
+        if (string.IsNullOrEmpty(request.UserId) || string.IsNullOrEmpty(newEmail) || string.IsNullOrEmpty(request.Code)
+            || Decode(request.Code) is not { } token)
+        {
+            return invalid;
+        }
+
+        var user = await userManager.FindByIdAsync(request.UserId);
+        if (user is null)
+        {
+            return invalid;
+        }
+
+        var oldEmail = await userManager.GetEmailAsync(user);
+        var notifyOld = oldEmail is not null && await userManager.IsEmailConfirmedAsync(user);
+
+        // Usernames are email addresses: rename in memory so ChangeEmailAsync saves both in one update.
+        user.UserName = newEmail;
+        await userManager.UpdateNormalizedUserNameAsync(user);
+
+        // Checks the token first (expired, used, tampered → InvalidToken), then validates the user
+        // (address taken meanwhile → DuplicateEmail), sets and confirms the email, changes the security
+        // stamp (ending every session) and saves once. On failure nothing is saved, and nothing about
+        // other accounts is revealed without a valid token.
+        var changed = await userManager.ChangeEmailAsync(user, newEmail, token);
+        if (!changed.Succeeded)
+        {
+            return TypedResults.ValidationProblem(changed.Errors
+                .GroupBy(e => e.Code)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray()));
+        }
+
+        if (userManager.GetUserId(principal) == user.Id)
+        {
+            await signInManager.RefreshSignInAsync(user);
+        }
+
+        if (notifyOld)
+        {
+            await SendAsync(delivery, loggers, EmailChangedMessage.Create(oldEmail!, newEmail), user.Id, cancellationToken);
+        }
+
+        return TypedResults.NoContent();
+    }
+
+    private static string? Decode(string code)
+    {
+        try
+        {
+            return Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Same encoding as Identity's built-in endpoints (Base64Url of the UTF-8 token).</summary>
+    private static string Encode(string token) => WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
     /// <summary>Checks the password and counts a wrong one towards the lockout; null when it is correct.</summary>
     private static async Task<ValidationProblem?> VerifyPasswordAsync(

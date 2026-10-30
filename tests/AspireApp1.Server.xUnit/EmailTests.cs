@@ -125,6 +125,41 @@ public class EmailTests
     }
 
     [Fact]
+    public void ChangeEmailMessage_has_the_link_and_says_24_hours()
+    {
+        var link = "https://app.test/confirm-email-change?userId=u1&email=new%40example.com&code=a%26b";
+
+        var message = ChangeEmailMessage.Create("new@example.com", link);
+
+        Assert.Equal("new@example.com", message.To);
+        Assert.Equal("Confirm your new email address", message.Subject);
+        Assert.Contains(link, message.TextBody);
+        Assert.Contains("24 hours", message.TextBody);
+        Assert.Contains("code=a%26b", message.HtmlBody);
+        Assert.DoesNotContain("code=a&b", message.HtmlBody);
+    }
+
+    [Fact]
+    public void Confirm_email_change_link_has_all_values()
+    {
+        var link = EmailLinks.ConfirmEmailChange("https://example.com/app/", "u1", "new@example.com", "c+1");
+
+        Assert.Equal("https://example.com/app/confirm-email-change?userId=u1&email=new@example.com&code=c%2B1", link);
+    }
+
+    [Fact]
+    public void EmailChangedMessage_names_the_new_address_and_has_no_link()
+    {
+        var message = EmailChangedMessage.Create("old@example.com", "<new>@example.com");
+
+        Assert.Equal("old@example.com", message.To);
+        Assert.Equal("Your email address was changed", message.Subject);
+        Assert.Contains("<new>@example.com", message.TextBody);
+        Assert.Contains("&lt;new&gt;@example.com", message.HtmlBody);
+        Assert.DoesNotContain("http", message.TextBody);
+    }
+
+    [Fact]
     public void ResetPasswordMessage_has_the_link_and_says_1_hour()
     {
         const string link = "https://app.test/reset-password?email=ada%40example.com&code=x<y";

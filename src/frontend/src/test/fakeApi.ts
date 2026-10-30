@@ -30,6 +30,7 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
   const resetRequests: string[] = [];
   const usedResetCodes = new Set<string>();
   const signedOutOthers: string[] = [];
+  const emailChangeRequests: string[] = [];
   const users = new Map<string, string>(signedInAs ? [[signedInAs, 'Passw0rd!']] : []);
 
   const fetchMock = fakeApi({
@@ -80,6 +81,25 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       session = null;
       return status(204);
     },
+    'POST /api/account/email': (init) => {
+      if (!session) return status(401);
+      const { newEmail, password } = JSON.parse(String(init?.body));
+      if (users.get(session) !== password) return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
+      if (users.has(newEmail)) return json({ errors: { DuplicateEmail: ['In use.'] } }, 400);
+      emailChangeRequests.push(newEmail);
+      return status(204);
+    },
+    // Change-email links in tests: userId = the current email, code = 'valid' (works once).
+    'POST /api/account/email/confirm': (init) => {
+      const { userId, email, code } = JSON.parse(String(init?.body));
+      if (code !== 'valid' || !users.has(userId)) return json({ errors: { InvalidToken: ['Invalid.'] } }, 400);
+      if (users.has(email)) return json({ errors: { DuplicateEmail: ['In use.'] } }, 400);
+      users.set(email, users.get(userId)!);
+      users.delete(userId);
+      confirmed.add(email);
+      if (session === userId) session = email;
+      return status(204);
+    },
     'POST /api/auth/resendConfirmationEmail': (init) => {
       resent.push(JSON.parse(String(init?.body)).email);
       return status(200);
@@ -104,5 +124,5 @@ export function fakeAuthBackend({ signedInAs, emailConfirmed = false }: { signed
       json([{ date: '2026-11-01', temperatureC: 20, temperatureF: 67, summary: 'Mild' }]),
   });
 
-  return { fetchMock, users, confirmed, resent, resetRequests, signedOutOthers };
+  return { fetchMock, users, confirmed, resent, resetRequests, signedOutOthers, emailChangeRequests };
 }

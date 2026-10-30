@@ -1,7 +1,7 @@
 ---
 id: F5
 title: Change email address
-status: Approved
+status: Done
 created: 2026-10-30
 approved: 2026-10-30
 depends-on: F3, F4
@@ -38,17 +38,17 @@ Signed-in users can change the email address they sign in with, for example afte
 
 ### Phase 1 – Request the change
 **Goal:** users can ask to change their email and get a link at the new address.
-- [ ] Given I'm on Account settings, when I look at the Email section, then I see my current address and whether it is confirmed.
-- [ ] Given I enter a valid new address and my correct password, when I click Change email, then I see the "We've sent a confirmation link" message, an email with a link arrives at the new address, and my sign-in address doesn't change yet.
-- [ ] Given the new address is invalid, the same as my current one, or already in use, when I submit, then I see why and nothing is sent.
-- [ ] Given my password is wrong, when I submit, then I see "Your password is incorrect." and nothing is sent.
+- [x] Given I'm on Account settings, when I look at the Email section, then I see my current address and whether it is confirmed.
+- [x] Given I enter a valid new address and my correct password, when I click Change email, then I see the "We've sent a confirmation link" message, an email with a link arrives at the new address, and my sign-in address doesn't change yet.
+- [x] Given the new address is invalid, the same as my current one, or already in use, when I submit, then I see why and nothing is sent.
+- [x] Given my password is wrong, when I submit, then I see "Your password is incorrect." and nothing is sent.
 
 ### Phase 2 – Confirm the change
 **Goal:** the link changes the address and the old address is told.
-- [ ] Given I open a valid link, then my email is changed and confirmed, I see "Your email address was changed.", and I can sign in with the new address but not the old one.
-- [ ] Given the link is older than 24 hours or already used, when I open it, then I see that it's no longer valid and can request the change again from Account settings.
-- [ ] Given my old address was confirmed, when the change completes, then the old address receives a notification email.
-- [ ] Given someone registered the new address in the meantime, when I open the link, then I see "This email address is already in use." and nothing changes.
+- [x] Given I open a valid link, then my email is changed and confirmed, I see "Your email address was changed.", and I can sign in with the new address but not the old one.
+- [x] Given the link is older than 24 hours or already used, when I open it, then I see that it's no longer valid and can request the change again from Account settings.
+- [x] Given my old address was confirmed, when the change completes, then the old address receives a notification email.
+- [x] Given someone registered the new address in the meantime, when I open the link, then I see "This email address is already in use." and nothing changes.
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F5. Asked by: PO | Architect -->

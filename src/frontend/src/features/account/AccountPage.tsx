@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography';
 import { useAuth } from '../auth/AuthContext';
 import ChangePasswordSection from './ChangePasswordSection';
 import DeleteAccountSection from './DeleteAccountSection';
+import EmailSection from './EmailSection';
 import SignOutOthersSection from './SignOutOthersSection';
 
 /** `/account` (signed-in only): the user's own account settings. */
@@ -19,6 +20,7 @@ export default function AccountPage() {
           <Typography sx={{ color: 'text.secondary' }}>Signed in as {state.email}</Typography>
         )}
       </div>
+      <EmailSection />
       <ChangePasswordSection />
       <SignOutOthersSection />
       <DeleteAccountSection />
