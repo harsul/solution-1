@@ -14,7 +14,7 @@ Input: $ARGUMENTS
 
 ## 0. Preconditions and mode
 - `.claude/scripts/fdoc.sh check` must print the repo; otherwise stop and say how to fix it (`gh` installed and signed in, or a cloud session with GitHub connected). Run `fdoc.sh init-labels` once per repo.
-- Read `CLAUDE.md` (Definition of Done, Gotchas, Conventions incl. **Auto-merge**) and the Roadmap (`fdoc.sh roadmap`).
+- Read `CLAUDE.md` (Definition of Done, Gotchas, Conventions), the Roadmap (`fdoc.sh roadmap`) and the **workflow settings** (`fdoc.sh config`): `GATES`, `REVIEW`, `AUTO_MERGE`, `MAX_PHASES`, `BASE_BRANCH`. Below, `<base>` means `BASE_BRANCH`.
 - **Epic mode** – `epic #<n>`: plan the whole epic once (step 1E), then deliver its features (steps 4–5) and close the epic (step 6).
 - **Feature mode** – `F<n>`, `#<issue>` or an idea: plan this one feature (step 1F), then steps 4–5.
 - **Resume** from labels, in both modes: `plan:draft` → plan; `plan:approved` without spec → step 2; `spec:approved` / `spec:in-progress` → step 4 at the next unchecked phase; `*:questions` or `needs-answer` → collect answers (step 3) first. Features already `done` are skipped.
@@ -41,14 +41,15 @@ When all are back, the **architect** folds design and ops into the final spec. T
 - Collect every **question for the stakeholder** from all agents (all features of the epic together). Ask with AskUserQuestion (max 4 per call, recommended option first, each self-contained). Product questions from the architect go to the product owner first.
 - Write answers back through the owning agent (plan → product owner, design → designer, spec → architect).
 - Stakeholder not available: comment the questions (`fdoc.sh comment`), label `needs-answer`, set `plan:questions` / `spec:questions`, stop. Resume with the same `/fdeliver` command.
-- **Plan gate:** summary → Approve / Request changes. On approve: `plan approved` and **Approved:** in each body.
-- **Spec gate:** summary → Approve / Request changes. On approve: `spec approved`.
+- **Plan gate** (only when `GATES=plan+spec`): summary → Approve / Request changes. On approve: `plan approved` and **Approved:** in each body. With `GATES=spec` or `none` the plans are approved automatically once the product owner has no open questions (write "approved automatically (GATES=…)" in the body).
+- **Spec gate** (when `GATES` is `plan+spec` or `spec`): summary → Approve / Request changes. On approve: `spec approved`. With `GATES=none` the specs are approved automatically once the architect has no open questions; show the summary anyway and continue.
+- Questions for the stakeholder are always asked, whatever `GATES` says.
 - After the spec gate everything runs without asking, except a **real decision** (product behaviour, irreversible step, security trade-off, cost), or when a later feature's spec no longer fits what was built – then the architect updates it and you ask.
 
 ## 4. Build one feature: per phase implement + commit → review → fix + commit
-1. **Branch** (first phase): `feature/F<n>-<kebab-name>` from an up-to-date `main` (after the PRs it depends on are merged, or stacked on their branch if not yet); write it into the spec header; `spec in-progress`.
+1. **Branch** (first phase): `feature/F<n>-<kebab-name>` from an up-to-date `<base>` (after the PRs it depends on are merged, or stacked on their branch if not yet); write it into the spec header; `spec in-progress`.
 2. **developer** agent implements phase k, runs all checks and **commits** (it owns verify + commit; never pushes). It returns the phase's commit range. Questions → step 3, then resume.
-3. **Reviews** (in parallel, independent: the commit range or `git diff main...HEAD` + the issue, never the developer's reasoning) – see **Review depth** below:
+3. **Reviews** (in parallel, independent: the commit range or `git diff <base>...HEAD` + the issue, never the developer's reasoning) – see **Review depth** below:
    - **reviewer**;
    - **designer** UI review if the frontend changed;
    - **cloudops** ops review if AppHost, configuration, migrations, infra or workflows changed;
@@ -57,16 +58,17 @@ When all are back, the **architect** folds design and ops into the final spec. T
 5. **Record** `fdoc.sh set <issue> review-p<k> <file>` (or `review` for a feature-end review): fixed / skipped with reason; tick the phase in the plan.
 6. **Definition of Done** (`CLAUDE.md`) met, otherwise back to 4. The working tree is clean after every phase (`git status`); if not, the developer commits or explains what's left.
 
-### Review depth
-- **Every phase** gets a review when it touches authentication, authorization or tenant data, payments, personal data, infrastructure/CI, or database migrations.
-- **Otherwise** the developer's verified commits stand, and the feature gets **one review at the end** over `git diff main...HEAD`.
+### Review depth (`REVIEW`)
+- `risk` (default): **every phase** gets a review when it touches authentication, authorization or tenant data, payments, personal data, infrastructure/CI, or database migrations; **otherwise** the developer's verified commits stand, and the feature gets **one review at the end** over `git diff <base>...HEAD`.
+- `every-phase`: every phase is reviewed.
+- `end-only`: one review per feature at the end.
 - The **last review of every feature** always includes the security pass over the whole feature.
 - A 1-phase feature has exactly one review.
 
 ## 5. Finish a feature
 - Plan and spec labels → `done`.
-- Push the branch and open a PR with `Closes #<issue>` and a short summary (pushing and creating PRs need the stakeholder's permission; if not possible, give the exact commands).
-- **Merge:** if `CLAUDE.md` → Conventions says **Auto-merge: on**, run `gh pr merge --auto --merge` so GitHub merges once the required checks pass (only when no must/should finding is open). Otherwise leave the PR for the stakeholder.
+- Push the branch and open a PR against `<base>` with `Closes #<issue>` and a short summary (pushing and creating PRs need the stakeholder's permission; if not possible, give the exact commands).
+- **Merge:** if `AUTO_MERGE=on`, run `gh pr merge --auto --merge` so GitHub merges once the required checks pass (only when no must/should finding is open). Otherwise leave the PR for the stakeholder.
 - **Retro:** non-obvious lessons from the developer's gotchas and the review findings → one-liners in `CLAUDE.md` → **Gotchas** (no duplicates); commit with the feature's docs.
 - Report in a few lines: what users get, notable review fixes, skipped items, test results, steps for the stakeholder (from CloudOps), the PR.
 
@@ -76,4 +78,4 @@ When every sub-issue of the epic is closed (`fdoc.sh children <epic>`) and the e
 ## Rules
 - Keep the stakeholder's time small: one sentence when you start, questions only at gates or for real decisions, a short report per feature and per epic. Progress is visible on the issues and in the task list.
 - Each document has one owner; you never edit a section yourself.
-- Never push, merge, delete or touch cloud resources without permission (auto-merge counts as permission only when the Conventions say **Auto-merge: on**). Never commit code to `main` directly.
+- Never push, merge, delete or touch cloud resources without permission (auto-merge counts as permission only with `AUTO_MERGE=on`). Never commit code to `<base>` directly.

@@ -27,6 +27,8 @@ Details for that command or agent: description, arguments or tools, its steps (`
 ```
 Tables: **Commands** (command + argument hint, one-sentence description) and **Agents** (role, owns, tools).
 
+**Settings:** `fdoc.sh config` as one compact line (e.g. `IDs F · gates plan+spec · review risk · auto-merge off · max 3 phases · base main · cost balanced`); details and how to change them: `.claude/workflow.conf` or `/finit update workflow`.
+
 **Where you are** (skip silently what's empty): current branch; product profile present (`docs/product.md`); `fdoc.sh check`; the roadmap's epics with their open features and status labels (`fdoc.sh roadmap`, `fdoc.sh children <epic>`); open bugs (`type:bug`); issues labelled `needs-answer`; uncommitted changes.
 
 **Suggested next** (first matching rule):

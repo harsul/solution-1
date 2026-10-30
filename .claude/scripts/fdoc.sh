@@ -14,6 +14,7 @@
 #
 # Usage:
 #   fdoc.sh check                         gh installed, signed in, repo detected
+#   fdoc.sh config [KEY]                  validated workflow settings from .claude/workflow.conf (all, or one value)
 #   fdoc.sh init-labels                   create/refresh the workflow labels (idempotent)
 #   fdoc.sh next-id                       next free ticket ID, e.g. F6 or ENG-1 (issues + legacy docs/plans)
 #   fdoc.sh find <ID>                     issue number of the feature with that ID (exit 1 if none)
@@ -35,17 +36,29 @@ set -euo pipefail
 die() { echo "fdoc: $*" >&2; exit 1; }
 need_file() { [[ -f "$1" ]] || die "file not found: $1"; }
 
-# Ticket IDs: prefix and first number from .claude/workflow.conf (defaults: F, 1).
-ID_PREFIX=F; ID_START=1
+# Workflow settings from .claude/workflow.conf, with defaults.
+ID_PREFIX=F; ID_START=1; GATES=plan+spec; REVIEW=risk; AUTO_MERGE=off; MAX_PHASES=3; BASE_BRANCH=main; COST=balanced
+config_keys=(ID_PREFIX ID_START GATES REVIEW AUTO_MERGE MAX_PHASES BASE_BRANCH COST)
 conf="$(git rev-parse --show-toplevel 2>/dev/null)/.claude/workflow.conf"
 if [[ -f "$conf" ]]; then  # read, never execute: KEY=value, # comments allowed
   while IFS='=' read -r key value; do
     value="$(printf '%s' "${value%%#*}" | tr -d '\r' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g')"
-    case "$key" in ID_PREFIX) ID_PREFIX="$value" ;; ID_START) ID_START="$value" ;; esac
-  done < <(grep -E '^(ID_PREFIX|ID_START)=' "$conf")
+    case "$key" in
+      ID_PREFIX) ID_PREFIX="$value" ;; ID_START) ID_START="$value" ;; GATES) GATES="$value" ;;
+      REVIEW) REVIEW="$value" ;; AUTO_MERGE) AUTO_MERGE="$value" ;; MAX_PHASES) MAX_PHASES="$value" ;;
+      BASE_BRANCH) BASE_BRANCH="$value" ;; COST) COST="$value" ;;
+      *) echo "fdoc: unknown setting $key in .claude/workflow.conf (ignored)" >&2 ;;
+    esac
+  done < <(grep -E '^[A-Z_]+=' "$conf")
 fi
 [[ "$ID_PREFIX" =~ ^[A-Za-z]+-?$ ]] || die "ID_PREFIX in .claude/workflow.conf must be letters, optionally followed by '-' (e.g. F or ENG-)"
 [[ "$ID_START" =~ ^[0-9]+$ ]] || die "ID_START in .claude/workflow.conf must be a number"
+[[ "$GATES" =~ ^(plan\+spec|spec|none)$ ]] || die "GATES must be plan+spec, spec or none (is: $GATES)"
+[[ "$REVIEW" =~ ^(risk|every-phase|end-only)$ ]] || die "REVIEW must be risk, every-phase or end-only (is: $REVIEW)"
+[[ "$AUTO_MERGE" =~ ^(on|off)$ ]] || die "AUTO_MERGE must be on or off (is: $AUTO_MERGE)"
+[[ "$MAX_PHASES" =~ ^[1-5]$ ]] || die "MAX_PHASES must be 1 to 5 (is: $MAX_PHASES)"
+[[ "$BASE_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]] || die "BASE_BRANCH is not a valid branch name (is: $BASE_BRANCH)"
+[[ "$COST" =~ ^(economy|balanced|max)$ ]] || die "COST must be economy, balanced or max (is: $COST)"
 
 plan_values=(draft questions approved done)
 spec_values=(draft questions approved in-progress done)
@@ -65,6 +78,14 @@ with_marker() { # <section> <file> → temp file path
 
 cmd="${1:-}"; shift || true
 case "$cmd" in
+  config)
+    if [[ -n "${1:-}" ]]; then
+      [[ " ${config_keys[*]} " == *" $1 "* ]] || die "unknown setting: $1 (${config_keys[*]})"
+      echo "${!1}"
+    else
+      for k in "${config_keys[@]}"; do echo "$k=${!k}"; done
+    fi
+    ;;
   check)
     command -v gh >/dev/null || die "gh CLI not installed (https://cli.github.com)"
     gh auth status >/dev/null 2>&1 || die "gh is not signed in: run 'gh auth login'"
