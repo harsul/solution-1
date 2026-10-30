@@ -2,8 +2,8 @@
 id: F1
 title: User accounts (register, sign in, sign out)
 plan: docs/plans/F1-2026-10-30-user-accounts.md
-status: In progress
-phase: 2/3
+status: Done
+phase: 3/3
 created: 2026-10-30
 approved: 2026-10-30
 branch: feature/F1-user-accounts
@@ -177,6 +177,8 @@ Test infrastructure: `ServerFactory` implements `IAsyncLifetime`, starts a `Post
   - **Answer:** Yes.
 
 ## Risks / notes
+- **Accepted (phase 3 review):** the weather endpoint's 5-second output cache no longer applies, because the default output-cache policy doesn't store responses for authenticated requests. Safe (nothing is shared between users); revisit if real data needs caching.
+- **Accepted (phase 3 review), revisit before/with F2:** `MapIdentityApi` also issues bearer tokens (login without `useCookies`/`useSessionCookies`) and exposes routes F1 doesn't use (`/refresh`, `/confirmEmail`, `/manage/2fa`; `/forgotPassword` and `/resetPassword` are needed by F2). Not a CSRF or enumeration hole.
 - **Phase 1 is the biggest** (database foundation + auth + routing). It stays one phase because each part alone isn't user-visible; commit it in logical groups with `/fcommit`.
 - **Docker for tests:** `dotnet test` needs Docker from phase 1 on. `/fverify` reports a clear "not run" if Docker is missing.
 - **Secure cookie over the Vite dev proxy:** the browser talks HTTP to `localhost`, which browsers treat as secure, so `Secure` cookies work; verify in phase 1 with `aspire run`.
@@ -196,6 +198,10 @@ Test infrastructure: `ServerFactory` implements `IAsyncLifetime`, starts a `Post
 - Phase 2: the password rule checklist is linked to the password field via `aria-describedby`; each rule's state is visually hidden text inside the rule ("…: met." / "…: not met."), so it is part of the field's accessible description. Tests assert that description.
 - Phase 2: the "has a letter" rule checks whole Unicode characters on both sides (`/\p{L}/u` in the browser, `EnumerateRunes()` + `Rune.IsLetter` on the server), so they agree for letters like 𝐀.
 - Phase 2: an extra API test checks that 4 failures do *not* lock the account (guards the boundary of "5 in a row").
+- Phase 3: a `GuestOnly` wrapper on `/signin` and `/register` replaces the pages' own navigation after success: once signed in, it sends the user to `state.from` (set by `RequireAuth`) or `/`. The form stays usable while the first session check is still running.
+- Phase 3: `apiFetch` reports 401s to `AuthProvider` through a registered handler (`setUnauthorizedHandler`), so the expired-session redirect works for any API call without passing the auth context around.
+- Phase 3: the API test for the weather endpoint also checks there's no `Location` header (401, not a redirect).
+- Phase 3 (review fix): the server serves `index.html` for every non-API, non-file path (`MapFallbackToFile`), so direct links and reloads of `/signin`, `/register` and deep links work in the published app; unknown `/api/*` routes stay 404. The test-only throwing route became `/test/throw.json` so it still falls through to the test branch.
 
 ## Review log
 - **2026-10-30, Phase 1** – independent review (spec, correctness, security, frontend, tests): 0 must-fix, 5 should-fix, 2 consider. Built-in `/code-review` and `/security-review` not run (not available in this session; run them before the pull request).
@@ -206,3 +212,9 @@ Test infrastructure: `ServerFactory` implements `IAsyncLifetime`, starts a `Post
   - Fixed: (1) screen readers didn't get the rule states through the field's description → state as visually hidden text, tests assert the accessible description; (2) the cookie-expiry test parsed the date with the machine's culture (fails on e.g. de-DE) → `SetCookieHeaderValue.Parse`; (3) browser and server disagreed on letters outside the BMP (e.g. "𝐀1234567") → server checks runes, test cases on both sides; (4) an invalid email gave no reason while still in the field → hint also shows when the email is the only thing blocking submit.
   - Built-in `/code-review` and `/security-review` not run (not available in this session).
   - Verified after fixes: server 32/32, frontend 39/39, lint, type check and build clean.
+- **2026-10-30, Phase 3** – independent review incl. a whole-feature security pass: 1 must-fix, 1 should-fix, 4 consider. Security pass clean (no open redirect via `state.from`, cookie and CSRF settings correct, every API endpoint except sign-in and registration requires sign-in).
+  - Fixed: (1) **must-fix:** no SPA fallback, so direct links/reloads of client routes returned 404 in the published app → `MapFallbackToFile` + `/api` 404 fallback, `SpaFallbackTests`; (2) sign-in button spun forever when login succeeded but the session check failed → treated as an error ("Something went wrong"), register then asks to sign in; (3) an old auth provider's cleanup could remove a newer 401 handler → `setUnauthorizedHandler` returns an unsubscribe that only removes its own handler, `apiFetch.test.ts`; (4) the requested page was lost when switching between Sign in and Create account → `from` passed along the links.
+  - Accepted (see Risks): (5) dead output cache on the weather endpoint; (6) bearer tokens and unused Identity routes.
+  - Built-in `/code-review` and `/security-review` not run (not available in this session).
+  - Verified after fixes: server 39/39, frontend 49/49, lint, type check and build clean; each new test fails when its fix is removed.
+  - Last phase without open must-fix → spec and plan set to **Done**.

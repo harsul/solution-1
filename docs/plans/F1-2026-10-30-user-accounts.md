@@ -1,7 +1,7 @@
 ---
 id: F1
 title: User accounts (register, sign in, sign out)
-status: Approved
+status: Done
 created: 2026-10-30
 approved: 2026-10-30
 depends-on:
@@ -63,10 +63,10 @@ Make the app private: people create an account with their email and a password, 
 
 ### Phase 3 – Private app
 **Goal:** nothing is visible without signing in, and users land where they wanted to go.
-- [ ] Given I'm not signed in, when I open any page of the app directly, then I'm sent to Sign in, and after signing in I'm returned to the page I asked for.
-- [ ] Given I'm not signed in, when the forecast data is requested, then it is refused and no weather data is shown.
-- [ ] Given my session has expired, when I use the app, then I'm sent to Sign in with the message "Your session has expired, please sign in again."
-- [ ] Given I'm signed in, when I open the Sign in or Create an account page, then I'm taken to the weather forecast instead.
+- [x] Given I'm not signed in, when I open any page of the app directly, then I'm sent to Sign in, and after signing in I'm returned to the page I asked for.
+- [x] Given I'm not signed in, when the forecast data is requested, then it is refused and no weather data is shown.
+- [x] Given my session has expired, when I use the app, then I'm sent to Sign in with the message "Your session has expired, please sign in again."
+- [x] Given I'm signed in, when I open the Sign in or Create an account page, then I'm taken to the weather forecast instead.
 
 ## Questions
 <!-- Answer under each question, then run /fbrainstorm F1. Asked by: PO | Architect -->
