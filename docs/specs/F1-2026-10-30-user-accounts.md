@@ -3,7 +3,7 @@ id: F1
 title: User accounts (register, sign in, sign out)
 plan: docs/plans/F1-2026-10-30-user-accounts.md
 status: In progress
-phase: 1/3
+phase: 2/3
 created: 2026-10-30
 approved: 2026-10-30
 branch: feature/F1-user-accounts
@@ -192,9 +192,17 @@ Test infrastructure: `ServerFactory` implements `IAsyncLifetime`, starts a `Post
 - Phase 1: added `AuthCard.tsx` (shared layout of the sign-in and register pages) and `src/test/fakeApi.ts` (a small in-memory fake backend for frontend tests, no mocking library).
 - Phase 1: the API client and auth state already handle `lockedOut` and Remember me; phase 2 adds the UI for them.
 - Phase 1: frontend bundle is now 174 kB gzipped (was 137 kB), mostly React Router; Vite may warn about the 500 kB chunk size. Code splitting can come later if needed.
+- Phase 2: email gets a light format check in the register form (`isValidEmail`, shown after leaving the field); the server still does the real validation. Inputs are trimmed before sending.
+- Phase 2: the password rule checklist is linked to the password field via `aria-describedby`; each rule's state is visually hidden text inside the rule ("…: met." / "…: not met."), so it is part of the field's accessible description. Tests assert that description.
+- Phase 2: the "has a letter" rule checks whole Unicode characters on both sides (`/\p{L}/u` in the browser, `EnumerateRunes()` + `Rune.IsLetter` on the server), so they agree for letters like 𝐀.
+- Phase 2: an extra API test checks that 4 failures do *not* lock the account (guards the boundary of "5 in a row").
 
 ## Review log
 - **2026-10-30, Phase 1** – independent review (spec, correctness, security, frontend, tests): 0 must-fix, 5 should-fix, 2 consider. Built-in `/code-review` and `/security-review` not run (not available in this session; run them before the pull request).
   - Fixed: (1) a late session check from page load could overwrite a successful sign-in → only the newest check updates the state; (2) a failed sign-out was silent → error snackbar, user stays signed in; (3) the cookie test only checked HttpOnly → also asserts `Secure` and `SameSite=Strict` (fails if removed); (4) account created but automatic sign-in failed → sign-in page with "Account created, please sign in."; (5) double-submit test couldn't fail and Create account had none → both forms tested with a second submit, plus a guard in the handlers; (6) App test now checks the "Create an account" link.
   - Skipped: (7) server errors on the session check look like "signed out". Revisit with phase 3's session handling.
   - Verified after fixes: server 16/16, frontend 19/19, lint, type check and build clean. The new race and cookie tests fail when their fix is removed.
+- **2026-10-30, Phase 2** – independent review: 0 must-fix, 2 should-fix, 2 consider; all four fixed.
+  - Fixed: (1) screen readers didn't get the rule states through the field's description → state as visually hidden text, tests assert the accessible description; (2) the cookie-expiry test parsed the date with the machine's culture (fails on e.g. de-DE) → `SetCookieHeaderValue.Parse`; (3) browser and server disagreed on letters outside the BMP (e.g. "𝐀1234567") → server checks runes, test cases on both sides; (4) an invalid email gave no reason while still in the field → hint also shows when the email is the only thing blocking submit.
+  - Built-in `/code-review` and `/security-review` not run (not available in this session).
+  - Verified after fixes: server 32/32, frontend 39/39, lint, type check and build clean.
