@@ -35,13 +35,19 @@
       "Bash(npm --prefix src/frontend run build)",
       "Bash(npm --prefix src/frontend test)",
       "Bash(npm --prefix src/frontend run test *)",
-      "Skill(fverify)",
-      "Skill(fverify *)"
+      "Bash(npm --prefix src/frontend run format*)",
+      "Bash(dotnet format *)",
+      "Bash(git fetch *)",
+      "Bash(.claude/scripts/fgit.sh *)",
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh run *)"
     ],
     "ask": [
       "Bash(git push *)",
       "Bash(git push)",
       "Bash(git merge *)",
+      "Bash(gh pr merge *)",
       "Bash(git rebase *)",
       "Bash(git stash *)",
       "Bash(npm install *)",
