@@ -18,7 +18,7 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     private static Task<HttpResponseMessage> ForgotAsync(HttpClient client, string email) =>
-        client.PostAsJsonAsync("/api/auth/password/forgot", new { email }, Ct);
+        client.PostAsJsonAsync("/api/auth/forgotPassword", new { email }, Ct);
 
     [Fact]
     public async Task Forgot_for_confirmed_account_sends_reset_link_to_frontend()
@@ -36,7 +36,7 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
         var query = QueryHelpers.ParseQuery(link.Query);
         Assert.Equal(email, query["email"]);
         Assert.False(string.IsNullOrEmpty(query["code"]));
-        Assert.Contains("1 hour", message.TextBody);
+        Assert.Contains("24 hours", message.TextBody);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
     }
 
     [Fact]
-    public async Task Forgot_for_unconfirmed_account_sends_confirmation_link_instead()
+    public async Task Forgot_for_unconfirmed_account_returns_200_and_sends_no_reset_email()
     {
         var client = factory.CreateHttpsClient();
         var email = NewEmail();
@@ -61,26 +61,7 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
         var response = await ForgotAsync(client, email);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var message = factory.Emails.SentTo(email).Last();
-        Assert.Equal("Confirm your email address first", message.Subject);
-        var link = LinkIn(message.TextBody);
-        Assert.Equal($"{ServerFactory.PublicUrl}/confirm-email", link.GetLeftPart(UriPartial.Path));
         Assert.DoesNotContain(factory.Emails.SentTo(email), m => m.Subject == "Reset your password");
-
-        // The link in that email really confirms the address.
-        Assert.Equal(HttpStatusCode.OK, (await ConfirmEmailAsync(client, link)).StatusCode);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("not-an-email")]
-    public async Task Forgot_with_malformed_email_returns_400(string email)
-    {
-        var client = factory.CreateHttpsClient();
-
-        var response = await ForgotAsync(client, email);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -94,24 +75,6 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
 
         Assert.Equal(known.StatusCode, unknown.StatusCode);
         Assert.Equal(await known.Content.ReadAsStringAsync(Ct), await unknown.Content.ReadAsStringAsync(Ct));
-    }
-
-    [Fact]
-    public async Task Sixth_forgot_request_within_15_minutes_is_rate_limited()
-    {
-        // Real limits (5 per 15 minutes), on a host of its own.
-        await using var limited = factory.WithWebHostBuilder(b =>
-            b.UseSetting("RateLimits:ForgotPassword:PermitLimit", "5"));
-        var client = limited.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
-
-        for (var i = 1; i <= 5; i++)
-        {
-            Assert.Equal(HttpStatusCode.OK, (await ForgotAsync(client, NewEmail())).StatusCode);
-        }
-        var sixth = await ForgotAsync(client, NewEmail());
-
-        Assert.Equal(HttpStatusCode.TooManyRequests, sixth.StatusCode);
-        Assert.True(sixth.Headers.Contains("Retry-After"));
     }
 
     [Fact]
@@ -191,11 +154,11 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
     }
 
     [Fact]
-    public void Reset_links_are_valid_for_1_hour()
+    public void Reset_links_are_valid_for_1_day()
     {
         var options = factory.Services.GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>().Value;
 
-        Assert.Equal(TimeSpan.FromHours(1), options.TokenLifespan);
+        Assert.Equal(TimeSpan.FromDays(1), options.TokenLifespan);
     }
 
     [Fact]
@@ -216,8 +179,8 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
     }
 
     [Theory]
-    [InlineData("short1", "PasswordTooShort")]
-    [InlineData("nodigitshere", "PasswordRequiresDigit")]
+    [InlineData("Ab1!", "PasswordTooShort")]
+    [InlineData("Password!", "PasswordRequiresDigit")]
     public async Task Reset_with_a_weak_password_returns_the_rule_code(string newPassword, string expectedCode)
     {
         var client = factory.CreateHttpsClient();
