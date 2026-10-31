@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
     return (
       <AuthCard title="This link has expired">
         <Typography>
-          Reset links are valid for 1 hour and work once. Request a new link to choose a new password.
+          Reset links are valid for 24 hours and work once. Request a new link to choose a new password.
         </Typography>
         <Button
           component={RouterLink}

@@ -8,21 +8,18 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '../auth/AuthContext';
 import PasswordRules from '../auth/PasswordRules';
-import { lockedOutMessage } from '../auth/messages';
 import { isPasswordValid } from '../auth/passwordRules';
 import { changePassword } from './api';
 
 type Feedback = { severity: 'success' | 'error'; messages: string[] };
 
 const messages = {
-  changed: 'Your password was changed.',
   wrongPassword: 'Your current password is incorrect.',
-  lockedOut: lockedOutMessage,
   error: 'Something went wrong. Please try again.',
 };
 
 export default function ChangePasswordSection() {
-  const { state } = useAuth();
+  const { state, sessionEnded } = useAuth();
   const [current, setCurrent] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -41,19 +38,15 @@ export default function ChangePasswordSection() {
     try {
       const result = await changePassword(current, password);
       if (result.ok) {
-        setCurrent('');
-        setPassword('');
-        setConfirm('');
-        // The submit button is now disabled; keep keyboard focus in the form.
-        currentRef.current?.focus();
-        setFeedback({ severity: 'success', messages: [messages.changed] });
+        // The browser is signed out; RequireAuth sends the user to the sign-in page with a notice.
+        await sessionEnded('passwordChanged');
       } else if (result.code === 'rules') {
         setFeedback({ severity: 'error', messages: result.errors.length ? result.errors : [messages.error] });
       } else {
         // Only the current password was wrong: keep the new one so it needn't be typed again.
         setCurrent('');
         currentRef.current?.focus();
-        setFeedback({ severity: 'error', messages: [messages[result.code]] });
+        setFeedback({ severity: 'error', messages: [messages.wrongPassword] });
       }
     } catch {
       setFeedback({ severity: 'error', messages: [messages.error] });

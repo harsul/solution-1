@@ -2,7 +2,7 @@ import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../../App';
-import { fakeApi, fakeAuthBackend, json, status } from '../../test/fakeApi';
+import { fakeAuthBackend } from '../../test/fakeApi';
 import { renderWithProviders } from '../../test/render';
 
 const reminder = /Please confirm your email address/;
@@ -50,19 +50,6 @@ describe('ConfirmEmailBanner', () => {
 
     await act(async () => vi.advanceTimersByTime(30_000));
     expect(screen.getByRole('button', { name: 'Resend email' })).toBeEnabled();
-  });
-
-  it('asks the user to wait when the server rate-limits the resend', async () => {
-    fakeApi({
-      'GET /api/auth/manage/info': () => json({ email: 'ada@example.com', isEmailConfirmed: false }),
-      'GET /api/weatherforecast': () => json([]),
-      'POST /api/auth/resendConfirmationEmail': () => status(429),
-    });
-    renderWithProviders(<App />);
-
-    await userEvent.click(await screen.findByRole('button', { name: 'Resend email' }));
-
-    expect(await screen.findByText('Please wait a minute before trying again.')).toBeInTheDocument();
   });
 
   it('stays closed after closing, until the user signs in again', async () => {

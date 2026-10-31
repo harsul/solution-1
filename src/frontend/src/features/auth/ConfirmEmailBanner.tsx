@@ -12,9 +12,9 @@ import { dismissBanner, isBannerDismissed } from './bannerDismissal';
 
 const cooldownSeconds = 60;
 
-const hiddenOn = ['/confirm-email', '/confirm-email-change'];
+const hiddenOn = ['/confirm-email'];
 
-type Feedback = 'sent' | 'tooSoon' | 'error' | null;
+type Feedback = 'sent' | 'error' | null;
 
 /**
  * Reminder for signed-in users whose email isn't confirmed yet, with "Resend email".
@@ -57,8 +57,8 @@ function SessionBanner() {
   const resend = async () => {
     setBusy(true);
     try {
-      const result = await resendConfirmation(email);
-      setFeedback(result);
+      await resendConfirmation(email);
+      setFeedback('sent');
       const current = Date.now();
       setNow(current);
       setCooldownUntil(current + cooldownSeconds * 1000);
@@ -75,7 +75,6 @@ function SessionBanner() {
 
   const message = {
     sent: `Email sent to ${email}. Check your inbox.`,
-    tooSoon: 'Please wait a minute before trying again.',
     error: "The email couldn't be sent. Please try again.",
   };
 

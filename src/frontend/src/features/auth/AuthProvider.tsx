@@ -74,15 +74,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: 'signedOut' });
   }, []);
 
-  const accountDeleted = useCallback(() => {
+  const sessionEnded = useCallback<AuthContextValue['sessionEnded']>(async (reason) => {
+    await api.signOut();
     clearBannerDismissals();
     latestCheck.current++;
-    setState({ status: 'signedOut', reason: 'deleted' });
+    setState({ status: 'signedOut', reason });
   }, []);
 
   const value = useMemo(
-    () => ({ state, signIn, register, signOut, accountDeleted, refreshUser: loadUser }),
-    [state, signIn, register, signOut, accountDeleted, loadUser],
+    () => ({ state, signIn, register, signOut, sessionEnded, refreshUser: loadUser }),
+    [state, signIn, register, signOut, sessionEnded, loadUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

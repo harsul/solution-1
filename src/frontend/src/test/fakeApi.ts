@@ -32,20 +32,41 @@ export function fakeAuthBackend({
   const resent: string[] = [];
   const resetRequests: string[] = [];
   const usedResetCodes = new Set<string>();
-  const signedOutOthers: string[] = [];
   const emailChangeRequests: string[] = [];
   const users = new Map<string, string>(signedInAs ? [[signedInAs, 'Passw0rd!']] : []);
 
   const fetchMock = fakeApi({
     'GET /api/auth/manage/info': () =>
       session ? json({ email: session, isEmailConfirmed: confirmed.has(session) }) : status(401),
-    // Confirmation links in tests: userId = the email, code = 'valid'.
+    // Built-in change of password (needs oldPassword) or email (sends a link to the new address).
+    'POST /api/auth/manage/info': (init) => {
+      if (!session) return status(401);
+      const { newEmail, oldPassword, newPassword } = JSON.parse(String(init?.body));
+      if (newPassword) {
+        if (users.get(session) !== oldPassword)
+          return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
+        users.set(session, newPassword);
+      }
+      if (newEmail) emailChangeRequests.push(newEmail);
+      return json({ email: session, isEmailConfirmed: confirmed.has(session) });
+    },
+    // Confirmation links in tests: userId = the email, code = 'valid'. With changedEmail (the new
+    // address) the user is renamed, like the real endpoint does.
     'GET /api/auth/confirmEmail': (_, url) => {
+      const userId = url.searchParams.get('userId') ?? '';
       if (url.searchParams.get('code') !== 'valid') return status(401);
-      confirmed.add(url.searchParams.get('userId') ?? '');
+      const changedEmail = url.searchParams.get('changedEmail');
+      if (changedEmail) {
+        if (users.has(changedEmail) || !users.has(userId)) return status(401);
+        users.set(changedEmail, users.get(userId)!);
+        users.delete(userId);
+        confirmed.add(changedEmail);
+      } else {
+        confirmed.add(userId);
+      }
       return status(200);
     },
-    'POST /api/auth/password/forgot': (init) => {
+    'POST /api/auth/forgotPassword': (init) => {
       resetRequests.push(JSON.parse(String(init?.body)).email);
       return status(200);
     },
@@ -58,50 +79,6 @@ export function fakeAuthBackend({
       usedResetCodes.add(email);
       users.set(email, newPassword);
       return status(200);
-    },
-    'POST /api/account/password': (init) => {
-      if (!session) return status(401);
-      const { currentPassword, newPassword } = JSON.parse(String(init?.body));
-      if (users.get(session) !== currentPassword) {
-        return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
-      }
-      users.set(session, newPassword);
-      return status(204);
-    },
-    'POST /api/account/sign-out-others': () => {
-      if (!session) return status(401);
-      signedOutOthers.push(session);
-      return status(204);
-    },
-    'POST /api/account/delete': (init) => {
-      if (!session) return status(401);
-      const { password, email } = JSON.parse(String(init?.body));
-      if (users.get(session) !== password) return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
-      if (String(email).trim().toLowerCase() !== session.toLowerCase()) {
-        return json({ errors: { EmailMismatch: ["The email address doesn't match this account."] } }, 400);
-      }
-      users.delete(session);
-      session = null;
-      return status(204);
-    },
-    'POST /api/account/email': (init) => {
-      if (!session) return status(401);
-      const { newEmail, password } = JSON.parse(String(init?.body));
-      if (users.get(session) !== password) return json({ errors: { PasswordMismatch: ['Incorrect password.'] } }, 400);
-      if (users.has(newEmail)) return json({ errors: { DuplicateEmail: ['In use.'] } }, 400);
-      emailChangeRequests.push(newEmail);
-      return status(204);
-    },
-    // Change-email links in tests: userId = the current email, code = 'valid' (works once).
-    'POST /api/account/email/confirm': (init) => {
-      const { userId, email, code } = JSON.parse(String(init?.body));
-      if (code !== 'valid' || !users.has(userId)) return json({ errors: { InvalidToken: ['Invalid.'] } }, 400);
-      if (users.has(email)) return json({ errors: { DuplicateEmail: ['In use.'] } }, 400);
-      users.set(email, users.get(userId)!);
-      users.delete(userId);
-      confirmed.add(email);
-      if (session === userId) session = email;
-      return status(204);
     },
     'POST /api/auth/resendConfirmationEmail': (init) => {
       resent.push(JSON.parse(String(init?.body)).email);
@@ -128,5 +105,5 @@ export function fakeAuthBackend({
       json([{ date: '2026-11-01', temperatureC: 20, temperatureF: 67, summary: 'Mild' }]),
   });
 
-  return { fetchMock, users, confirmed, resent, resetRequests, signedOutOthers, emailChangeRequests };
+  return { fetchMock, users, confirmed, resent, resetRequests, emailChangeRequests };
 }

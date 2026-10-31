@@ -10,10 +10,6 @@ export interface UserInfo {
 
 export type SignInResult = 'ok' | 'invalid' | 'lockedOut';
 
-export type ResendResult = 'sent' | 'tooSoon';
-
-export type ForgotResult = 'sent' | 'tooManyRequests' | 'invalidEmail';
-
 export type ResetResult = { ok: true } | { ok: false; expired: boolean; errors: string[] };
 
 export type RegisterResult = { ok: true } | { ok: false; duplicate: boolean; errors: string[] };
@@ -72,30 +68,26 @@ export async function signOut(): Promise<void> {
   if (!response.ok && response.status !== 401) throw unexpected(response);
 }
 
-/** Confirms the email from a confirmation link; false when the link is invalid or expired. */
-export async function confirmEmail(userId: string, code: string): Promise<boolean> {
+/** Confirms the email (or, with `changedEmail`, the change to it) from a link; false when the link is invalid or expired. */
+export async function confirmEmail(userId: string, code: string, changedEmail?: string): Promise<boolean> {
   const query = new URLSearchParams({ userId, code });
+  if (changedEmail) query.set('changedEmail', changedEmail);
   const response = await fetch(`/api/auth/confirmEmail?${query}`);
   if (response.ok) return true;
   if (response.status === 401) return false;
   throw unexpected(response);
 }
 
-/** Sends the confirmation email again; 'tooSoon' when rate-limited. */
-export async function resendConfirmation(email: string): Promise<ResendResult> {
+/** Sends the confirmation email again. */
+export async function resendConfirmation(email: string): Promise<void> {
   const response = await fetch('/api/auth/resendConfirmationEmail', postJson({ email }));
-  if (response.ok) return 'sent';
-  if (response.status === 429) return 'tooSoon';
-  throw unexpected(response);
+  if (!response.ok) throw unexpected(response);
 }
 
 /** Asks for a password reset email. The answer is the same whether or not the account exists. */
-export async function requestPasswordReset(email: string): Promise<ForgotResult> {
-  const response = await fetch('/api/auth/password/forgot', postJson({ email }));
-  if (response.ok) return 'sent';
-  if (response.status === 429) return 'tooManyRequests';
-  if (response.status === 400) return 'invalidEmail';
-  throw unexpected(response);
+export async function requestPasswordReset(email: string): Promise<void> {
+  const response = await fetch('/api/auth/forgotPassword', postJson({ email }));
+  if (!response.ok) throw unexpected(response);
 }
 
 /** Sets a new password with the values from a reset link; `expired` when the link is used, expired or invalid. */

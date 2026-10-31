@@ -12,7 +12,6 @@ import { isValidEmail } from './passwordRules';
 
 const messages = {
   sent: "If an account exists for this email, we've sent a link to reset your password.",
-  tooManyRequests: 'Too many requests. Please wait a few minutes and try again.',
   invalidEmail: 'Enter a valid email address.',
   error: 'Something went wrong. Please try again.',
 };
@@ -37,9 +36,8 @@ export default function ForgotPasswordPage() {
     setBusy(true);
     setError(null);
     try {
-      const result = await requestPasswordReset(email.trim());
-      if (result === 'sent') setSent(true);
-      else setError(messages[result]);
+      await requestPasswordReset(email.trim());
+      setSent(true);
     } catch {
       setError(messages.error);
     }

@@ -16,26 +16,25 @@ const submit = () => userEvent.click(screen.getByRole('button', { name: 'Change 
 function signedInWith(handler: () => Response) {
   fakeApi({
     'GET /api/auth/manage/info': () => json({ email: 'ada@example.com', isEmailConfirmed: true }),
-    'POST /api/account/password': handler,
+    'POST /api/auth/manage/info': handler,
   });
 }
 
 describe('ChangePasswordSection', () => {
-  it('changes the password, says so and clears the fields', async () => {
-    const { users } = fakeAuthBackend({ signedInAs: 'ada@example.com' });
+  it('changes the password through manage/info, signs out and says so on the sign-in page', async () => {
+    const { users, fetchMock } = fakeAuthBackend({ signedInAs: 'ada@example.com' });
     renderWithProviders(<App />, { route: '/account' });
 
     await fill('Passw0rd!', 'N3wPassw0rd!');
     await submit();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Your password was changed.');
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.getByText('Your password was changed. Please sign in with your new password.')).toBeInTheDocument();
     expect(users.get('ada@example.com')).toBe('N3wPassw0rd!');
-    expect(screen.getByLabelText('Current password')).toHaveValue('');
-    expect(screen.getByLabelText('New password')).toHaveValue('');
-    expect(screen.getByLabelText('Current password')).toHaveFocus();
+    expect(fetchMock.mock.calls.some(([url]) => url === '/api/auth/logout')).toBe(true);
   });
 
-  it('says when the current password is wrong', async () => {
+  it('says when the current password is wrong and keeps the new one', async () => {
     const { users } = fakeAuthBackend({ signedInAs: 'ada@example.com' });
     renderWithProviders(<App />, { route: '/account' });
 
@@ -45,28 +44,17 @@ describe('ChangePasswordSection', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Your current password is incorrect.');
     expect(users.get('ada@example.com')).toBe('Passw0rd!');
     expect(screen.getByLabelText('New password')).toHaveValue('N3wPassw0rd!');
-  });
-
-  it('shows the lockout message', async () => {
-    signedInWith(() => json({ errors: { LockedOut: ['Locked.'] } }, 400));
-    renderWithProviders(<App />, { route: '/account' });
-
-    await fill('Passw0rd!', 'N3wPassw0rd!');
-    await submit();
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'This account is temporarily locked. Try again in 5 minutes.',
-    );
+    expect(screen.getByLabelText('Current password')).toHaveFocus();
   });
 
   it('shows the server rule messages', async () => {
-    signedInWith(() => json({ errors: { PasswordRequiresUniqueChars: ['Use more different characters.'] } }, 400));
+    signedInWith(() => json({ errors: { PasswordRequiresUpper: ['Passwords must have an uppercase letter.'] } }, 400));
     renderWithProviders(<App />, { route: '/account' });
 
     await fill('Passw0rd!', 'N3wPassw0rd!');
     await submit();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Use more different characters.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Passwords must have an uppercase letter.');
   });
 
   it('shows a generic message for unexpected errors', async () => {
@@ -84,7 +72,7 @@ describe('ChangePasswordSection', () => {
     renderWithProviders(<App />, { route: '/account' });
 
     await fill('Passw0rd!', 'short');
-    expect(screen.getByLabelText('New password')).toHaveAccessibleDescription(/At least 8 characters: not met/);
+    expect(screen.getByLabelText('New password')).toHaveAccessibleDescription(/At least 6 characters: not met/);
     expect(screen.getByRole('button', { name: 'Change password' })).toBeDisabled();
 
     await userEvent.clear(screen.getByLabelText('New password'));
