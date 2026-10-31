@@ -21,7 +21,7 @@ const srOnly = {
  * Live checklist of the password rules under the password field. Each rule's state is part of
  * its text (visually hidden), so the field's description tells screen readers which rules fail.
  */
-export default function PasswordRules({ password, id }: { password: string; id: string }) {
+export default function PasswordRuleList({ password, id }: { password: string; id: string }) {
   return (
     <List id={id} dense disablePadding sx={{ mt: -1 }}>
       {passwordRules.map((rule) => {

@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import aspireLogo from '/Aspire.png';
 import ColorModeToggle from './components/ColorModeToggle';
 import AccountPage from './features/account/AccountPage';
 import ConfirmEmailBanner from './features/auth/ConfirmEmailBanner';
@@ -36,7 +35,7 @@ function App() {
             aria-label="Visit Aspire website (opens in new tab)"
             sx={{ display: 'flex' }}
           >
-            <Box component="img" src={aspireLogo} alt="Aspire logo" sx={{ height: 36 }} />
+            <Box component="img" src="/Aspire.png" alt="Aspire logo" sx={{ height: 36 }} />
           </Link>
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography variant="h6" component="h1" noWrap sx={{ lineHeight: 1.2 }}>
