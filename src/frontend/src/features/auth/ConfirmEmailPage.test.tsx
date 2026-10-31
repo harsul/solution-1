@@ -78,4 +78,55 @@ describe('ConfirmEmailPage', () => {
     expect(await screen.findByRole('heading', { name: 'Something went wrong' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Go to the app' })).toBeInTheDocument();
   });
+
+  describe('with changedEmail (a change-email link)', () => {
+    const changeLink = (code: string) =>
+      `/confirm-email?userId=ada%40example.com&code=${code}&changedEmail=ada%40new.example`;
+
+    it('changes the email, signs out a signed-in browser and says to sign in with the new address', async () => {
+      const { users, fetchMock } = fakeAuthBackend({ signedInAs: 'ada@example.com', emailConfirmed: true });
+
+      renderWithProviders(<App />, { route: changeLink('valid') });
+
+      expect(await screen.findByRole('heading', { name: 'Email changed' })).toBeInTheDocument();
+      expect(screen.getByText('ada@new.example')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/signin');
+      expect(users.has('ada@new.example')).toBe(true);
+      expect(fetchMock.mock.calls.some(([url]) => String(url) === '/api/auth/logout')).toBe(true);
+    });
+
+    it('works for a signed-out visitor too, without signing out', async () => {
+      const { users, fetchMock } = fakeAuthBackend();
+      users.set('ada@example.com', 'Passw0rd!');
+
+      renderWithProviders(<App />, { route: changeLink('valid') });
+
+      expect(await screen.findByRole('heading', { name: 'Email changed' })).toBeInTheDocument();
+      expect(users.has('ada@new.example')).toBe(true);
+      expect(fetchMock.mock.calls.some(([url]) => String(url).startsWith('/api/auth/confirmEmail?'))).toBe(true);
+    });
+
+    it('sends changedEmail to the built-in endpoint', async () => {
+      const { fetchMock, users } = fakeAuthBackend();
+      users.set('ada@example.com', 'Passw0rd!');
+
+      renderWithProviders(<App />, { route: changeLink('valid') });
+      await screen.findByRole('heading', { name: 'Email changed' });
+
+      expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain(
+        '/api/auth/confirmEmail?userId=ada%40example.com&code=valid&changedEmail=ada%40new.example',
+      );
+    });
+
+    it('shows "no longer valid" with the way forward when the link fails, even for a confirmed user', async () => {
+      fakeAuthBackend({ signedInAs: 'ada@example.com', emailConfirmed: true });
+
+      renderWithProviders(<App />, { route: changeLink('expired') });
+
+      expect(await screen.findByRole('heading', { name: 'This link is no longer valid' })).toBeInTheDocument();
+      expect(
+        screen.getByText('This link is no longer valid. Request the change again in Account settings.'),
+      ).toBeInTheDocument();
+    });
+  });
 });

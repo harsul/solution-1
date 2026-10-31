@@ -40,35 +40,17 @@ describe('ForgotPasswordPage', () => {
     expect(resetRequests).toEqual([]);
   });
 
-  it('asks to wait when rate-limited', async () => {
+  it('shows an error when the server fails', async () => {
     fakeApi({
       'GET /api/auth/manage/info': () => status(401),
-      'POST /api/auth/password/forgot': () => status(429),
+      'POST /api/auth/forgotPassword': () => status(500),
     });
     renderWithProviders(<App />, { route: '/forgot-password' });
 
     await userEvent.type(await screen.findByLabelText('Email'), 'ada@example.com');
     await userEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Too many requests. Please wait a few minutes and try again.',
-    );
-  });
-
-  it.each([
-    [400, 'Enter a valid email address.'],
-    [500, 'Something went wrong. Please try again.'],
-  ])('shows an error when the server answers %i', async (code, text) => {
-    fakeApi({
-      'GET /api/auth/manage/info': () => status(401),
-      'POST /api/auth/password/forgot': () => status(code),
-    });
-    renderWithProviders(<App />, { route: '/forgot-password' });
-
-    await userEvent.type(await screen.findByLabelText('Email'), 'ada@example.com');
-    await userEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(text);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong. Please try again.');
   });
 
   it('prefills the email from the link', async () => {

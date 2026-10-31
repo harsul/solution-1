@@ -8,19 +8,15 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '../auth/AuthContext';
-import { lockedOutMessage } from '../auth/messages';
-import { isValidEmail } from '../auth/passwordRules';
-import { changeEmail, type ChangeEmailResult } from './api';
+import { isUsableAsSignInName, isValidEmail } from '../auth/passwordRules';
+import { changeEmail } from './api';
 
 type Feedback = { severity: 'success' | 'error'; message: string };
 
-const errorMessages: Record<Extract<ChangeEmailResult, { ok: false }>['code'], string> = {
-  wrongPassword: 'Your password is incorrect.',
-  lockedOut: lockedOutMessage,
+const messages = {
   invalidEmail: 'Enter a valid email address.',
+  unusable: "This email address can't be used to sign in.",
   sameEmail: 'This is already your email address.',
-  inUse: 'This email address is already in use.',
-  tooManyRequests: 'Too many requests. Please wait a few minutes and try again.',
 };
 
 export default function EmailSection() {
@@ -28,28 +24,36 @@ export default function EmailSection() {
   const current = state.status === 'signedIn' ? state.email : '';
   const confirmed = state.status === 'signedIn' && state.emailConfirmed;
   const [newEmail, setNewEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
   const emailValid = isValidEmail(newEmail);
   const showEmailError = touched && newEmail !== '' && !emailValid;
-  const canSubmit = emailValid && password !== '';
+  const canSubmit = emailValid;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (busy || !canSubmit) return;
-    setBusy(true);
     setFeedback(null);
     const address = newEmail.trim();
+    // Checked here: the built-in endpoint would send the link anyway and confirmation would fail later.
+    const problem = !isUsableAsSignInName(address)
+      ? messages.unusable
+      : address.toLowerCase() === current.toLowerCase()
+        ? messages.sameEmail
+        : null;
+    if (problem) {
+      setFeedback({ severity: 'error', message: problem });
+      emailRef.current?.focus();
+      return;
+    }
+    setBusy(true);
     try {
-      const result = await changeEmail(address, password);
+      const result = await changeEmail(address);
       if (result.ok) {
         setNewEmail('');
-        setPassword('');
         setTouched(false);
         // The submit button is now disabled; keep keyboard focus in the form.
         emailRef.current?.focus();
@@ -58,14 +62,8 @@ export default function EmailSection() {
           message: `We've sent a confirmation link to ${address}. Your email changes when you click it.`,
         });
       } else {
-        setFeedback({ severity: 'error', message: errorMessages[result.code] });
-        if (result.code === 'invalidEmail' || result.code === 'sameEmail' || result.code === 'inUse') {
-          // Only the address was wrong: keep the password so it needn't be typed again.
-          emailRef.current?.focus();
-        } else {
-          setPassword('');
-          passwordRef.current?.focus();
-        }
+        setFeedback({ severity: 'error', message: messages.invalidEmail });
+        emailRef.current?.focus();
       }
     } catch {
       setFeedback({ severity: 'error', message: 'Something went wrong. Please try again.' });
@@ -100,17 +98,6 @@ export default function EmailSection() {
             inputRef={emailRef}
             error={showEmailError}
             helperText={showEmailError ? 'Enter a valid email address.' : ' '}
-            fullWidth
-          />
-          {/* The account's sign-in name, so password managers fill the right password. */}
-          <input type="email" name="username" autoComplete="username" value={current} readOnly hidden />
-          <TextField
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            inputRef={passwordRef}
             fullWidth
           />
           <Button

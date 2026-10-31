@@ -40,18 +40,20 @@ describe('RegisterPage', () => {
     await fillForm('new@example.com', 'short');
 
     const passwordField = screen.getByLabelText('Password');
-    expect(passwordField).toHaveAccessibleDescription(/At least 8 characters: not met/);
-    expect(passwordField).toHaveAccessibleDescription(/At least one letter: met/);
-    expect(passwordField).toHaveAccessibleDescription(/At least one number: not met/);
+    expect(passwordField).toHaveAccessibleDescription(/At least 6 characters: not met/);
+    expect(passwordField).toHaveAccessibleDescription(/A lowercase letter: met/);
+    expect(passwordField).toHaveAccessibleDescription(/An uppercase letter: not met/);
+    expect(passwordField).toHaveAccessibleDescription(/A number: not met/);
     expect(screen.getByRole('button', { name: 'Create account' })).toBeDisabled();
 
     await userEvent.clear(screen.getByLabelText('Password'));
-    await userEvent.type(screen.getByLabelText('Password'), 'short123');
+    await userEvent.type(screen.getByLabelText('Password'), 'Short1!');
     await userEvent.clear(screen.getByLabelText('Repeat password'));
-    await userEvent.type(screen.getByLabelText('Repeat password'), 'short123');
+    await userEvent.type(screen.getByLabelText('Repeat password'), 'Short1!');
 
-    expect(passwordField).toHaveAccessibleDescription(/At least 8 characters: met/);
-    expect(passwordField).toHaveAccessibleDescription(/At least one number: met/);
+    expect(passwordField).toHaveAccessibleDescription(/At least 6 characters: met/);
+    expect(passwordField).toHaveAccessibleDescription(/An uppercase letter: met/);
+    expect(passwordField).toHaveAccessibleDescription(/A number: met/);
     expect(screen.getByRole('button', { name: 'Create account' })).toBeEnabled();
   });
 

@@ -6,7 +6,7 @@ import { useAuth } from './AuthContext';
 
 const notices = {
   expired: 'Your session has expired, please sign in again.',
-  deleted: 'Your account was deleted.',
+  passwordChanged: 'Your password was changed. Please sign in with your new password.',
 };
 
 /**
