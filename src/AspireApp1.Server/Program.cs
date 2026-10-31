@@ -33,7 +33,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // Static files (the built React app) are public: serve them before authentication, so they don't
-// pay for the per-request session check (F4).
+// pay for the authentication handler.
 app.UseFileServer();
 
 app.UseAuthentication();

@@ -19,8 +19,8 @@ internal sealed class IdentityEmailSender(
     /// The built-in link points to the API and is built from the request's host. Only its
     /// <c>userId</c>, <c>code</c> and (change-email) <c>changedEmail</c> are kept; the link in the
     /// email points to the frontend's confirm page at the configured public URL. The email goes to
-    /// the new address for a change and otherwise to the stored one (never the typed spelling; the built-in
-    /// endpoints pass the stored one today, this keeps it so).
+    /// the new address for a change and otherwise to the stored one
+    /// (<c>user.Email</c>), never the <c>email</c> parameter.
     /// </summary>
     public async Task SendConfirmationLinkAsync(IdentityUser user, string email, string confirmationLink)
     {
@@ -48,7 +48,7 @@ internal sealed class IdentityEmailSender(
 
     /// <summary>
     /// The built-in /forgotPassword passes the Base64Url code HTML-encoded. The email goes to the stored
-    /// address (never the typed spelling) and links to the frontend's reset page.
+    /// address (<c>user.Email</c>, never the <c>email</c> parameter) and links to the frontend's reset page.
     /// </summary>
     public async Task SendPasswordResetCodeAsync(IdentityUser user, string email, string resetCode)
     {

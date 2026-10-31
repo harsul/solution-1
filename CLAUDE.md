@@ -101,11 +101,10 @@ Non-obvious traps the team ran into. `/fwork` adds new ones after each epic (ret
 - Vitest fake timers break Testing Library's `findBy*`: fake only what you need (`toFake: ['setInterval', 'clearInterval', 'Date']`) and only after the `findBy` calls.
 - ASP.NET Identity token providers (`DataProtectorTokenProvider`) have no `TimeProvider`: test expiry by shrinking `TokenLifespan` in a `WithWebHostBuilder` host, plus a test for the configured lifespan.
 - Built-in `/confirmEmail?changedEmail=` saves the email and the user name separately: an address outside `AllowedUserNameCharacters` changes the email but not the sign-in name; reject such addresses in the frontend.
-- `UserManager.FindByEmailAsync` matches normalized (upper-cased) addresses, and `IEmailSender` gets the address as the built-in endpoint sees it (the stored one in .NET 10): send to `user.Email`, never to the typed spelling.
+- `UserManager.FindByEmailAsync` matches normalized (upper-cased) addresses, so `IEmailSender` implementations send to `user.Email` (stored), never to the `email` parameter.
 - Navigating right after a state change that `RequireAuth` reacts to (e.g. sign-out) races its own redirect: let `RequireAuth` redirect (signed-out `reason`) instead.
 - Integration tests need Postgres: Testcontainers with Docker, or `TEST_POSTGRES_CONNECTION`.
 - Line endings are LF everywhere (`.gitattributes`, `.editorconfig`); bash scripts fail on CRLF.
-- On Windows the frontend tests can't run natively (`./PasswordRules` resolves to `passwordRules.ts` on a case-insensitive disk, `/Aspire.png` import): run them in a Linux container or CI.
 
 ## Conventions
 

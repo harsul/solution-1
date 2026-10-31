@@ -154,7 +154,7 @@ public class PasswordResetTests(ServerFactory factory) : IClassFixture<ServerFac
     }
 
     [Fact]
-    public void Reset_links_are_valid_for_1_day()
+    public void All_Identity_tokens_incl_reset_and_confirmation_links_are_valid_for_1_day()
     {
         var options = factory.Services.GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>().Value;
 

@@ -174,7 +174,7 @@ public class EmailTests
     {
         var delivery = new RecordingDelivery();
 
-        // The built-in endpoint passes the Base64Url code HTML-encoded and the typed spelling.
+        // The code arrives HTML-encoded; the email parameter must not decide the recipient.
         await NewSender(delivery).SendPasswordResetCodeAsync(
             new IdentityUser { Email = "ada@example.com" }, "ADA@EXAMPLE.COM", "ab-_&#x2B;c");
 
