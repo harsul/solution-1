@@ -32,7 +32,7 @@ Fix with tests, all checks green, commit the fixes as **new commits** (never ame
 ## 5. Rebase, push, PR
 1. `git fetch origin` and `git rebase origin/<BASE_BRANCH>`; resolve conflicts keeping both sides' intent (read the other task's change; never drop it), then all checks green again.
 2. `git push -u origin <branch>` (first push), later `git push --force-with-lease origin <branch>` – **only your own task branch, never the base branch**.
-3. `gh pr create --base <BASE_BRANCH> --title "<ID> – <title>" --body` with a short summary, how to try it and `Closes #<task>`.
+3. `gh pr create --base <BASE_BRANCH> --title "<ID> – <title>" --body` with a short summary, how to try it and `Closes #<task>`; an `ops` task's PR also gets `--label ops` (the pipeline's ownership check needs it).
 4. If `AUTO_MERGE=on`: `gh pr merge --auto --<MERGE_METHOD>` – GitHub merges when the required checks pass.
 5. If the pipeline fails or `BASE_BRANCH` moved and the PR is behind: fix or rebase again (step 5.1), push with lease.
 

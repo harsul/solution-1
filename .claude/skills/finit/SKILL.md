@@ -64,6 +64,7 @@ Skip any question the free-text answers or the existing profile already settle. 
 - Team size `DEVELOPERS`: 2 developers + QA (recommended) / 3 (faster, more cost) / 4–5 (fastest, more conflicts and cost).
 - Epic and task size: an epic is one working day of the agent team – `EPIC_MAX_TASKS` (default 9) tasks of up to `TASK_MAX_LINES` (default 400) changed lines; ask only if the stakeholder wants other limits.
 - Merging `MERGE_METHOD`: rebase, linear history (recommended) / squash, one commit per task / merge commits. `AUTO_MERGE`: off until the pipeline and branch protection exist (recommended) / on.
+- Daily cutoff `CUTOFF`: off (recommended until you know the team's pace) / a local time such as `16:00` – after it `/fwork` starts no new tasks, finishes the ones in flight and reports what carries over.
 - Cost `COST`: balanced (recommended: Sonnet for the product owner, designer, QA and developers; the session's model for architect, team lead, CloudOps and reviewer) / economy (Sonnet for every role except the reviewer) / max (the session's model everywhere).
 - `BASE_BRANCH` (default `main`): ask only if the stakeholder wants another one.
 - Work tracking: GitHub Issues (current tooling) / something else (note it; the tooling stays GitHub-based for now).

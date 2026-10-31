@@ -54,7 +54,7 @@ We build a **SaaS starter platform** that any kind of business can start from. W
 | `/finit [update [name \| brand \| tickets \| workflow \| quality \| section]]` | Setup: product questions → `docs/product.md`; code name (rename), display name, brand colors, task IDs, workflow settings. Re-run with `update` to change any of it |
 | `/fepic "idea" \| review \| #<epic>` | Product owner defines small epics (label `epic`); you approve them |
 | `/fplan #<epic>` | Team lead + architect (+ designer, CloudOps) break the epic into tasks (sub-issues); you approve the task list |
-| `/fwork #<epic>` | The sprint: developers in parallel take ready tasks by priority → QA → review → rebase → PR → auto-merge → next task, until the epic is done |
+| `/fwork #<epic>` | The sprint: developers in parallel take ready tasks by priority → QA → review → rebase → PR → auto-merge → next task; then epic QA, product-owner acceptance, retro and day report (stops new work at `CUTOFF`) |
 | `/ffix #<bug>` | Bug: failing test → fix → QA → review → PR |
 | `/fcommit [check]` | Your own manual changes: all checks, then logical Conventional Commits; `check` only verifies |
 
@@ -68,6 +68,7 @@ All reads and writes go through `.claude/scripts/fgit.sh` (needs `gh`, signed in
 - **Task:** issue `<ID> – <title>`, label `task` + priority `P1`/`P2`/`P3`, a **sub-issue** of its epic. Body: goal, acceptance criteria, technical/UI/ops notes, `**Blocked by:** #<n>, …` (or `–`). At most `TASK_MAX_LINES` changed lines (tests and lock files not counted). IDs: prefix + sequential number, never reused (`fgit.sh next-id`; `ID_PREFIX`/`ID_START`, here `F` → `F6`).
 - **Ready** = open, not `in-progress`, all blockers closed (`fgit.sh ready <epic>`, best first). A developer takes one with `fgit.sh claim`; a merged PR (`Closes #<task>`) closes it.
 - **Sections** (one comment each, updated in place): `qa`, `review`, `fix`.
+- **Epic close:** QA's epic pass on the merged result, then the product owner accepts it ("What users get" comment) or adds the missing tasks. Skipped review findings become `follow-up` issues (P3, outside the epic); ideas from the feature template get `idea`; both feed `/fepic review`.
 - **Bug:** label `bug` (bug template); `/ffix` on `fix/<issue>-<name>`, PR with `Fixes #<issue>`.
 - **Branches:** `feature/<ID>-<name>` from the latest `BASE_BRANCH`; before the PR: rebase on `origin/<BASE_BRANCH>`, resolve conflicts, all checks again. Force pushes only `--force-with-lease` on your own task branch.
 - **PRs:** one per task, `Closes #<task>`, merged by GitHub with `MERGE_METHOD` once the pipeline's required checks pass (`AUTO_MERGE=on`; needs branch protection with required checks).
@@ -113,7 +114,7 @@ Non-obvious traps the team ran into. `/fwork` adds new ones after each epic (ret
 Decided conventions. The architect adds to this list when the stakeholder answers an architecture question (during `/finit`, `/fplan` or `/fwork`), so it is not asked again.
 
 - Work tracking: GitHub Issues through `.claude/scripts/fgit.sh`: epics (label `epic`) and their tasks (sub-issues, label `task`, priorities `P1`–`P3`, `Blocked by` lines); one branch and one PR per task.
-- Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/fgit.sh config`): task IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), team size (`DEVELOPERS`), epic and task size (`EPIC_MAX_TASKS`, `TASK_MAX_LINES`), `BASE_BRANCH`, `MERGE_METHOD`, `AUTO_MERGE` (switch to `on` only once the pipeline has required checks and branch protection), and the model per role (`COST`). `/finit` sets them; edit them any time.
+- Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/fgit.sh config`): task IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), team size (`DEVELOPERS`), epic and task size (`EPIC_MAX_TASKS`, `TASK_MAX_LINES`), `BASE_BRANCH`, `MERGE_METHOD`, `AUTO_MERGE` (switch to `on` only once the pipeline has required checks and branch protection), the model per role (`COST`), and the daily cutoff (`CUTOFF`). `/finit` sets them; edit them any time.
 - Infrastructure ownership: only CloudOps changes the **infra paths** – `src/<Code>.AppHost`, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles, `docs/ops/` – through one `ops` task per epic (label `ops`, P1) when the epic needs it; tasks that depend on it are `Blocked by` it, the others start at once. Developers keep migrations, `Program.cs` wiring and `appsettings` bindings and stop when they need an infra change; the reviewer flags violations.
 - Hosting: Azure Container Apps (dev environment only for now; production comes later, as its own epic), deployed from the Aspire AppHost (`aspire publish`/azd); CI/CD with GitHub Actions using OIDC federated credentials; secrets in Key Vault / Container Apps secrets, never in the repo.
 - Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.

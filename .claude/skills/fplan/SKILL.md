@@ -11,7 +11,7 @@ effort: high
 Input: $ARGUMENTS
 
 ## 0. Context
-`fgit.sh check`; the epic must be `epic:approved` (`fgit.sh labels <epic>`) – otherwise point to `/fepic #<epic>`. Read the epic, `docs/product.md`, `CLAUDE.md` and the settings (`fgit.sh config`: `EPIC_MAX_TASKS`, `TASK_MAX_LINES`, `DEVELOPERS`, `GATES`). Already planned (`epic:planned`) → show the tasks and ask whether to re-plan open ones.
+`fgit.sh check`, `fgit.sh init-labels` (idempotent; new labels after an update); the epic must be `epic:approved` (`fgit.sh labels <epic>`) – otherwise point to `/fepic #<epic>`. Read the epic, `docs/product.md`, `CLAUDE.md` and the settings (`fgit.sh config`: `EPIC_MAX_TASKS`, `TASK_MAX_LINES`, `DEVELOPERS`, `GATES`). Already planned (`epic:planned`) → show the tasks and ask whether to re-plan open ones.
 
 ## 1. Breakdown
 1. **team-lead** agent: draft the tasks (goal, acceptance criteria, priority, size, blockers, collision check) and create them as sub-issues of the epic.

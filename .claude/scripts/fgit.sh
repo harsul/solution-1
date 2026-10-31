@@ -8,6 +8,8 @@
 #          incl. a line "**Blocked by:** #12, #15" (or "–"); label in-progress while a developer works on it;
 #          label ops = infrastructure task (AppHost, infra, workflows), done by CloudOps only
 #   bug    issue from the bug template, label bug; fixed with /ffix
+#   follow-up  issue with label follow-up + P3: a skipped review finding or loose end, outside any epic;
+#          the product owner may pull it into a later epic (/fepic review)
 #   sections  one comment per section, first line "<!-- fgit:<name> -->" (qa, review, fix), updated in place
 #   <ID>   ID_PREFIX + number from .claude/workflow.conf, e.g. F6 or ENG-1
 #
@@ -17,7 +19,9 @@
 #   fgit.sh init-labels                    create/refresh the labels (idempotent)
 #   fgit.sh next-id                        next free task ID, e.g. F6 or ENG-1
 #   fgit.sh find <ID>                      issue number of the task with that ID (exit 1 if none)
-#   fgit.sh new epic|task|bug "<title>" <body-file>   create an issue, print its number
+#   fgit.sh new epic|task|bug|follow-up "<title>" <body-file> [--priority P1|P2|P3] [--ops]
+#                                          create an issue with its labels (epic → epic:draft, follow-up → P3,
+#                                          --ops only for tasks), print its number
 #   fgit.sh link <epic> <task>             make the task a sub-issue of the epic (idempotent)
 #   fgit.sh children <epic>                the epic's tasks: "#<n> <state> <labels> <title>"
 #   fgit.sh ready <epic>                   open tasks nobody works on whose blockers are all closed,
@@ -40,9 +44,9 @@ die() { echo "fgit: $*" >&2; exit 1; }
 need_file() { [[ -f "$1" ]] || die "file not found: $1"; }
 
 # ---- settings ------------------------------------------------------------------------------------
-config_keys=(ID_PREFIX ID_START GATES DEVELOPERS EPIC_MAX_TASKS TASK_MAX_LINES BASE_BRANCH MERGE_METHOD AUTO_MERGE COST)
+config_keys=(ID_PREFIX ID_START GATES DEVELOPERS EPIC_MAX_TASKS TASK_MAX_LINES BASE_BRANCH MERGE_METHOD AUTO_MERGE COST CUTOFF)
 ID_PREFIX=F; ID_START=1; GATES=epic+tasks; DEVELOPERS=3; EPIC_MAX_TASKS=9; TASK_MAX_LINES=400
-BASE_BRANCH=main; MERGE_METHOD=rebase; AUTO_MERGE=off; COST=balanced
+BASE_BRANCH=main; MERGE_METHOD=rebase; AUTO_MERGE=off; COST=balanced; CUTOFF=off
 conf="$(git rev-parse --show-toplevel 2>/dev/null)/.claude/workflow.conf"
 if [[ -f "$conf" ]]; then  # read, never execute: KEY=value, # comments allowed
   while IFS='=' read -r key value; do
@@ -62,6 +66,7 @@ check_setting BASE_BRANCH "$BASE_BRANCH" '^[A-Za-z0-9._/-]+$' "a branch name"
 check_setting MERGE_METHOD "$MERGE_METHOD" '^(rebase|squash|merge)$' "rebase, squash or merge"
 check_setting AUTO_MERGE "$AUTO_MERGE" '^(on|off)$' "on or off"
 check_setting COST "$COST" '^(economy|balanced|max)$' "economy, balanced or max"
+check_setting CUTOFF "$CUTOFF" '^(off|([01][0-9]|2[0-3]):[0-5][0-9])$' "off or a local time HH:MM (e.g. 16:00)"
 
 marker() { printf '<!-- fgit:%s -->' "$1"; }
 section_comment_id() { # <issue> <section>
@@ -98,6 +103,8 @@ case "$cmd" in
     gh label create P2 --color d93f0b --description "Priority: normal" --force
     gh label create P3 --color fef2c0 --description "Priority: later" --force
     gh label create needs-answer --color e99695 --description "Waiting for an answer from the stakeholder" --force
+    gh label create follow-up --color c2e0c6 --description "Skipped review finding or loose end; the product owner may pull it into an epic" --force
+    gh label create idea --color d4c5f9 --description "Feature idea; the product owner turns it into an epic (/fepic)" --force
     ;;
   next-id)
     max=$((ID_START - 1))
@@ -114,12 +121,19 @@ case "$cmd" in
     echo "$n"
     ;;
   new)
-    [[ "${1:-}" =~ ^(epic|task|bug)$ ]] || die "usage: new epic|task|bug <title> <body-file>"
+    [[ "${1:-}" =~ ^(epic|task|bug|follow-up)$ ]] || die "usage: new epic|task|bug|follow-up <title> <body-file> [--priority P1|P2|P3] [--ops]"
     need_file "${3:-}"
-    url="$(gh issue create --title "$2" --body-file "$3" --label "$1")"
-    n="${url##*/}"
-    [[ "$1" == epic ]] && gh issue edit "$n" --add-label epic:draft >/dev/null
-    echo "$n"
+    kind="$1" title="$2" file="$3"; shift 3
+    labels=("$kind"); [[ "$kind" == epic ]] && labels+=(epic:draft); [[ "$kind" == follow-up ]] && labels+=(P3)
+    while (( $# )); do
+      case "$1" in
+        --priority) [[ "${2:-}" =~ ^P[1-3]$ ]] || die "--priority needs P1, P2 or P3"; labels+=("$2"); shift 2 ;;
+        --ops)      [[ "$kind" == task ]] || die "--ops is only for tasks"; labels+=(ops); shift ;;
+        *)          die "unknown option: $1" ;;
+      esac
+    done
+    url="$(gh issue create --title "$title" --body-file "$file" --label "$(IFS=,; echo "${labels[*]}")")"
+    echo "${url##*/}"
     ;;
   link)
     [[ -n "${1:-}" && -n "${2:-}" ]] || die "usage: link <epic> <task>"

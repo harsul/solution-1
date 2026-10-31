@@ -15,7 +15,7 @@ Input: $ARGUMENTS
 
 ## 1. Epics
 - **An idea** → start the **product-owner** agent with it, the profile and the existing epics. It writes one or more epics (status `epic:draft`), each small enough for one working day of the agent team (at most `EPIC_MAX_TASKS` tasks), split where needed, with priorities and dependencies between epics.
-- **`review`** → show the open epics (priority, status, open tasks via `fgit.sh children`) and ask what changes: reorder, add, split, drop.
+- **`review`** → show the open epics (priority, status, open tasks via `fgit.sh children`) and the open ideas and follow-ups (`gh issue list --label idea`, `--label follow-up`), and ask what changes: reorder, add, split, drop, or fold ideas/follow-ups into an epic (close them with a link to it).
 - **`#<epic>`** → refine that epic with the product owner.
 
 ## 2. Questions and approval

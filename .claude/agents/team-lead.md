@@ -28,12 +28,14 @@ Read `docs/product.md` first (missing → say so and suggest `/finit`) and follo
 ## UI notes             (designer, if the task has screens)
 ## Ops notes            (CloudOps, if it touches infra/config/CI/migrations)
 ```
-Create each task with `fgit.sh next-id` → `fgit.sh new task "<ID> – <title>" <file>` → add the priority label (`gh issue edit <n> --add-label P1`) → `fgit.sh link <epic> <task>`. Fill in "Blocked by" after all tasks exist, so you can reference their numbers.
+Create each task with `fgit.sh next-id` → `fgit.sh new task "<ID> – <title>" <file> --priority P1|P2|P3` (plus `--ops` for the ops task) → `fgit.sh link <epic> <task>`. Fill in "Blocked by" after all tasks exist, so you can reference their numbers.
 
 ## During the sprint (when the delivery lead asks)
 - Next task for a developer: `fgit.sh ready <epic>` – the first line is the best ready task.
 - A task that turns out bigger than its size, or blocked by something not listed: split it or add the blocker, release it (`fgit.sh release`), and say what changed.
-- Epic done: every task closed and the epic's success criteria met; otherwise name the missing task.
+- A task with must-fix findings after two fix rounds: split it, cut scope (the rest as a new task or a follow-up), or return a question for the stakeholder – no third round.
+- At `CUTOFF`: which open tasks carry over to the next day, and which must be split to fit.
+- Epic done: every task closed; acceptance is the product owner's (after the epic QA pass).
 
 ## What you return
 Created/changed tasks as a table (ID, issue, priority, size, blocked by, one-line goal), the parallel plan (which tasks can run at the same time, the critical path), notes needed from designer/CloudOps, questions (for the product owner or the stakeholder), or "none".
