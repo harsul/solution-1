@@ -100,14 +100,12 @@ Non-obvious traps the team ran into. `/fwork` adds new ones after each epic (ret
 
 - Vitest fake timers break Testing Library's `findBy*`: fake only what you need (`toFake: ['setInterval', 'clearInterval', 'Date']`) and only after the `findBy` calls.
 - ASP.NET Identity token providers (`DataProtectorTokenProvider`) have no `TimeProvider`: test expiry by shrinking `TokenLifespan` in a `WithWebHostBuilder` host, plus a test for the configured lifespan.
-- Identity's built-in endpoints (`MapIdentityApi`) can bypass our rules (e.g. `/manage/info` newEmail/newPassword, `/confirmEmail?changedEmail=`): block or test them whenever we add our own version.
-- `UserManager.FindByEmailAsync` matches normalized (upper-cased) addresses: always send emails to the stored address (`GetEmailAsync`), never to the typed one.
-- Usernames are emails and must pass `AllowedUserNameCharacters` (no apostrophes or accented letters); change email and user name in one update (set `UserName` + `UpdateNormalizedUserNameAsync`, then `ChangeEmailAsync`).
-- With the security stamp validated on every request, call `RefreshSignInAsync` after anything that changes the stamp, or the current browser is signed out too.
+- Built-in `/confirmEmail?changedEmail=` saves the email and the user name separately: an address outside `AllowedUserNameCharacters` changes the email but not the sign-in name; reject such addresses in the frontend.
+- `UserManager.FindByEmailAsync` matches normalized (upper-cased) addresses, and `IEmailSender` gets the address as the built-in endpoint sees it (the stored one in .NET 10): send to `user.Email`, never to the typed spelling.
 - Navigating right after a state change that `RequireAuth` reacts to (e.g. sign-out) races its own redirect: let `RequireAuth` redirect (signed-out `reason`) instead.
-- The rate limiter partitions by the routed endpoint pattern, not the raw path, so `/a/` and `/a` share one limit.
 - Integration tests need Postgres: Testcontainers with Docker, or `TEST_POSTGRES_CONNECTION`.
 - Line endings are LF everywhere (`.gitattributes`, `.editorconfig`); bash scripts fail on CRLF.
+- On Windows the frontend tests can't run natively (`./PasswordRules` resolves to `passwordRules.ts` on a case-insensitive disk, `/Aspire.png` import): run them in a Linux container or CI.
 
 ## Conventions
 
@@ -119,11 +117,9 @@ Decided conventions. The architect adds to this list when the stakeholder answer
 - Hosting: Azure Container Apps (dev environment only for now; production comes later, as its own epic), deployed from the Aspire AppHost (`aspire publish`/azd); CI/CD with GitHub Actions using OIDC federated credentials; secrets in Key Vault / Container Apps secrets, never in the repo.
 - Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.
 - Database: PostgreSQL via Aspire (`appdb`, pgAdmin in dev) with EF Core; DbContext, migrations and DB helpers in `Data/`. Migrations apply automatically at startup in Development only. Create them with `dotnet ef migrations add <Name> -o Data/Migrations` (local tool).
-- Auth: ASP.NET Core Identity with cookie sessions (same origin, `HttpOnly`, `SameSite=Strict`); API returns 401/403, never redirects. Protect endpoints with `.RequireAuthorization()`.
-- Email: Identity's built-in email endpoints; `IEmailSender<IdentityUser>` (`Email/IdentityEmailSender`) builds messages (plain text + HTML in code) and rebuilds links to the frontend from `App:PublicUrl`, never from request headers; `IEmailDelivery` sends them (MailKit → Mailpit in development). Tests swap `IEmailDelivery` for a capturing test double.
-- Sessions: the security stamp is validated on every request (`ValidationInterval = 0`); end sessions with `UpdateSecurityStampAsync` and keep the current one with `RefreshSignInAsync`.
-- Account changes: own endpoints under `/api/account` (`.RequireAuthorization()`) when the built-in Identity endpoints lack needed behaviour; verify passwords with `CheckPasswordSignInAsync(..., lockoutOnFailure: true)`; expected failures are `400` ValidationProblems keyed by code (e.g. `PasswordMismatch`, `LockedOut`).
-- Rate limiting: ASP.NET Core's built-in rate limiter as a global limiter partitioned by path (only email-sending paths are limited, per client IP), limits from `RateLimits:*` configuration, 429 ProblemDetails with `Retry-After`.
+- Auth: ASP.NET Core Identity with cookie sessions (same origin, `HttpOnly`, `SameSite=Strict`); API returns 401/403, never redirects. Protect endpoints with `.RequireAuthorization()`. Account flows use only Identity's built-in endpoints (`/api/auth/*` incl. `manage/info`, `forgotPassword`, `resetPassword`, `confirmEmail`); the only custom one is `POST /api/auth/logout`. Identity's default password, lockout and token options.
+- Email: `IEmailSender<IdentityUser>` (`Email/IdentityEmailSender`) sends the confirm (incl. change-email, `changedEmail`) and reset emails (plain text + HTML in code) with links rebuilt from `App:PublicUrl`, never from request headers. Confirm and reset go to the stored address, change-email links to the new one. `IEmailDelivery` sends them (MailKit → Mailpit in development); tests swap it for a capturing test double.
+- Sessions: Identity's default security stamp check (30 min); after a password or email change the frontend signs the browser out.
 - Errors: don't catch exceptions just to return 500; `GlobalExceptionHandler` turns unhandled exceptions into a ProblemDetails 500 (logged, no details leaked). For expected failures return `TypedResults.Problem` / `TypedResults.ValidationProblem` / `TypedResults.NotFound` with the right status code.
 - Frontend data fetching: relative `/api/...` URLs through `src/api/apiFetch.ts` (handles expired sessions).
 - Frontend structure: feature folders `src/features/<feature>/` (pages, API calls, hooks, tests); shared UI in `src/components/`. Routing with React Router 8 (`react-router`).
@@ -144,3 +140,4 @@ Decided conventions. The architect adds to this list when the stakeholder answer
 
 - Applying migrations outside Development (deployment strategy)
 - Real email provider for production (F2 uses Mailpit in development)
+- Rate limiting of email-sending endpoints (removed for the minimal starter)
