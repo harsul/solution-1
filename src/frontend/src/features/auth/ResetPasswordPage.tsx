@@ -8,7 +8,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AuthCard from './AuthCard';
 import { useAuth } from './AuthContext';
-import PasswordRules from './PasswordRules';
+import PasswordRuleList from './PasswordRuleList';
 import { resetPassword } from './api';
 import { isPasswordValid } from './passwordRules';
 
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
           slotProps={{ htmlInput: { 'aria-describedby': 'password-rules' } }}
           fullWidth
         />
-        <PasswordRules id="password-rules" password={password} />
+        <PasswordRuleList id="password-rules" password={password} />
         <TextField
           label="Repeat new password"
           type="password"

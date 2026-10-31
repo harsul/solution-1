@@ -8,7 +8,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import AuthCard from './AuthCard';
 import { useAuth } from './AuthContext';
-import PasswordRules from './PasswordRules';
+import PasswordRuleList from './PasswordRuleList';
 import { isPasswordValid, isValidEmail } from './passwordRules';
 
 type FormError = { kind: 'duplicate' } | { kind: 'messages'; messages: string[] };
@@ -90,7 +90,7 @@ export default function RegisterPage() {
           slotProps={{ htmlInput: { 'aria-describedby': 'password-rules' } }}
           fullWidth
         />
-        <PasswordRules id="password-rules" password={password} />
+        <PasswordRuleList id="password-rules" password={password} />
         <TextField
           label="Repeat password"
           type="password"

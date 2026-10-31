@@ -7,7 +7,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useAuth } from '../auth/AuthContext';
-import PasswordRules from '../auth/PasswordRules';
+import PasswordRuleList from '../auth/PasswordRuleList';
 import { isPasswordValid } from '../auth/passwordRules';
 import { changePassword } from './api';
 
@@ -95,7 +95,7 @@ export default function ChangePasswordSection() {
             slotProps={{ htmlInput: { 'aria-describedby': 'new-password-rules' } }}
             fullWidth
           />
-          <PasswordRules id="new-password-rules" password={password} />
+          <PasswordRuleList id="new-password-rules" password={password} />
           <TextField
             label="Repeat new password"
             type="password"
