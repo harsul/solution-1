@@ -98,8 +98,10 @@ public class AuthEndpointsTests(ServerFactory factory) : IClassFixture<ServerFac
     [Theory]
     [InlineData("/api/auth/password/forgot")]
     [InlineData("/api/account/password")]
+    [InlineData("/api/account/sign-out-others")]
+    [InlineData("/api/account/delete")]
     [InlineData("/api/account/email")]
-    [InlineData("/api/account/sessions")]
+    [InlineData("/api/account/email/confirm")]
     public async Task Removed_custom_endpoints_return_404(string path)
     {
         var (client, _) = await SignedInClientAsync(factory);

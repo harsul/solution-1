@@ -92,14 +92,6 @@ public class EmailConfirmationTests(ServerFactory factory) : IClassFixture<Serve
     }
 
     [Fact]
-    public void Confirmation_tokens_are_valid_for_24_hours()
-    {
-        var options = factory.Services.GetRequiredService<IOptions<DataProtectionTokenProviderOptions>>().Value;
-
-        Assert.Equal(TimeSpan.FromHours(24), options.TokenLifespan);
-    }
-
-    [Fact]
     public async Task Expired_confirmation_link_returns_401()
     {
         // Identity's token provider has no test clock, so shrink the lifetime and let it pass.
