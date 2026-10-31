@@ -15,7 +15,7 @@ internal static class ResetPasswordMessage
 
             {resetLink}
 
-            The link is valid for 1 hour and works once. If you didn't ask to reset your password, you can ignore this email; your password stays the same.
+            The link is valid for 24 hours and works once. If you didn't ask to reset your password, you can ignore this email; your password stays the same.
             """;
 
         var link = WebUtility.HtmlEncode(resetLink);
@@ -23,7 +23,7 @@ internal static class ResetPasswordMessage
             <p>We received a request to reset the password for your {WebUtility.HtmlEncode(Branding.ProductName)} account.</p>
             <p><a href="{link}">Choose a new password</a></p>
             <p>Or copy this link into your browser:<br>{link}</p>
-            <p>The link is valid for 1 hour and works once. If you didn't ask to reset your password, you can ignore this email; your password stays the same.</p>
+            <p>The link is valid for 24 hours and works once. If you didn't ask to reset your password, you can ignore this email; your password stays the same.</p>
             """;
 
         return new EmailMessage(to, Subject, text, html);

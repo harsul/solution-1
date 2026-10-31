@@ -92,71 +92,11 @@ public class EmailTests
 
         // Identity passes the link HTML-encoded.
         await sender.SendConfirmationLinkAsync(
-            new IdentityUser(), "ada@example.com", "https://evil.example/api/auth/confirmEmail?userId=u1&amp;code=c1");
+            new IdentityUser { Email = "ada@example.com" }, "ada@example.com", "https://evil.example/api/auth/confirmEmail?userId=u1&amp;code=c1");
 
         var message = Assert.Single(delivery.Sent);
         Assert.Contains("https://app.test/confirm-email?userId=u1&code=c1", message.TextBody);
         Assert.DoesNotContain("evil.example", message.TextBody);
-    }
-
-    [Fact]
-    public void PasswordChangedMessage_says_when_and_what_to_do_if_it_was_not_you()
-    {
-        var message = PasswordChangedMessage.Create("ada@example.com", new DateTimeOffset(2026, 10, 30, 12, 5, 0, TimeSpan.FromHours(1)));
-
-        Assert.Equal("ada@example.com", message.To);
-        Assert.Equal("Your password was changed", message.Subject);
-        Assert.Contains("2026-10-30 11:05 UTC", message.TextBody);
-        Assert.Contains("If this wasn't you", message.TextBody);
-        Assert.Contains("2026-10-30 11:05 UTC", message.HtmlBody);
-        Assert.DoesNotContain("http", message.TextBody);
-    }
-
-    [Fact]
-    public void AccountDeletedMessage_says_it_cannot_be_undone_and_has_no_link()
-    {
-        var message = AccountDeletedMessage.Create("ada@example.com");
-
-        Assert.Equal("ada@example.com", message.To);
-        Assert.Equal("Your account was deleted", message.Subject);
-        Assert.Contains("can't be undone", message.TextBody);
-        Assert.Contains("can't be undone", message.HtmlBody);
-        Assert.DoesNotContain("http", message.TextBody);
-    }
-
-    [Fact]
-    public void ChangeEmailMessage_has_the_link_and_says_24_hours()
-    {
-        var link = "https://app.test/confirm-email-change?userId=u1&email=new%40example.com&code=a%26b";
-
-        var message = ChangeEmailMessage.Create("new@example.com", link);
-
-        Assert.Equal("new@example.com", message.To);
-        Assert.Equal("Confirm your new email address", message.Subject);
-        Assert.Contains(link, message.TextBody);
-        Assert.Contains("24 hours", message.TextBody);
-        Assert.Contains("code=a%26b", message.HtmlBody);
-        Assert.DoesNotContain("code=a&b", message.HtmlBody);
-    }
-
-    [Fact]
-    public void Confirm_email_change_link_has_all_values()
-    {
-        var link = EmailLinks.ConfirmEmailChange("https://example.com/app/", "u1", "new@example.com", "c+1");
-
-        Assert.Equal("https://example.com/app/confirm-email-change?userId=u1&email=new@example.com&code=c%2B1", link);
-    }
-
-    [Fact]
-    public void EmailChangedMessage_names_the_new_address_and_has_no_link()
-    {
-        var message = EmailChangedMessage.Create("old@example.com", "<new>@example.com");
-
-        Assert.Equal("old@example.com", message.To);
-        Assert.Equal("Your email address was changed", message.Subject);
-        Assert.Contains("<new>@example.com", message.TextBody);
-        Assert.Contains("&lt;new&gt;@example.com", message.HtmlBody);
-        Assert.DoesNotContain("http", message.TextBody);
     }
 
     [Fact]
@@ -166,11 +106,6 @@ public class EmailTests
         [
             ConfirmEmailMessage.Create("a@example.com", "https://app.test/x"),
             ResetPasswordMessage.Create("a@example.com", "https://app.test/x"),
-            ConfirmBeforeResetMessage.Create("a@example.com", "https://app.test/x"),
-            PasswordChangedMessage.Create("a@example.com", DateTimeOffset.UnixEpoch),
-            AccountDeletedMessage.Create("a@example.com"),
-            ChangeEmailMessage.Create("a@example.com", "https://app.test/x"),
-            EmailChangedMessage.Create("a@example.com", "b@example.com"),
         ];
 
         Assert.All(messages, m => Assert.Contains(Branding.ProductName, m.TextBody));
@@ -178,7 +113,7 @@ public class EmailTests
     }
 
     [Fact]
-    public void ResetPasswordMessage_has_the_link_and_says_1_hour()
+    public void ResetPasswordMessage_has_the_link_and_says_24_hours()
     {
         const string link = "https://app.test/reset-password?email=ada%40example.com&code=x<y";
 
@@ -186,22 +121,9 @@ public class EmailTests
 
         Assert.Equal("Reset your password", message.Subject);
         Assert.Contains(link, message.TextBody);
-        Assert.Contains("1 hour", message.TextBody);
+        Assert.Contains("24 hours", message.TextBody);
         Assert.Contains("code=x&lt;y", message.HtmlBody);
         Assert.DoesNotContain("x<y", message.HtmlBody);
-    }
-
-    [Fact]
-    public void ConfirmBeforeResetMessage_explains_to_confirm_first_and_request_again()
-    {
-        const string link = "https://app.test/confirm-email?userId=u1&code=c1";
-
-        var message = ConfirmBeforeResetMessage.Create("ada@example.com", link);
-
-        Assert.Equal("Confirm your email address first", message.Subject);
-        Assert.Contains(link, message.TextBody);
-        Assert.Contains("request the password reset again", message.TextBody);
-        Assert.Contains("https://app.test/confirm-email?userId=u1&amp;code=c1", message.HtmlBody);
     }
 
     [Theory]
@@ -211,6 +133,70 @@ public class EmailTests
     {
         Assert.Equal(expected, EmailLinks.ResetPassword(publicUrl, "ada@example.com", "c+1"));
     }
+
+    [Fact]
+    public void Confirm_link_has_changedEmail_only_when_given()
+    {
+        Assert.Equal("https://app.test/confirm-email?userId=u1&code=c1&changedEmail=new@example.com",
+            EmailLinks.ConfirmEmail("https://app.test", "u1", "c1", "new@example.com"));
+        Assert.DoesNotContain("changedEmail", EmailLinks.ConfirmEmail("https://app.test", "u1", "c1"));
+    }
+
+    [Fact]
+    public async Task Sender_keeps_changedEmail_and_sends_to_it()
+    {
+        var delivery = new RecordingDelivery();
+        var sender = NewSender(delivery);
+
+        await sender.SendConfirmationLinkAsync(
+            new IdentityUser { Email = "old@example.com" }, "new@example.com",
+            "https://evil.example/api/auth/confirmEmail?userId=u1&amp;code=c1&amp;changedEmail=new%40example.com");
+
+        var message = Assert.Single(delivery.Sent);
+        Assert.Equal("new@example.com", message.To);
+        Assert.Contains("https://app.test/confirm-email?userId=u1&code=c1&changedEmail=new@example.com", message.TextBody);
+    }
+
+    [Fact]
+    public async Task Sender_sends_a_plain_confirmation_to_the_stored_address_not_the_typed_one()
+    {
+        var delivery = new RecordingDelivery();
+
+        await NewSender(delivery).SendConfirmationLinkAsync(
+            new IdentityUser { Email = "ada@example.com" }, "ADA@EXAMPLE.COM",
+            "https://api.test/api/auth/confirmEmail?userId=u1&amp;code=c1");
+
+        Assert.Equal("ada@example.com", Assert.Single(delivery.Sent).To);
+    }
+
+    [Fact]
+    public async Task Reset_sender_decodes_the_code_and_sends_to_the_stored_address()
+    {
+        var delivery = new RecordingDelivery();
+
+        // The built-in endpoint passes the Base64Url code HTML-encoded and the typed spelling.
+        await NewSender(delivery).SendPasswordResetCodeAsync(
+            new IdentityUser { Email = "ada@example.com" }, "ADA@EXAMPLE.COM", "ab-_&#x2B;c");
+
+        var message = Assert.Single(delivery.Sent);
+        Assert.Equal("ada@example.com", message.To);
+        Assert.Equal("Reset your password", message.Subject);
+        Assert.Contains("https://app.test/reset-password?email=ada@example.com&code=ab-_%2Bc", message.TextBody);
+    }
+
+    [Fact]
+    public async Task Reset_link_sender_sends_nothing()
+    {
+        var delivery = new RecordingDelivery();
+
+        await NewSender(delivery).SendPasswordResetLinkAsync(
+            new IdentityUser { Email = "ada@example.com" }, "ada@example.com", "https://api.test/x");
+
+        Assert.Empty(delivery.Sent);
+    }
+
+    private static IdentityEmailSender NewSender(IEmailDelivery delivery) =>
+        new(delivery, Options.Create(new EmailOptions { PublicUrl = "https://app.test" }), NullLogger<IdentityEmailSender>.Instance);
 
     private sealed class RecordingDelivery : IEmailDelivery
     {

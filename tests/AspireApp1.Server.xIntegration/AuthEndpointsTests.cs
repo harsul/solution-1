@@ -88,6 +88,28 @@ public class AuthEndpointsTests(ServerFactory factory) : IClassFixture<ServerFac
     }
 
     [Fact]
+    public async Task Logout_without_a_session_returns_401_not_a_redirect()
+    {
+        var response = await factory.CreateHttpsClient().PostAsync("/api/auth/logout", content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/auth/password/forgot")]
+    [InlineData("/api/account/password")]
+    [InlineData("/api/account/email")]
+    [InlineData("/api/account/sessions")]
+    public async Task Removed_custom_endpoints_return_404(string path)
+    {
+        var (client, _) = await SignedInClientAsync(factory);
+
+        var response = await client.PostAsync(path, content: null, Ct);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Logout_ends_the_session()
     {
         var (client, _) = await SignedInClientAsync(factory);
@@ -113,9 +135,11 @@ public class AuthEndpointsTests(ServerFactory factory) : IClassFixture<ServerFac
     }
 
     [Theory]
-    [InlineData("Ab1", "PasswordTooShort")]
-    [InlineData("abcdefgh", "PasswordRequiresDigit")]
-    [InlineData("12345678", "PasswordRequiresLetter")]
+    [InlineData("Ab1!", "PasswordTooShort")]
+    [InlineData("passw0rd!", "PasswordRequiresUpper")]
+    [InlineData("PASSW0RD!", "PasswordRequiresLower")]
+    [InlineData("Password!", "PasswordRequiresDigit")]
+    [InlineData("Passw0rd", "PasswordRequiresNonAlphanumeric")]
     public async Task Register_rejects_passwords_that_break_a_rule(string password, string expectedCode)
     {
         var client = factory.CreateHttpsClient();

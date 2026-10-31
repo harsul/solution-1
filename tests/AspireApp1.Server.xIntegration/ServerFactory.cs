@@ -44,10 +44,6 @@ public sealed class ServerFactory(PostgresFixture postgres) : WebApplicationFact
         builder.UseSetting("ConnectionStrings:appdb", _connectionString);
         builder.UseWebRoot(_webRoot);
         builder.UseSetting("App:PublicUrl", PublicUrl);
-        // Tests share one client IP; real limits are tested with their own host (WithWebHostBuilder).
-        builder.UseSetting("RateLimits:ResendConfirmation:PermitLimit", "1000");
-        builder.UseSetting("RateLimits:ForgotPassword:PermitLimit", "1000");
-        builder.UseSetting("RateLimits:ChangeEmail:PermitLimit", "1000");
 
         // Aspire's Redis client requires a connection string; it is never connected to.
         builder.UseSetting("ConnectionStrings:cache", "localhost:6379,abortConnect=false,connectTimeout=100");

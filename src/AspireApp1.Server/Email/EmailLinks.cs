@@ -11,14 +11,12 @@ internal static class EmailLinks
         && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
         && !string.IsNullOrEmpty(uri.Host);
 
-    public static string ConfirmEmail(string publicUrl, string userId, string code) =>
-        Build(publicUrl, "confirm-email", new() { ["userId"] = userId, ["code"] = code });
+    /// <summary><paramref name="changedEmail"/> is set for change-email links (the new address).</summary>
+    public static string ConfirmEmail(string publicUrl, string userId, string code, string? changedEmail = null) =>
+        Build(publicUrl, "confirm-email", new() { ["userId"] = userId, ["code"] = code, ["changedEmail"] = changedEmail });
 
     public static string ResetPassword(string publicUrl, string email, string code) =>
         Build(publicUrl, "reset-password", new() { ["email"] = email, ["code"] = code });
-
-    public static string ConfirmEmailChange(string publicUrl, string userId, string email, string code) =>
-        Build(publicUrl, "confirm-email-change", new() { ["userId"] = userId, ["email"] = email, ["code"] = code });
 
     /// <summary>Appends <paramref name="path"/> to the public URL, keeping any path it already has.</summary>
     private static string Build(string publicUrl, string path, Dictionary<string, string?> query) =>

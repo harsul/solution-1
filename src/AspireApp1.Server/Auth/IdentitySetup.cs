@@ -6,52 +6,24 @@ namespace AspireApp1.Server.Auth;
 internal static class IdentitySetup
 {
     /// <summary>
-    /// ASP.NET Core Identity with cookie sessions for the same-origin React app.
-    /// Password, lockout and cookie rules follow the F1 spec.
+    /// ASP.NET Core Identity with cookie sessions for the same-origin React app. Identity's defaults
+    /// for passwords, lockout and tokens; only the cookie is tightened.
     /// </summary>
     public static IHostApplicationBuilder AddAppIdentity(this IHostApplicationBuilder builder)
     {
         builder.Services
             .AddIdentityApiEndpoints<IdentityUser>(options =>
             {
-                options.Password.RequiredLength = 8;
-                options.Password.RequireDigit = true;
-                options.Password.RequireLowercase = false;
-                options.Password.RequireUppercase = false;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequiredUniqueChars = 1;
-
-                options.Lockout.MaxFailedAccessAttempts = 5;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-                options.Lockout.AllowedForNewUsers = true;
-
+                // Not a password or token rule: without it /confirmEmail?changedEmail= could save an
+                // address another account already uses.
                 options.User.RequireUniqueEmail = true;
-                options.SignIn.RequireConfirmedAccount = false;
-
-                // Email confirmation links use their own provider (24 h lifetime).
-                options.Tokens.EmailConfirmationTokenProvider = EmailConfirmationTokenProvider.ProviderName;
-                // Change-email links (F5) live as long as confirmation links.
-                options.Tokens.ChangeEmailTokenProvider = EmailConfirmationTokenProvider.ProviderName;
             })
-            .AddEntityFrameworkStores<AppDbContext>()
-            .AddPasswordValidator<RequireLetterPasswordValidator>()
-            .AddTokenProvider<EmailConfirmationTokenProvider>(EmailConfirmationTokenProvider.ProviderName);
-
-        // Password reset links (default token provider) are valid for 1 hour; email confirmation has
-        // its own provider and options (24 h), so this doesn't affect it; neither are change-email links.
-        builder.Services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(1));
-
-        // Check the security stamp on every request, so changing it (password change, "sign out other
-        // devices", deleted account) ends other sessions on their next request (F4).
-        builder.Services.Configure<SecurityStampValidatorOptions>(o => o.ValidationInterval = TimeSpan.Zero);
+            .AddEntityFrameworkStores<AppDbContext>();
 
         builder.Services.ConfigureApplicationCookie(options =>
         {
-            options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = SameSiteMode.Strict;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.ExpireTimeSpan = TimeSpan.FromDays(14);
-            options.SlidingExpiration = true;
 
             // This is an API: answer with status codes instead of redirecting to a login page.
             options.Events.OnRedirectToLogin = context =>
