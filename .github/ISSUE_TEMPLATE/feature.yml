@@ -1,6 +1,7 @@
 name: Feature idea
 description: Suggest something new; the product owner turns it into an epic (/fepic)
 title: "Idea: "
+labels: ["idea"]
 body:
   - type: textarea
     id: problem

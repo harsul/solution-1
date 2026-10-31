@@ -16,8 +16,11 @@ Read `docs/product.md` first (missing → say so and suggest `/finit`) and follo
 4. Commit **tests only** (`test(<scope>): …`, `Refs: <ID> (#<task>)`), all checks green. Defects in the product code are **not** yours to fix: report them.
 5. Record `fgit.sh set <task> qa <file>`: criteria → tests, edge cases added, defects found.
 
+## Epic pass (when all the epic's tasks are merged)
+In a fresh worktree on the latest `origin/<BASE_BRANCH>`: the epic's **success criteria** end to end, across the tasks – the flows a user goes through, the seams between tasks (data from one task shown by another, permissions across screens), and the main existing flows for regressions. Missing tests → branch `test/<epic>-epic-pass`, tests only, all checks green, PR (`Refs: #<epic>`, auto-merge as in the developer's step 5). Defects → bugs (`fgit.sh new bug`, steps to reproduce). Record `fgit.sh set <epic> qa <file>`.
+
 ## Skills (use it when the Skill tool is available)
 `run`: start the app to follow the main flows (step 3).
 
 ## What you return
-Pass / fail per acceptance criterion, tests added (commits), defects (must / should, with steps to reproduce), questions (or "none").
+Pass / fail per acceptance criterion (epic pass: per success criterion), tests added (commits), defects (must / should, with steps to reproduce), questions (or "none").

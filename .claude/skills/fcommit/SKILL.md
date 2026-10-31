@@ -25,7 +25,7 @@ Run from the repository root. Don't fix anything here; only report – the calle
 | 6 | Frontend tests | `npm --prefix src/frontend test` | frontend |
 | 7 | Frontend build | `npm --prefix src/frontend run build` | frontend |
 
-- Scope: `check server` / `check frontend` runs one group. When committing, run the groups the changes touch: server for `*.cs`/`*.csproj`/AppHost, frontend for `src/frontend/**`; docs-only and `.claude/`-only changes skip verification (say so).
+- Scope: `check server` / `check frontend` runs one group. When committing, run the groups the changes touch: server for `*.cs`/`*.csproj`/AppHost, frontend for `src/frontend/**`; docs-only and `.claude/`-only changes skip verification (say so). Changes to the infra paths (`CLAUDE.md` → Conventions) are checked by the pipeline (actionlint, ownership check) and need the `ops` label on their PR.
 - `dotnet test` runs both test projects; the integration tests need Postgres (Docker for Testcontainers, or `TEST_POSTGRES_CONNECTION`).
 - `src/frontend/node_modules` missing → `npm --prefix src/frontend ci` first (needs permission; say why).
 - A tool (`dotnet`, `npm`) not available → mark its checks **not run**, never as passed.
