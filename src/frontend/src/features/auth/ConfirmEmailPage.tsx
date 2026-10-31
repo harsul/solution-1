@@ -28,10 +28,9 @@ export default function ConfirmEmailPage() {
     started.current = true;
     confirmEmail(userId, code, changedEmail ?? undefined)
       .then(async (ok) => {
-        // The change ended every session of the account: sign this browser out now rather than
-        // surprising the user later.
-        if (ok && changedEmail) await signOut().catch(() => undefined);
-        else if (ok) await refreshUser();
+        // The change ended every session of the account: sign a signed-in browser out now rather
+        // than surprising the user later.
+        if (ok && (await refreshUser()) && changedEmail) await signOut().catch(() => undefined);
         setStatus(ok ? 'confirmed' : 'invalid');
       })
       .catch(() => setStatus('error'));

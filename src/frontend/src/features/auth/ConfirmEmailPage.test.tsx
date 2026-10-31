@@ -104,6 +104,7 @@ describe('ConfirmEmailPage', () => {
       expect(await screen.findByRole('heading', { name: 'Email changed' })).toBeInTheDocument();
       expect(users.has('ada@new.example')).toBe(true);
       expect(fetchMock.mock.calls.some(([url]) => String(url).startsWith('/api/auth/confirmEmail?'))).toBe(true);
+      expect(fetchMock.mock.calls.some(([url]) => String(url) === '/api/auth/logout')).toBe(false);
     });
 
     it('sends changedEmail to the built-in endpoint', async () => {
