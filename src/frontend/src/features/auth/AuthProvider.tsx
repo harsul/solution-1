@@ -67,23 +67,21 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     [signIn],
   );
 
-  const signOut = useCallback(async () => {
-    await api.signOut();
-    clearBannerDismissals();
-    latestCheck.current++;
-    setState({ status: 'signedOut' });
-  }, []);
-
-  const sessionEnded = useCallback<AuthContextValue['sessionEnded']>(async (reason) => {
-    await api.signOut();
+  const signOut = useCallback<AuthContextValue['signOut']>(async (reason) => {
+    try {
+      await api.signOut();
+    } catch (error) {
+      // With a reason the account change already happened: still end the session locally.
+      if (!reason) throw error;
+    }
     clearBannerDismissals();
     latestCheck.current++;
     setState({ status: 'signedOut', reason });
   }, []);
 
   const value = useMemo(
-    () => ({ state, signIn, register, signOut, sessionEnded, refreshUser: loadUser }),
-    [state, signIn, register, signOut, sessionEnded, loadUser],
+    () => ({ state, signIn, register, signOut, refreshUser: loadUser }),
+    [state, signIn, register, signOut, loadUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

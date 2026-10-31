@@ -47,6 +47,22 @@ describe('ChangePasswordSection', () => {
     expect(screen.getByLabelText('Current password')).toHaveFocus();
   });
 
+  it('still signs out with the notice when the sign-out request fails after the change', async () => {
+    fakeApi({
+      'GET /api/auth/manage/info': () => json({ email: 'ada@example.com', isEmailConfirmed: true }),
+      'POST /api/auth/manage/info': () => json({ email: 'ada@example.com', isEmailConfirmed: true }),
+      'POST /api/auth/logout': () => status(500),
+    });
+    renderWithProviders(<App />, { route: '/account' });
+
+    await fill('Passw0rd!', 'N3wPassw0rd!');
+    await submit();
+
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.getByText('Your password was changed. Please sign in with your new password.')).toBeInTheDocument();
+    expect(screen.queryByText('Something went wrong. Please try again.')).not.toBeInTheDocument();
+  });
+
   it('shows the server rule messages', async () => {
     signedInWith(() => json({ errors: { PasswordRequiresUpper: ['Passwords must have an uppercase letter.'] } }, 400));
     renderWithProviders(<App />, { route: '/account' });

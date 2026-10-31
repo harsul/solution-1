@@ -14,9 +14,8 @@ export interface AuthContextValue {
   signIn: (credentials: Credentials, rememberMe: boolean) => Promise<SignInResult>;
   /** Registers and, on success, signs the new user in (session cookie). */
   register: (credentials: Credentials) => Promise<RegisterOutcome>;
-  signOut: () => Promise<void>;
-  /** Ends the session after a password change and signs out locally (RequireAuth shows the matching notice). */
-  sessionEnded: (reason: 'passwordChanged') => Promise<void>;
+  /** Signs out; with a reason (RequireAuth shows its notice) a failing request is ignored, as the account change already happened. */
+  signOut: (reason?: 'passwordChanged') => Promise<void>;
   /** Reloads the session state (e.g. after confirming the email); resolves to whether signed in. */
   refreshUser: () => Promise<boolean>;
 }

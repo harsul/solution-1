@@ -19,7 +19,7 @@ const messages = {
 };
 
 export default function ChangePasswordSection() {
-  const { state, sessionEnded } = useAuth();
+  const { state, signOut } = useAuth();
   const [current, setCurrent] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -39,7 +39,7 @@ export default function ChangePasswordSection() {
       const result = await changePassword(current, password);
       if (result.ok) {
         // The browser is signed out; RequireAuth sends the user to the sign-in page with a notice.
-        await sessionEnded('passwordChanged');
+        await signOut('passwordChanged');
       } else if (result.code === 'rules') {
         setFeedback({ severity: 'error', messages: result.errors.length ? result.errors : [messages.error] });
       } else {
