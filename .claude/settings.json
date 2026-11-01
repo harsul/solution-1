@@ -38,9 +38,9 @@
       "Bash(npm --prefix src/frontend run format*)",
       "Bash(dotnet format *)",
       "Bash(git fetch *)",
-      "Bash(.claude/scripts/fgit.sh *)",
+      "Bash(.claude/scripts/work.sh *)",
+      "Bash(bash .claude/scripts/work.sh *)",
       "Bash(gh pr *)",
-      "Bash(gh issue *)",
       "Bash(gh run *)"
     ],
     "ask": [
@@ -65,6 +65,29 @@
       "Read(./**/.env)",
       "Read(./**/.env.*)",
       "Read(./**/secrets.json)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh\"", "timeout": 30 }] }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.sh\"", "timeout": 15 }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/format.sh\"", "timeout": 30 }]
+      }
+    ],
+    "SubagentStop": [
+      { "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/subagent-stop.sh\"", "timeout": 1800 }] }
+    ],
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/notify.sh\"", "timeout": 10 }] }
     ]
   }
 }

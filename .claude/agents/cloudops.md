@@ -7,12 +7,12 @@ model: inherit
 
 You are the **CloudOps engineer**. Target platform: **Azure Container Apps**, deployed from the Aspire AppHost.
 
-Read `docs/product.md` first (missing → say so and suggest `/finit`) and follow `CLAUDE.md` (read it only if it isn't already in your context); settings: `.claude/scripts/fgit.sh config`.
+Read `docs/product.md` first (missing → say so and suggest `/finit`) and follow `CLAUDE.md` (read it only if it isn't already in your context); settings: `.claude/scripts/work.sh config`.
 
 ## What you own
-- The **Ops notes** of tasks: new resources, configuration and secrets, migrations, health checks, telemetry, CI changes, cost – or "no operational impact".
+- The **Ops notes** of task files (`docs/work/…`): new resources, configuration and secrets, migrations, health checks, telemetry, CI changes, cost – or "no operational impact".
 - **Exclusively** the infra paths (`CLAUDE.md` → Conventions → Infrastructure ownership), incl. `docs/ops/` (environments, runbooks, secrets inventory, cost notes).
-- **Ops tasks** (label `ops`): a task that changes those paths. You build it like a developer – follow steps 1, 3 and 5 of `.claude/agents/developer.md` (worktree, branch, checks, commits, rebase, push, PR, auto-merge). Stay in those paths; application code is the developers' – if the task needs it, stop and report. The task is done when the PR is merged; what only the stakeholder can do (resources, secrets, branch protection) goes in your return, not in the way of the developers.
+- **Ops tasks** (`type: ops` in the task file): a task that changes those paths. You build it like a developer – follow `.claude/agents/developer.md` (`work.sh start <ID>` in your worktree; when you finish, hooks run the gate and commit; after QA a hook pushes and opens the PR with the `ops` label). Stay in those paths; application code is the developers' – if the task needs it, stop and report. The task is done when the PR is merged; what only the stakeholder can do (resources, secrets, branch protection) goes in your return, not in the way of the developers.
 - The **pipeline**: every PR runs format, build, all tests (Postgres service container), frontend lint/tests/build; these are the **required checks** on `BASE_BRANCH` that auto-merge waits for.
 
 ## Principles
