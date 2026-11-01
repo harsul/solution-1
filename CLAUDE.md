@@ -17,8 +17,9 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 | `docs/design/` | Design system (designer) |
 | `docs/architecture/` | Architecture decision records (architect) |
 | `docs/ops/` | Environments, runbooks, secrets inventory (CloudOps) |
-| `docs/plans`, `docs/specs` | Archive of F1–F5 (newer features live on GitHub Issues) |
-| `.claude/agents/`, `.claude/skills/`, `.claude/scripts/`, `.claude/workflow.conf` | The team: role agents, `/f*` commands, GitHub Issues helper (`fgit.sh`), rename helper, workflow settings |
+| `docs/work/` | Epics and tasks (markdown, see Team workflow) |
+| `docs/plans`, `docs/specs` | Archive of F1–F5 (F6–F19 were GitHub issues) |
+| `.claude/agents/`, `.claude/skills/`, `.claude/hooks/`, `.claude/scripts/`, `.claude/workflow.conf` | The team: role agents, `/f*` commands, hooks, work tracking (`work.sh`), rename helper, workflow settings |
 
 ## Commands
 
@@ -31,50 +32,57 @@ Aspire 13.6 app: ASP.NET Core (.NET 10) API + React 19 / Material UI 9 / Vite 8 
 
 ## Team workflow
 
-We build a **SaaS starter platform** that any kind of business can start from. Work is organised as **epics** and **tasks** on GitHub Issues and delivered by a team of role agents (`.claude/agents/`): main → task branch → PR → main.
+We build a **SaaS starter platform** that any kind of business can start from. Work is organised as **epics** and **tasks** in markdown files under `docs/work/` and delivered by a team of role agents (`.claude/agents/`): main → task branch → PR → main. **Scripts and hooks do the mechanical steps** (branch, gate, commit, push, PR) so the agents spend tokens only on thinking.
 
 ### Team
 
 | Role | Agent | Owns |
 |---|---|---|
-| Product owner | `product-owner` | Epics (what and why), each one working day of the agent team; `docs/product.md` |
-| Team lead | `team-lead` | Breaking an epic into small prioritized tasks with dependencies; keeping the sprint flowing |
-| Software architect | `architect` | Technical notes on every task, collisions between tasks, conventions, ADRs (`docs/architecture/`) |
-| Designer | `designer` | UI notes on tasks with screens, the design system (`docs/design/`), UI review before a PR |
-| CloudOps | `cloudops` | Ops notes, the epic's `ops` task, pipeline and required checks, Azure dev environment; **the only role that changes the AppHost, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles, `docs/ops/`**; ops review |
-| Developers (×`DEVELOPERS`) | `developer` | One task at a time in their own worktree: branch, build with tests, verify, commit, fix findings, rebase, push, PR with auto-merge |
-| QA | `qa` | Acceptance criteria → tests, edge cases, main flows; commits tests only; reports defects |
-| Reviewer | `reviewer` | Independent code + security review of every task before its PR (read-only) |
-| Delivery lead | you, via the commands | Runs the agents, asks the stakeholder (agents can't), tracks PRs |
+| Product owner | `product-owner` | Epics (what and why, `epic.md`), each one working day of the agent team; acceptance; `docs/product.md` |
+| Team lead | `team-lead` | Breaking an epic into small prioritized task files with dependencies; blocked, too big or failing tasks |
+| Software architect | `architect` | Technical notes on every task, collisions between tasks, conventions, ADRs (`docs/architecture/`); its hook publishes the plan |
+| Designer | `designer` | UI notes on tasks with screens, the design system (`docs/design/`), UI review |
+| CloudOps | `cloudops` | Ops notes, the epic's `ops` task, pipeline and required checks, Azure dev environment; **the only role that changes the AppHost, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles, `docs/ops/`** |
+| Developers (×`DEVELOPERS`) | `developer` | One task at a time in their own worktree: build it with tests; hooks gate and commit |
+| QA | `qa` | Integration tests, security scan, code + security review, criteria → tests; commits tests only; pass → its hook ships the PR |
+| Delivery lead | you, via the commands | Runs the agents, asks the stakeholder (agents can't), picks among ready tasks, tracks PRs |
 
 ### Commands
 
 | Command | Does |
 |---|---|
 | `/finit [update [name \| brand \| tickets \| workflow \| quality \| section]]` | Setup: product questions → `docs/product.md`; code name (rename), display name, brand colors, task IDs, workflow settings. Re-run with `update` to change any of it |
-| `/fepic "idea" \| review \| #<epic>` | Product owner defines small epics (label `epic`); you approve them |
-| `/fplan #<epic>` | Team lead + architect (+ designer, CloudOps) break the epic into tasks (sub-issues); you approve the task list |
-| `/fwork #<epic>` | The sprint: developers in parallel take ready tasks by priority → QA → review → rebase → PR → auto-merge → next task; then epic QA, product-owner acceptance, retro and day report (stops new work at `CUTOFF`) |
-| `/ffix #<bug>` | Bug: failing test → fix → QA → review → PR |
+| `/fepic "idea" \| review \| E<n>` | Product owner writes small epics (`docs/work/E<n>-…/epic.md`); you approve them |
+| `/fplan E<n>` | Team lead + architect (+ designer, CloudOps) write the task files; the architect's hook validates and publishes them as a PR |
+| `/fwork E<n>` | The sprint: developers in parallel take ready tasks (you pick when several are ready) → gate + commit (hook) → QA (integration tests, scan, review) → push + PR + auto-merge (hook) → next task; then epic QA, acceptance, retro (stops new work at `CUTOFF`) |
+| `/ffix "bug" \| F<n>` | Bug: bug file → failing test → fix → gate → QA → PR |
 | `/fcommit [check]` | Your own manual changes: all checks, then logical Conventional Commits; `check` only verifies |
 
-Approvals (`GATES`, default `epic+tasks`): you approve the **epic** and its **task list**; after that `/fwork` runs on its own and only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
+Approvals (`GATES`, default `epic`): you approve the **epic**; the plan is published when the architect finishes, and you choose which ready task starts when there are several. `/fwork` only stops for real decisions (product behaviour, irreversible steps, security trade-offs, cost).
 
-### Epics and tasks on GitHub Issues
+### Work files (`docs/work/`, `.claude/scripts/work.sh`)
 
-All reads and writes go through `.claude/scripts/fgit.sh` (needs `gh`, signed in; `fgit.sh init-labels` once per repo).
-
-- **Epic:** issue `Epic: <name>`, label `epic`, status `epic:draft → epic:approved → epic:planned`, closed when done. Size: one working day of the agent team – at most `EPIC_MAX_TASKS` tasks.
-- **Task:** issue `<ID> – <title>`, label `task` + priority `P1`/`P2`/`P3`, a **sub-issue** of its epic. Body: goal, acceptance criteria, technical/UI/ops notes, `**Blocked by:** #<n>, …` (or `–`). At most `TASK_MAX_LINES` changed lines (tests and lock files not counted). IDs: prefix + sequential number, never reused (`fgit.sh next-id`; `ID_PREFIX`/`ID_START`, here `F` → `F6`).
-- **Ready** = open, not `in-progress`, all blockers closed (`fgit.sh ready <epic>`, best first). A developer takes one with `fgit.sh claim`; a merged PR (`Closes #<task>`) closes it.
-- **Sections** (one comment each, updated in place): `qa`, `review`, `fix`.
-- **Epic close:** QA's epic pass on the merged result, then the product owner accepts it ("What users get" comment) or adds the missing tasks. Skipped review findings become `follow-up` issues (P3, outside the epic); ideas from the feature template get `idea`; both feed `/fepic review`.
-- **Bug:** label `bug` (bug template); `/ffix` on `fix/<issue>-<name>`, PR with `Fixes #<issue>`.
-- **Branches:** `feature/<ID>-<name>` from the latest `BASE_BRANCH`; before the PR: rebase on `origin/<BASE_BRANCH>`, resolve conflicts, all checks again. Force pushes only `--force-with-lease` on your own task branch.
-- **PRs:** one per task, `Closes #<task>`, merged by GitHub with `MERGE_METHOD` once the pipeline's required checks pass (`AUTO_MERGE=on`; needs branch protection with required checks).
-- Commits end with `Refs: <ID> (#<task>)`.
+- **Epic:** `docs/work/E<n>-<name>/epic.md`, front matter `id`, `title`, `status` (`draft → approved → planned → done`), `priority`, `depends_on`. Size: one working day of the agent team – at most `EPIC_MAX_TASKS` tasks.
+- **Task:** `docs/work/E<n>-<name>/<ID>-<name>.md`, front matter `id`, `title`, `epic`, `type` (`task`/`ops`/`bug`), `status` (`todo → in-progress → review → done`, or `blocked` + `blocked_reason`), `priority` (`P1`–`P3`), `size` (`S`/`M`), `blocked_by`, `qa`; sections Goal, Acceptance criteria, Technical/UI/Ops notes, QA. At most `TASK_MAX_LINES` changed lines (tests, lock files, migrations not counted). IDs never reused (`work.sh next-id`; here `F`, from `F20`).
+- **Bug:** `docs/work/bugs/<ID>-<name>.md`, `type: bug`; the file travels with its fix's PR.
+- **Status travels with the work:** the plan PR puts the tasks on `main` as `todo`; the task branch changes them, and `done` reaches `main` with the task's merged PR. **Claims** are local locks in `.git/work/locks/` (shared by all worktrees, never committed).
+- **Ready** = `todo` on `main`, not claimed, all blockers `done` (`work.sh ready E<n>`, best first). `work.sh board` shows everything.
+- **Branches:** `feature|fix|ops/<ID>-<name>` from the latest `BASE_BRANCH` (`work.sh start <ID>`). Force pushes only `--force-with-lease` on your own task branch.
+- **PRs:** one per task, title `<ID> – <title>`, merged by GitHub with `MERGE_METHOD` (squash) once the required checks pass (`AUTO_MERGE=on`). Commits end with `Refs: <ID>`.
 - Questions flow upstream: developer → team lead / architect → product owner → stakeholder.
-- F1–F5 were built before this setup; their plans and specs stay in `docs/plans` and `docs/specs` as an archive.
+- F1–F19 were tracked as GitHub issues (F1–F5 plans and specs in `docs/plans`, `docs/specs`); open ones stay there.
+
+### Hooks (`.claude/hooks/`, wired in `.claude/settings.json`)
+
+| Hook | When | Does |
+|---|---|---|
+| `guard.sh` | before Bash / file edits | No push to `BASE_BRANCH`, no force push without lease, no manual `gh pr merge`; each role edits only its own files (developers: no infra paths; QA: tests only; agents only inside their own worktree) |
+| `format.sh` | after an edit | Prettier on the changed frontend file |
+| `subagent-stop.sh` | an agent finishes | **developer/cloudops:** `work.sh gate` (format, build, xUnit, Vitest, lint, frontend build, size) – red goes back to the agent (3 rounds, then `blocked`), green → `review` + commit. **qa:** verdict `pass` → commit, `done`, `work.sh ship` (rebase, push, PR, auto-merge); `fail` → commit, back to the developer. **architect:** `work.sh check-plan` → `publish-plan` |
+| `session-start.sh` | session start | A short work board in the context |
+| `notify.sh` | Claude waits for you | Desktop notification |
+
+An agent that sets its task `blocked` with a reason may always finish: it is handing back a question. Logs: `.git/work/logs/`; ship and publish results next to the locks.
 
 ## Principles
 
@@ -110,9 +118,9 @@ Non-obvious traps the team ran into. `/fwork` adds new ones after each epic (ret
 
 Decided conventions. The architect adds to this list when the stakeholder answers an architecture question (during `/finit`, `/fplan` or `/fwork`), so it is not asked again.
 
-- Work tracking: GitHub Issues through `.claude/scripts/fgit.sh`: epics (label `epic`) and their tasks (sub-issues, label `task`, priorities `P1`–`P3`, `Blocked by` lines); one branch and one PR per task.
-- Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/fgit.sh config`): task IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), team size (`DEVELOPERS`), epic and task size (`EPIC_MAX_TASKS`, `TASK_MAX_LINES`), `BASE_BRANCH`, `MERGE_METHOD`, `AUTO_MERGE` (switch to `on` only once the pipeline has required checks and branch protection), the model per role (`COST`), and the daily cutoff (`CUTOFF`). `/finit` sets them; edit them any time.
-- Infrastructure ownership: only CloudOps changes the **infra paths** – `src/<Code>.AppHost`, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles, `docs/ops/` – through one `ops` task per epic (label `ops`, P1) when the epic needs it; tasks that depend on it are `Blocked by` it, the others start at once. Developers keep migrations, `Program.cs` wiring and `appsettings` bindings and stop when they need an infra change; the reviewer flags violations.
+- Work tracking: markdown files under `docs/work/` through `.claude/scripts/work.sh` (epics, task files with front matter, local claim locks); mechanical steps in hooks (`.claude/hooks/`); one branch and one PR per task.
+- Workflow settings live in `.claude/workflow.conf` (read with `.claude/scripts/work.sh config`): task IDs (`ID_PREFIX`, `ID_START`), approvals (`GATES`), team size (`DEVELOPERS`), epic and task size (`EPIC_MAX_TASKS`, `TASK_MAX_LINES`), `BASE_BRANCH`, `MERGE_METHOD`, `AUTO_MERGE` (switch to `on` only once the pipeline has required checks and branch protection), the model per role (`COST`), and the daily cutoff (`CUTOFF`). `/finit` sets them; edit them any time.
+- Infrastructure ownership: only CloudOps changes the **infra paths** – `src/<Code>.AppHost`, `infra/`, `azure.yaml`, `.github/workflows/`, Dockerfiles, `docs/ops/` – through one `ops` task per epic (`type: ops`, P1) when the epic needs it; tasks that depend on it are `Blocked by` it, the others start at once. Developers keep migrations, `Program.cs` wiring and `appsettings` bindings and stop when they need an infra change; the guard hook refuses their edits there and QA flags violations.
 - Hosting: Azure Container Apps (dev environment only for now; production comes later, as its own epic), deployed from the Aspire AppHost (`aspire publish`/azd); CI/CD with GitHub Actions using OIDC federated credentials; secrets in Key Vault / Container Apps secrets, never in the repo.
 - Server endpoints: minimal APIs under `/api`, one `Endpoints/<Feature>Endpoints.cs` per feature with a `Map<Feature>Endpoints()` extension; `Program.cs` only wires things up.
 - Database: PostgreSQL via Aspire (`appdb`, pgAdmin in dev) with EF Core; DbContext, migrations and DB helpers in `Data/`. Migrations apply automatically at startup in Development only. Create them with `dotnet ef migrations add <Name> -o Data/Migrations` (local tool).

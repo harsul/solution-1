@@ -48,7 +48,7 @@ For each failure only the relevant lines (file:line, error, failing test name). 
 In `check` mode, stop here. When committing: any failure → **don't commit**; show the report and stop (commit anyway only on the stakeholder's explicit word, and say so in the summary).
 
 ## 2. Inspect
-`git status --porcelain`, `git diff`, `git diff --staged`, `git branch --show-current`. No changes → say so, stop. On `main` (protected, nothing lands there without a PR): create a branch first (`git switch -c <type>/<kebab-summary>`, e.g. `chore/ci-pipeline`) and commit there. The feature comes from the branch (`feature/<ID>-…`, `fix/<issue>-…`); find its issue with `fgit.sh find <ID>`.
+`git status --porcelain`, `git diff`, `git diff --staged`, `git branch --show-current`. No changes → say so, stop. On `main` (protected, nothing lands there without a PR): create a branch first (`git switch -c <type>/<kebab-summary>`, e.g. `chore/ci-pipeline`) and commit there. The task comes from the branch (`feature/<ID>-…`, `fix/<ID>-…`); its file is `.claude/scripts/work.sh file <ID>`.
 
 ## 3. Never commit
 `bin/`, `obj/`, `node_modules/`, `dist/`, `.vs/`, `*.user`, `.env*`, secrets, connection strings, API keys, `.azure/`, the stray `src/frontend/src/frontend/` copy, large build output. Leave them out and say so; suggest `.gitignore` entries when useful.
@@ -63,9 +63,9 @@ One reviewable change per commit, in an order where earlier commits still build:
 <why, 1–3 lines>
 - <notable what, if not obvious>
 
-Refs: <ID> (#<issue>)
+Refs: <ID>
 ```
 types: feat, fix, test, refactor, docs, build, ci, chore, perf, style · scopes: server, frontend, apphost, infra, ci, tests, docs, deps, claude.
 
 ## 6. Confirm and commit
-Unless `auto`: show the proposal (header + files per commit) and ask Commit / Adjust / Cancel. Then per group `git add -- <files>` and `git commit -F <message-file>`. No `--no-verify`, `--amend` or force. **Never push.** Finish with the verification table, `git log --oneline -n <count>` and the remaining `git status`. Once the branch's PR is merged: `.claude/scripts/fgit.sh sync` (back to `main`, pulled, merged branch deleted).
+Unless `auto`: show the proposal (header + files per commit) and ask Commit / Adjust / Cancel. Then per group `git add -- <files>` and `git commit -F <message-file>`. No `--no-verify`, `--amend` or force. **Never push.** Finish with the verification table, `git log --oneline -n <count>` and the remaining `git status`. Once the branch's PR is merged: `.claude/scripts/work.sh sync` (back to `main`, pulled, merged branch deleted).
