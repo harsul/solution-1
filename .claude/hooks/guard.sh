@@ -11,7 +11,7 @@ base="$(work config BASE_BRANCH 2>/dev/null || echo main)"
 
 if [[ "$tool" == Bash ]]; then
   if [[ "$command" =~ git[[:space:]]+push(.*) ]]; then
-    args=" ${BASH_REMATCH[1]} "
+    args="${BASH_REMATCH[1]}"; args="${args%%$'\n'*}"; args=" ${args%%[;&|]*} "   # only this command, not what follows it
     # An explicit target (main, HEAD:main, refs/heads/main), or a plain push while on the base branch.
     explicit='[[:space:]:]'"(refs/heads/)?$base"'[[:space:]]'
     named='[[:space:]]origin[[:space:]]+[^[:space:]-]'
@@ -19,7 +19,7 @@ if [[ "$tool" == Bash ]]; then
     if [[ "$args" =~ $explicit ]] || [[ "$branch" == "$base" && ! "$args" =~ $named ]]; then
       block "Pushing to $base is not allowed: everything reaches $base through a PR (work.sh ship / publish-plan)."
     fi
-    [[ "$command" =~ (--force([[:space:]]|$)|[[:space:]]-f([[:space:]]|$)) ]] \
+    [[ "$args" =~ ([[:space:]]--force[[:space:]]|[[:space:]]-f[[:space:]]) ]] \
       && block "Force pushes only with --force-with-lease, on your own task branch."
   fi
   [[ "$command" =~ gh[[:space:]]+pr[[:space:]]+merge && ! "$command" =~ --auto ]] \

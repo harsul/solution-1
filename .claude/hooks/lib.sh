@@ -10,7 +10,7 @@ hook_fields() {
     const o = JSON.parse(require("fs").readFileSync(0, "utf8") || "{}");
     for (const k of process.argv.slice(1)) {
       const v = k.split(".").reduce((a, p) => (a == null ? a : a[p]), o);
-      console.log(v == null ? "" : String(v).replace(/\r?\n/g, " "));
+      console.log(v == null ? "" : String(v).replace(/\r?\n/g, " ; ")); // one line per field; a newline separates shell commands
     }' "$@"
 }
 
