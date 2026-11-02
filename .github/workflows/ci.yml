@@ -3,11 +3,13 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    # labeled/unlabeled re-run the ownership guard when the `ops` label changes. The whole
+    # workflow re-runs on purpose: skipping jobs would post "skipped" (= passing) checks.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -20,49 +22,86 @@ env:
 jobs:
   server:
     name: Server (format, build, tests)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    permissions:
+      contents: read
     env:
       # Integration tests use this server instead of Testcontainers (see PostgresFixture).
       TEST_POSTGRES_CONNECTION: Host=localhost;Port=5432;Username=postgres;Password=postgres
     steps:
       - uses: actions/checkout@v5
 
+      # Not a service container: those block the job until the image is pulled and healthy.
+      # Started in the background, the pull overlaps SDK setup, restore and build.
+      - name: Start Postgres (background)
+        run: |
+          nohup docker run -d --name postgres -p 5432:5432 \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+            --health-cmd "pg_isready -h 127.0.0.1 -U postgres" --health-interval 2s \
+            postgres:17-alpine > "$RUNNER_TEMP/postgres-start.log" 2>&1 &
+
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+          # Caches ~/.nuget/packages keyed on these files (no packages.lock.json in the repo).
           cache: true
           cache-dependency-path: |
             **/*.csproj
             Directory.Packages.props
             Directory.Build.props
 
+      # Folder mode checks the same .cs files against .editorconfig without loading the
+      # MSBuild workspace (~2 s instead of ~10 s).
       - name: Format (whitespace)
-        run: dotnet format whitespace Solution1.slnx --verify-no-changes
+        run: dotnet format whitespace --folder --verify-no-changes .
+
+      - name: Restore
+        run: dotnet restore Solution1.slnx
 
       - name: Build
-        run: dotnet build Solution1.slnx --nologo -v q
+        run: dotnet build Solution1.slnx --no-restore --nologo -v m
+
+      - name: Wait for Postgres
+        run: |
+          for _ in $(seq 1 60); do
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' postgres 2>/dev/null)" = healthy ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Postgres did not become healthy within 60 s"
+          cat "$RUNNER_TEMP/postgres-start.log"
+          docker logs postgres || true
+          exit 1
 
       - name: Test
-        run: dotnet test --no-build
+        id: test
+        shell: bash
+        run: dotnet test --no-build 2>&1 | tee "$RUNNER_TEMP/server-tests.log"
+
+      - name: Test summary
+        if: always() && steps.test.outcome != 'skipped'
+        run: |
+          counts=$(sed 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/server-tests.log" \
+            | grep -E '^[[:space:]]*(total|failed|succeeded|skipped|duration):' || true)
+          {
+            echo "### Server tests (${{ steps.test.outcome }})"
+            if [ -n "$counts" ]; then
+              echo '| | |'
+              echo '|---|---|'
+              echo "$counts" | sed -E 's/^[[:space:]]*([a-z]+):[[:space:]]*(.*)$/| \1 | \2 |/'
+            else
+              echo 'No test summary found; see the Test step log.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
   frontend:
     name: Frontend (format, lint, tests, build)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: src/frontend
@@ -76,7 +115,7 @@ jobs:
           cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       - name: Format
         run: npm run format:check
@@ -85,7 +124,105 @@ jobs:
         run: npm run lint
 
       - name: Test
-        run: npm test
+        id: test
+        run: npm test -- --reporter=default --reporter=json --outputFile.json="$RUNNER_TEMP/vitest.json"
+
+      - name: Test summary
+        if: always() && steps.test.outcome != 'skipped'
+        run: |
+          {
+            echo "### Frontend tests (${{ steps.test.outcome }})"
+            if [ -f "$RUNNER_TEMP/vitest.json" ]; then
+              jq -r '"| | |", "|---|---|",
+                "| test files | \(.numTotalTestSuites) (\(.numFailedTestSuites) failed) |",
+                "| total | \(.numTotalTests) |",
+                "| passed | \(.numPassedTests) |",
+                "| failed | \(.numFailedTests) |",
+                "| skipped | \(.numPendingTests + .numTodoTests) |"' "$RUNNER_TEMP/vitest.json"
+            else
+              echo 'No test report found; see the Test step log.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build
         run: npm run build
+
+  ownership:
+    name: Ownership (infra paths need the ops label)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check infra paths against the ops label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # Live data, so re-runs see the current labels and files.
+          if gh api "repos/$REPO/pulls/$PR" --jq '.labels[].name' | grep -qx ops; then
+            has_ops=true
+          else
+            has_ops=false
+          fi
+          infra=$(gh api --paginate "repos/$REPO/pulls/$PR/files" \
+              --jq '.[] | .filename, (.previous_filename // empty)' \
+            | grep -E '^(src/[^/]+\.AppHost/|infra/|docs/ops/|\.github/workflows/)|^azure\.yaml$|(^|/)Dockerfile[^/]*$' \
+            | sort -u || true)
+          if [ -z "$infra" ]; then
+            echo "No infra paths changed."
+            exit 0
+          fi
+          echo "Infra paths changed:"
+          echo "$infra"
+          if [ "$has_ops" = true ]; then
+            echo "PR has the ops label."
+            exit 0
+          fi
+          echo "::error::This PR changes infra paths (AppHost, infra/, azure.yaml, workflows, Dockerfiles, docs/ops/) owned by CloudOps. Add the 'ops' label if this is an ops task, or move the change into one."
+          exit 1
+
+  actionlint:
+    name: Workflows (actionlint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      ACTIONLINT_VERSION: 1.7.12
+      ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: actionlint
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$archive"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$archive" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color
+
+  # The single required check: green only when every job above passed.
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [server, frontend, ownership, actionlint]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: All jobs passed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          # Every job must succeed; only the ownership guard may be skipped, and only outside pull requests.
+          echo "$NEEDS" | jq -e --arg event "$EVENT" '
+            to_entries | all(
+              .value.result == "success"
+              or (.key == "ownership" and $event != "pull_request" and .value.result == "skipped"))' > /dev/null \
+            || { echo "::error::At least one job failed, was cancelled or was skipped unexpectedly."; exit 1; }
