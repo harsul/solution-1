@@ -25,7 +25,9 @@
 #   work.sh set <ID> <key> <value>          set any front-matter field (e.g. qa pass)
 #   work.sh check-plan <E<n>>     validate an epic's task files
 #   work.sh publish-plan <E<n>>   commit the epic folder on plan/<E>, push, PR with auto-merge
-#   work.sh gate                  format, build, unit tests (xUnit + Vitest), lint, frontend build, size
+#   work.sh publish-epic <E<n>>   after acceptance: epic.md + CLAUDE.md gotchas on docs/retro-<E>, PR with auto-merge
+#   work.sh is-infra <path>       exit 0 when the path is an infrastructure path (CloudOps only)
+#   work.sh gate                  format, build, unit tests (xUnit + Vitest), lint, frontend build, size, ownership
 #   work.sh scan                  integration tests, vulnerable packages, secret scan
 #   work.sh ship                  rebase on the base branch, push, PR, auto-merge
 #   work.sh sync                  main checkout: base branch, pull, clean merged branches, locks and worktrees
@@ -88,6 +90,11 @@ tmp_fm="$(mktemp)"; trap 'rm -f "$tmp_fm"' EXIT
 
 lock_of() { [[ -f "$locks/$1/owner" ]] && cat "$locks/$1/owner" || true; }
 lock_get() { [[ -f "$locks/$1/$2" ]] && cat "$locks/$1/$2" || true; }
+live_file() { # <ID>: the task file in the claiming worktree ("" when none) – the status of a task in flight
+  local wt; wt="$(lock_get "$1" worktree)"
+  [[ -n "$wt" && -d "$wt/$work_dir" ]] || return 0
+  find "$wt/$work_dir" -name "$1-*.md" 2>/dev/null | head -1
+}
 
 branch_id() { git branch --show-current | sed -nE "s#^(feature|fix|ops)/(${ID_PREFIX}[0-9]+)-.*#\2#p"; }
 
@@ -131,6 +138,38 @@ changed_lines() { # added + changed lines since the base (new files included), w
   echo $(( tracked + untracked ))
 }
 
+is_infra() { # <path>: an infrastructure path only CloudOps changes (CLAUDE.md → Conventions → Infrastructure ownership)
+  case "$1" in
+    src/*.AppHost/*|infra/*|azure.yaml|.github/workflows/*|*Dockerfile*|docs/ops/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+publish_docs() { # <branch> <subject> <ref> <PR body> <path>...: these main-checkout paths → <branch> from the base branch, PR, auto-merge
+  local branch="$1" subject="$2" ref="$3" body="$4" tmp p url; shift 4
+  command -v gh > /dev/null || die "gh not found"
+  git fetch --quiet origin "$BASE_BRANCH"
+  tmp="$common/work/publish-${branch//\//-}"
+  rm -rf "$tmp"; git worktree prune
+  git worktree add --quiet -B "$branch" "$tmp" "origin/$BASE_BRANCH"
+  for p in "$@"; do
+    if [[ -d "$p" ]]; then mkdir -p "$tmp/$p"; cp -R "$p/." "$tmp/$p/"; else mkdir -p "$tmp/$(dirname "$p")"; cp "$p" "$tmp/$p"; fi
+    git -C "$tmp" add -- "$p"
+  done
+  if git -C "$tmp" diff --cached --quiet; then git worktree remove --force "$tmp"; echo "$branch: nothing new to publish"; return 0; fi
+  git -C "$tmp" commit --quiet -m "$subject" -m "Refs: $ref"
+  git -C "$tmp" push --quiet --force-with-lease -u origin "$branch"
+  url="$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')"
+  [[ -n "$url" ]] || url="$(gh pr create --base "$BASE_BRANCH" --head "$branch" --title "$subject" \
+    --body "$(printf '%s\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)' "$body")")"
+  [[ "$AUTO_MERGE" == on ]] && gh pr merge "$url" --auto "--$MERGE_METHOD" > /dev/null
+  git worktree remove --force "$tmp"
+  # Tracked files edited here now travel with the PR: restore them, so 'sync' can fast-forward
+  # (they come back with the merge). Untracked ones stay; sync drops them once they are on the base branch.
+  for p in "$@"; do git diff --quiet -- "$p" 2>/dev/null || git checkout -- "$p"; done
+  echo "$branch: $url"
+}
+
 cmd="${1:-}"; shift || true
 case "$cmd" in
   config)
@@ -158,16 +197,27 @@ case "$cmd" in
     if [[ -z "$paths" ]]; then echo "No planned tasks on $BASE_BRANCH${epic:+ for $epic}."; exit 0; fi
     declare -A counts=()
     while read -r p; do
-      id="$(base_fm "$p" id)"; st="$(base_fm "$p" status)"; owner="$(lock_of "$id")"
-      [[ -n "$owner" && "$st" != done ]] && st="${st/todo/claimed}"
+      id="$(base_fm "$p" id)"; st="$(base_fm "$p" status)"; owner="$(lock_of "$id")"; note=""
+      if [[ -n "$owner" && "$st" != done ]]; then
+        st="${st/todo/claimed}"
+        live="$(live_file "$id")"   # in flight: the status lives on the task branch, in its worktree
+        if [[ -n "$live" ]]; then
+          st="$(fm "$live" status)"
+          if [[ "$st" == blocked ]]; then note="$(fm "$live" blocked_reason)"; note="– ${note//\"/}"; fi
+        fi
+        [[ -f "$locks/$id/ship" ]] && note="– ship failed: $(cat "$locks/$id/ship")"
+      fi
       counts[$st]=$(( ${counts[$st]:-0} + 1 ))
       [[ -n "$brief" ]] && continue
-      printf '%-5s %-11s %-3s %-12s %-10s %s %s\n' "$id" "$st" "$(base_fm "$p" priority)" \
-        "blk:$(base_fm "$p" blocked_by)" "${owner:--}" "$(base_fm "$p" title)" "$(lock_get "$id" pr)"
+      printf '%-5s %-11s %-3s %-12s %-10s %s %s %s\n' "$id" "$st" "$(base_fm "$p" priority)" \
+        "blk:$(base_fm "$p" blocked_by)" "${owner:--}" "$(base_fm "$p" title)" "$(lock_get "$id" pr)" "$note"
     done <<< "$paths"
     summary=""; for k in "${!counts[@]}"; do summary+="$k ${counts[$k]}, "; done
     echo "Tasks${epic:+ in $epic}: ${summary%, }"
-    if [[ -n "$brief" ]]; then r="$("$0" ready "$epic" 2>/dev/null | head -3)"; [[ -n "$r" ]] && echo "Ready: $(echo "$r" | cut -d' ' -f1 | paste -sd' ')"; fi
+    if [[ -n "$brief" ]]; then
+      r="$("$0" ready "$epic" 2>/dev/null | head -3)"
+      if [[ -n "$r" ]]; then echo "Ready: $(echo "$r" | cut -d' ' -f1 | paste -sd' ')"; fi
+    fi
     ;;
   ready)
     epic="${1:-}"
@@ -189,6 +239,7 @@ case "$cmd" in
     done <<< "$all" | sort -k1,1n -k2,2n | cut -d' ' -f3-
     ;;
   file) task_file "${1:?usage: file <ID>}" ;;
+  is-infra) is_infra "${1:?usage: is-infra <path>}" ;;
   claim)
     [[ -n "${1:-}" && -n "${2:-}" ]] || die "usage: claim <ID> <owner>"
     mkdir -p "$locks"
@@ -267,7 +318,20 @@ case "$cmd" in
       done
       grep -qE '^- \[ \]' "$f" || errors+=("$n: no acceptance criteria (- [ ] …)")
     done
-    if (( ${#errors[@]} )); then printf 'plan %s: %s\n' "$e" "${errors[@]}"; exit 1; fi
+    # Circular blockers (F21 → F22 → F21) would never become ready. Only this epic's tasks can form a
+    # cycle: tasks already on the base branch can't be blocked by new ones.
+    declare -A deps=()
+    for f in "${files[@]}"; do [[ -e "$f" ]] && deps[$(fm "$f" id)]="$(fm "$f" blocked_by | tr ',' ' ')"; done
+    for s in "${!deps[@]}"; do
+      stack=(${deps[$s]}); seen=" "
+      while (( ${#stack[@]} )); do
+        x="${stack[-1]}"; unset 'stack[-1]'
+        [[ "$x" == - || "$seen" == *" $x "* ]] && continue
+        if [[ "$x" == "$s" ]]; then errors+=("$s: circular blockers (it ends up blocked by itself)"); break; fi
+        seen+="$x "; stack+=(${deps[$x]:-})
+      done
+    done
+    if (( ${#errors[@]} )); then printf "plan $e: %s\n" "${errors[@]}"; exit 1; fi
     if grep -rqE '_pending_' "$d"; then echo "plan $e: valid, but open questions (_pending_) remain"; exit 3; fi
     echo "plan $e: valid (${#files[@]} tasks)"
     ;;
@@ -276,27 +340,25 @@ case "$cmd" in
     "$0" check-plan "$e"
     command -v gh > /dev/null || die "gh not found"
     fm_set "$d/epic.md" status planned
-    git fetch --quiet origin "$BASE_BRANCH"
-    branch="plan/$e"; tmp="$common/work/publish-$e"
-    rm -rf "$tmp"; git worktree prune
-    git worktree add --quiet -B "$branch" "$tmp" "origin/$BASE_BRANCH"
-    mkdir -p "$tmp/$d"; cp -R "$d/." "$tmp/$d/"
     title="$(fm "$d/epic.md" title)"
-    git -C "$tmp" add "$d"
-    if git -C "$tmp" diff --cached --quiet; then git worktree remove --force "$tmp"; echo "plan $e: nothing new to publish"; exit 0; fi
-    git -C "$tmp" commit --quiet -m "docs(plan): $e – $title" -m "Refs: $e"
-    git -C "$tmp" push --quiet --force-with-lease -u origin "$branch"
-    url="$(gh pr list --head "$branch" --state open --json url --jq '.[0].url')"
-    if [[ -z "$url" ]]; then
-      body="$(printf 'Plan for **%s – %s**\n\n| ID | Pri | Size | Blocked by | Title |\n|---|---|---|---|---|\n' "$e" "$title")"
-      for f in "$d"/"$ID_PREFIX"*-*.md; do
-        body+="$(printf '\n| %s | %s | %s | %s | %s |' "$(fm "$f" id)" "$(fm "$f" priority)" "$(fm "$f" size)" "$(fm "$f" blocked_by)" "$(fm "$f" title)")"
-      done
-      url="$(gh pr create --base "$BASE_BRANCH" --head "$branch" --title "docs(plan): $e – $title" --body "$body")"
-    fi
-    [[ "$AUTO_MERGE" == on ]] && gh pr merge "$url" --auto "--$MERGE_METHOD" > /dev/null
-    git worktree remove --force "$tmp"
-    echo "plan $e: $url"
+    body="$(printf 'Plan for **%s – %s**\n\n| ID | Pri | Size | Blocked by | Title |\n|---|---|---|---|---|\n' "$e" "$title")"
+    for f in "$d"/"$ID_PREFIX"*-*.md; do
+      body+="$(printf '\n| %s | %s | %s | %s | %s |' "$(fm "$f" id)" "$(fm "$f" priority)" "$(fm "$f" size)" "$(fm "$f" blocked_by)" "$(fm "$f" title)")"
+    done
+    publish_docs "plan/$e" "docs(plan): $e – $title" "$e" "$body" "$d"
+    ;;
+  publish-epic)
+    # After acceptance: epic.md (status done, "What users get") and the retro's CLAUDE.md gotchas.
+    e="${1:?usage: publish-epic <E<n>>}"; d="$(epic_dir "$e")"
+    [[ "$root" == "$main_root" ]] || die "publish-epic runs in the main checkout"
+    git fetch --quiet origin "$BASE_BRANCH"
+    git merge-base --is-ancestor "origin/$BASE_BRANCH" HEAD \
+      || die "the main checkout is behind origin/$BASE_BRANCH – 'git pull --ff-only origin $BASE_BRANCH' first (your edits stay), then publish again"
+    title="$(fm "$d/epic.md" title)"
+    paths=("$d/epic.md"); git diff --quiet -- CLAUDE.md || paths+=(CLAUDE.md)
+    publish_docs "docs/retro-$e" "docs(retro): $e – $title" "$e" \
+      "$(printf 'Acceptance and retro for **%s – %s**: epic status `%s`, what users get, new gotchas.' "$e" "$title" "$(fm "$d/epic.md" status)")" \
+      "${paths[@]}"
     ;;
   gate)
     base_branch_guard
@@ -318,6 +380,14 @@ case "$cmd" in
     lines="$(changed_lines)"
     if (( lines > TASK_MAX_LINES )); then echo "FAIL  size: $lines changed lines > TASK_MAX_LINES=$TASK_MAX_LINES (tests, lock files, migrations not counted) – stop and report it, the task needs splitting"; fail=1
     else echo "ok    size: $lines changed lines"; fi
+    # The guard hook stops edits to infra paths, but not Bash writes: check the result as well.
+    f="$(task_file "$id" 2>/dev/null)" || f=""
+    if [[ -n "$f" && "$(fm "$f" type)" != ops && "$(lock_of "$id")" != cloudops ]]; then  # ops tasks, CloudOps' bug fixes
+      base="$(git merge-base HEAD "$(base_ref)")"; infra=""
+      while read -r p; do is_infra "$p" && infra+=" $p"; done < <(git diff --name-only "$base"; git ls-files --others --exclude-standard)
+      if [[ -n "$infra" ]]; then echo "FAIL  ownership: infra paths changed in a non-ops task:$infra – revert them; set the task blocked (needs an ops task)"; fail=1
+      else echo "ok    ownership: no infra paths"; fi
+    fi
     exit $fail
     ;;
   scan)
@@ -399,6 +469,12 @@ case "$cmd" in
       done
     fi
     git worktree prune
+    # Agent worktrees (isolation: worktree) start on a worktree-agent-* branch before work.sh start switches
+    # to the task branch: delete those that have no commits of their own and no worktree any more.
+    while read -r b; do
+      git merge-base --is-ancestor "$b" "origin/$BASE_BRANCH" 2>/dev/null || continue
+      git branch -D "$b" > /dev/null 2>&1 && echo "deleted $b (agent branch)"
+    done < <(git for-each-ref --format='%(refname:short)' 'refs/heads/worktree-agent-*')
     while read -r b; do  # other local branches whose PR is merged
       [[ "$b" == "$BASE_BRANCH" ]] && continue
       if command -v gh > /dev/null && [[ -n "$(gh pr list --state merged --head "$b" --json number --jq '.[0].number' 2>/dev/null)" ]]; then

@@ -22,10 +22,5 @@ block() { printf '%s\n' "$*" >&2; exit 2; }
 
 work() { bash "$CLAUDE_PROJECT_DIR/.claude/scripts/work.sh" "$@"; }
 
-# Infrastructure paths only CloudOps changes (CLAUDE.md → Conventions → Infrastructure ownership).
-is_infra_path() {
-  case "$1" in
-    src/*.AppHost/*|infra/*|azure.yaml|.github/workflows/*|*Dockerfile*|docs/ops/*) return 0 ;;
-    *) return 1 ;;
-  esac
-}
+# Infrastructure paths only CloudOps changes – one list, in work.sh (also used by its gate).
+is_infra_path() { work is-infra "$1"; }

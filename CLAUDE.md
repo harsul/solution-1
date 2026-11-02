@@ -78,7 +78,7 @@ Approvals (`GATES`, default `epic`): you approve the **epic**; the plan is publi
 |---|---|---|
 | `guard.sh` | before Bash / file edits | No push to `BASE_BRANCH`, no force push without lease, no manual `gh pr merge`; each role edits only its own files (developers: no infra paths; QA: tests only; agents only inside their own worktree) |
 | `format.sh` | after an edit | Prettier on the changed frontend file |
-| `subagent-stop.sh` | an agent finishes | **developer/cloudops:** `work.sh gate` (format, build, xUnit, Vitest, lint, frontend build, size) – red goes back to the agent (3 rounds, then `blocked`), green → `review` + commit. **qa:** verdict `pass` → commit, `done`, `work.sh ship` (rebase, push, PR, auto-merge); `fail` → commit, back to the developer. **architect:** `work.sh check-plan` → `publish-plan` |
+| `subagent-stop.sh` | an agent finishes | **developer/cloudops:** `work.sh gate` (format, build, xUnit, Vitest, lint, frontend build, size, no infra paths outside ops tasks) – red goes back to the agent (3 rounds, then `blocked`), green → `review` + commit. **qa:** verdict `pass` → commit, `done`, `work.sh ship` (rebase, push, PR, auto-merge; conflicts → stays `done`, the developer rebases and its hook ships again); `fail` → commit, back to the developer. **architect:** `work.sh check-plan` → `publish-plan` |
 | `session-start.sh` | session start | A short work board in the context |
 | `notify.sh` | Claude waits for you | Desktop notification |
 
@@ -100,7 +100,7 @@ Every task (and every bug fix) is done only when:
 - [ ] Security: authorization (and tenant scope) on every new endpoint; no secrets, tokens or personal data in code, logs or errors; built-in endpoints can't bypass the feature's rules.
 - [ ] Operations: new configuration, secrets, migrations or resources are in the task's ops notes and the AppHost; the pipeline still covers the change.
 - [ ] No debug code, unused code or unrelated changes.
-- [ ] Rebased on the latest base branch with all checks green; the task is current: criteria ticked, QA and review recorded; the PR says `Closes #<task>`.
+- [ ] Rebased on the latest base branch with all checks green; the task is current: criteria ticked, QA and review recorded; the PR links its task file (`work.sh ship` adds it).
 
 ## Gotchas
 

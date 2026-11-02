@@ -16,7 +16,7 @@ Input: $ARGUMENTS
 - Write the bug file in the main checkout and leave it uncommitted: the developer's `work.sh start` copies it into the fix branch, so it lands with the fix's PR (`work.sh sync` removes the local copy after the merge).
 
 ## 2. Reproduce and fix
-`work.sh claim <ID> dev-fix`, then a **developer** agent (the **cloudops** agent if the fix is in the infra paths) with `isolation: "worktree"`: "Bug <ID>. Start with `.claude/scripts/work.sh start <ID>`. First a **failing test** at the lowest level that shows the bug (run it, see it fail; can't reproduce → `blocked` with what was tried), then fix the root cause, tests for close variants, the same pattern elsewhere fixed or listed." Its hook runs the gate and commits (`fix(<ID>): …`).
+`work.sh claim <ID> dev-fix` (`work.sh claim <ID> cloudops` if the fix is in the infra paths – the gate allows infra changes only for ops tasks and CloudOps' claims), then a **developer** agent (the **cloudops** agent for the infra paths) with `isolation: "worktree"`: "Bug <ID>. Start with `.claude/scripts/work.sh start <ID>`. First a **failing test** at the lowest level that shows the bug (run it, see it fail; can't reproduce → `blocked` with what was tried), then fix the root cause, tests for close variants, the same pattern elsewhere fixed or listed." Its hook runs the gate and commits (`fix(<ID>): …`).
 
 ## 3. Check and ship
 **QA** in the developer's worktree (variants, regressions, review). Pass → its hook ships (PR with auto-merge); fail → resume the developer. Track as in `/fwork` step 4; once merged, `work.sh sync`. A non-obvious trap → `CLAUDE.md` → Gotchas (next retro).
