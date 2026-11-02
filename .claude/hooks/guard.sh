@@ -12,11 +12,13 @@ base="$(work config BASE_BRANCH 2>/dev/null || echo main)"
 if [[ "$tool" == Bash ]]; then
   if [[ "$command" =~ git[[:space:]]+push(.*) ]]; then
     args="${BASH_REMATCH[1]}"; args="${args%%$'\n'*}"; args=" ${args%%[;&|]*} "   # only this command, not what follows it
-    # An explicit target (main, HEAD:main, refs/heads/main), or a plain push while on the base branch.
+    # An explicit target (main, HEAD:main, refs/heads/main), or – while on the base branch – a plain push
+    # or one of the current branch (origin HEAD / origin @).
     explicit='[[:space:]:]'"(refs/heads/)?$base"'[[:space:]]'
     named='[[:space:]]origin[[:space:]]+[^[:space:]-]'
+    current='[[:space:]](HEAD|@)[[:space:]]'
     branch="$(git -C "$cwd" branch --show-current 2>/dev/null)"
-    if [[ "$args" =~ $explicit ]] || [[ "$branch" == "$base" && ! "$args" =~ $named ]]; then
+    if [[ "$args" =~ $explicit ]] || [[ "$branch" == "$base" && ( ! "$args" =~ $named || "$args" =~ $current ) ]]; then
       block "Pushing to $base is not allowed: everything reaches $base through a PR (work.sh ship / publish-plan)."
     fi
     [[ "$args" =~ ([[:space:]]--force[[:space:]]|[[:space:]]-f[[:space:]]) ]] \

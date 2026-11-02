@@ -79,9 +79,9 @@ qa() {
   fi
   work status "$id" done > /dev/null                    # lands on the base branch with the merge
   commit_all "test($id): QA pass" "$id"
-  if ! work ship > "$locks/$id/ship.log" 2>&1; then
-    work status "$id" review > /dev/null; commit_all "chore($id): back to review" "$id"
-  fi
+  # A failed ship (rebase conflicts) keeps the task done: work.sh ship records the conflicts in the lock
+  # (board shows them), the lead resumes the developer, and its hook ships again once the rebase is resolved.
+  work ship > "$locks/$id/ship.log" 2>&1 || true
   exit 0
 }
 
